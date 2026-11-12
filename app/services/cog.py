@@ -59,8 +59,8 @@ async def _fetch_s2_bands(
         for b in _S2_BANDS
         if b in signed["assets"]
     }
-    results = await asyncio.gather(*tasks.values())
-    return dict(zip(tasks.keys(), results))
+    results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+    return {k: r for k, r in zip(tasks.keys(), results) if isinstance(r, np.ndarray)}
 
 
 async def _fetch_s1_bands(
@@ -101,8 +101,19 @@ async def _fetch_dem_band(item: dict, bbox: list[float], size: int) -> np.ndarra
 
 
 def _s2_to_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    scl = bands.get("SCL", np.zeros((1, 1)))
-    invalid = np.isin(scl, list(_SCL_INVALID))
+    ref_shape = None
+    for v in bands.values():
+        if isinstance(v, np.ndarray) and v.ndim == 2:
+            ref_shape = v.shape
+            break
+    if ref_shape is None:
+        ref_shape = (1, 1)
+    scl = bands.get("SCL", np.ones(ref_shape, dtype=np.float32) * 4)
+    invalid = (
+        np.isin(scl, list(_SCL_INVALID))
+        if scl.shape == ref_shape
+        else np.zeros(ref_shape, dtype=bool)
+    )
     mask = ~invalid
 
     b02 = bands.get("B02", np.zeros_like(scl)) / _SCALE

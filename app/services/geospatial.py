@@ -14,7 +14,6 @@ from app.services.raster import (
 __all__ = [
     "extract_bbox_from_geometry",
     "calculate_polygon_area_hectares",
-    "apply_s2_cloud_mask",
     "calculate_ndvi",
     "calculate_ndwi",
     "calculate_mndwi",
@@ -53,25 +52,44 @@ def extract_bbox_from_geometry(geometry: dict[str, Any]) -> list[float]:
     ]
 
 
-def calculate_polygon_area_hectares(bbox: list[float]) -> float:
-    min_lon, min_lat, max_lon, max_lat = bbox
-    lat_mid = np.radians((min_lat + max_lat) / 2.0)
-    meters_per_deg_lat = 111320.0
-    meters_per_deg_lon = 111320.0 * np.cos(lat_mid)
+def calculate_polygon_area_hectares(geometry_or_bbox: Any) -> float:
+    if isinstance(geometry_or_bbox, (list, tuple)):
+        bbox = list(geometry_or_bbox)
+        min_lon, min_lat, max_lon, max_lat = bbox
+        lat_mid = np.radians((min_lat + max_lat) / 2.0)
+        width_m = abs(max_lon - min_lon) * 111320.0 * np.cos(lat_mid)
+        height_m = abs(max_lat - min_lat) * 111320.0
+        return round(float((width_m * height_m) / 10000.0), 2)
 
-    width_m = abs(max_lon - min_lon) * meters_per_deg_lon
-    height_m = abs(max_lat - min_lat) * meters_per_deg_lat
-    return round(float((width_m * height_m) / 10000.0), 2)
+    geom_type = geometry_or_bbox.get("type", "Polygon")
+    polygons: list[Any] = []
+    if geom_type == "Polygon":
+        polygons = [geometry_or_bbox.get("coordinates", [])]
+    elif geom_type == "MultiPolygon":
+        polygons = geometry_or_bbox.get("coordinates", [])
 
+    total_deg2 = 0.0
+    all_lats: list[float] = []
+    for poly in polygons:
+        if not poly or not poly[0]:
+            continue
+        ring = poly[0]
+        xs = [float(p[0]) for p in ring]
+        ys = [float(p[1]) for p in ring]
+        all_lats.extend(ys)
+        s = 0.0
+        n = len(xs)
+        for i in range(n):
+            j = (i + 1) % n
+            s += xs[i] * ys[j] - xs[j] * ys[i]
+        total_deg2 += abs(s) / 2.0
 
-def apply_s2_cloud_mask(
-    bands: dict[str, np.ndarray], scl_band: np.ndarray
-) -> dict[str, np.ndarray]:
-    cloud_mask = np.isin(scl_band, [3, 8, 9, 10])
-    masked_bands: dict[str, np.ndarray] = {}
-    for name, data in bands.items():
-        masked_bands[name] = np.where(cloud_mask, np.nan, data.astype(np.float32))
-    return masked_bands
+    if total_deg2 == 0.0 or not all_lats:
+        return 0.0
+    lat_mid = np.radians(float(np.mean(all_lats)))
+    meters_per_deg = 111320.0 * np.cos(lat_mid)
+    area_m2 = total_deg2 * (meters_per_deg**2)
+    return round(float(area_m2 / 10000.0), 2)
 
 
 def calculate_slope_degrees(

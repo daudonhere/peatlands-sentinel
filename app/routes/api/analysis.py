@@ -98,7 +98,7 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
             status_code=400, detail=f"Invalid GeoJSON geometry: {exc}"
         ) from exc
 
-    area_ha = calculate_polygon_area_hectares(bbox)
+    area_ha = calculate_polygon_area_hectares(geom_dict)
     run_id = f"sentinel_{uuid.uuid4().hex[:8]}"
     created_at = datetime.now(timezone.utc).isoformat()
 
