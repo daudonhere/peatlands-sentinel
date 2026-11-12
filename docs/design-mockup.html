@@ -161,7 +161,10 @@
           <div class="drawer-tag">Peatland Moisture and Extent (S1 + S2)</div>
           <div class="drawer-heading">Telemetry &amp; AI Diagnostic</div>
         </div>
-        <button class="close-btn" onclick="document.getElementById('drawer').classList.toggle('collapsed'); syncToggles();">&times;</button>
+        <div style="display: flex; gap: 0.4rem;">
+          <button class="btn-sm" onclick="alert('Open Run History modal')">Run History</button>
+          <button class="close-btn" onclick="document.getElementById('drawer').classList.toggle('collapsed'); syncToggles();">&times;</button>
+        </div>
       </div>
       <div class="drawer-body">
         <div class="status-banner">
@@ -191,11 +194,26 @@
           </div>
         </div>
         <div class="block">
-          <div class="block-title">NDVI Time Series (Scatter)</div>
+          <div class="block-title">Multi-Series Scatter Plot</div>
           <div class="scatter">
-            <svg viewBox="0 0 300 160" preserveAspectRatio="none">
-              <line x1="20" y1="140" x2="280" y2="140" stroke="#3a3a3a" stroke-width="1" />
-              <line x1="20" y1="20" x2="20" y2="140" stroke="#3a3a3a" stroke-width="1" />
+            <svg viewBox="0 0 300 180" preserveAspectRatio="none">
+              <!-- grid lines -->
+              <g stroke="#2a2a2a" stroke-width="0.5">
+                <line x1="20" y1="40" x2="280" y2="40" />
+                <line x1="20" y1="70" x2="280" y2="70" />
+                <line x1="20" y1="100" x2="280" y2="100" />
+                <line x1="20" y1="130" x2="280" y2="130" />
+                <line x1="20" y1="160" x2="280" y2="160" />
+                <line x1="60" y1="20" x2="60" y2="160" />
+                <line x1="100" y1="20" x2="100" y2="160" />
+                <line x1="140" y1="20" x2="140" y2="160" />
+                <line x1="180" y1="20" x2="180" y2="160" />
+                <line x1="220" y1="20" x2="220" y2="160" />
+                <line x1="260" y1="20" x2="260" y2="160" />
+              </g>
+              <line x1="20" y1="160" x2="280" y2="160" stroke="#555" stroke-width="1" />
+              <line x1="20" y1="20" x2="20" y2="160" stroke="#555" stroke-width="1" />
+              <!-- series: NDVI (white), NDWI (light gray), NBR (mid gray), BSI (dark gray) -->
               <circle cx="40" cy="90" r="3" fill="#ffffff" />
               <circle cx="70" cy="75" r="3" fill="#ffffff" />
               <circle cx="100" cy="100" r="3" fill="#ffffff" />
@@ -205,7 +223,33 @@
               <circle cx="220" cy="45" r="3" fill="#ffffff" />
               <circle cx="250" cy="65" r="3" fill="#ffffff" />
               <circle cx="275" cy="55" r="3" fill="#ffffff" />
+
+              <circle cx="40" cy="110" r="3" fill="#b3b3b3" />
+              <circle cx="70" cy="95" r="3" fill="#b3b3b3" />
+              <circle cx="100" cy="120" r="3" fill="#b3b3b3" />
+              <circle cx="130" cy="85" r="3" fill="#b3b3b3" />
+              <circle cx="160" cy="70" r="3" fill="#b3b3b3" />
+              <circle cx="190" cy="100" r="3" fill="#b3b3b3" />
+              <circle cx="220" cy="60" r="3" fill="#b3b3b3" />
+              <circle cx="250" cy="85" r="3" fill="#b3b3b3" />
+              <circle cx="275" cy="75" r="3" fill="#b3b3b3" />
+
+              <circle cx="40" cy="70" r="3" fill="#7a7a7a" />
+              <circle cx="70" cy="55" r="3" fill="#7a7a7a" />
+              <circle cx="100" cy="80" r="3" fill="#7a7a7a" />
+              <circle cx="130" cy="40" r="3" fill="#7a7a7a" />
+              <circle cx="160" cy="30" r="3" fill="#7a7a7a" />
+              <circle cx="190" cy="60" r="3" fill="#7a7a7a" />
+              <circle cx="220" cy="25" r="3" fill="#7a7a7a" />
+              <circle cx="250" cy="45" r="3" fill="#7a7a7a" />
+              <circle cx="275" cy="35" r="3" fill="#7a7a7a" />
             </svg>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.4rem; font-size: 0.7rem; color: var(--muted); flex-wrap: wrap;">
+            <span><span style="display:inline-block;width:8px;height:8px;background:#ffffff;border-radius:50%;margin-right:4px;"></span>NDVI</span>
+            <span><span style="display:inline-block;width:8px;height:8px;background:#b3b3b3;border-radius:50%;margin-right:4px;"></span>NDWI</span>
+            <span><span style="display:inline-block;width:8px;height:8px;background:#7a7a7a;border-radius:50%;margin-right:4px;"></span>NBR</span>
+            <span><span style="display:inline-block;width:8px;height:8px;background:#404040;border-radius:50%;margin-right:4px;"></span>BSI</span>
           </div>
         </div>
         <div class="block">
