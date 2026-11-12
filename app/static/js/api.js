@@ -24,3 +24,19 @@ async function fetchAoiScenes(bbox) {
   }
   return response.json();
 }
+
+async function fetchHistoryList() {
+  const response = await fetch("/api/analysis/history/list");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function fetchRunDetails(runId) {
+  const response = await fetch(`/api/analysis/${runId}`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
+}

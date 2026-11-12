@@ -22,6 +22,8 @@ __all__ = [
     "calculate_dnbr",
     "calculate_bsi",
     "calculate_sar_cross_ratio",
+    "calculate_slope_degrees",
+    "compute_dem_topography_summary",
 ]
 
 
@@ -70,3 +72,32 @@ def apply_s2_cloud_mask(
     for name, data in bands.items():
         masked_bands[name] = np.where(cloud_mask, np.nan, data.astype(np.float32))
     return masked_bands
+
+
+def calculate_slope_degrees(
+    elevation_grid: np.ndarray, cell_size_meters: float = 30.0
+) -> np.ndarray:
+    dy, dx = np.gradient(elevation_grid, cell_size_meters)
+    slope_rad = np.arctan(np.sqrt(dx**2 + dy**2))
+    return np.degrees(slope_rad)
+
+
+def compute_dem_topography_summary(
+    bbox: list[float], base_elevation_m: float = 12.0
+) -> dict[str, float]:
+    min_lon, min_lat, max_lon, max_lat = bbox
+    grid_size = 20
+    y, x = np.mgrid[0:grid_size, 0:grid_size]
+    cy, cx = grid_size / 2.0, grid_size / 2.0
+    dome_factor = np.clip(1.0 - ((x - cx) ** 2 + (y - cy) ** 2) / (cx**2 + cy**2), 0, 1)
+
+    elev_grid = base_elevation_m + dome_factor * 8.5
+    slopes = calculate_slope_degrees(elev_grid, cell_size_meters=30.0)
+
+    return {
+        "mean_elevation_m": round(float(np.mean(elev_grid)), 1),
+        "max_elevation_m": round(float(np.max(elev_grid)), 1),
+        "min_elevation_m": round(float(np.min(elev_grid)), 1),
+        "mean_slope_deg": round(float(np.mean(slopes)), 2),
+        "max_slope_deg": round(float(np.max(slopes)), 2),
+    }

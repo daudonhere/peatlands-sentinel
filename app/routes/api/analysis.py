@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import io
 import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,11 +12,13 @@ from app.schemas.analysis import (
 from app.services.geospatial import (
     extract_bbox_from_geometry,
     calculate_polygon_area_hectares,
+    compute_dem_topography_summary,
 )
 from app.services.classifier import simulate_aoi_transitions
 from app.services.ai_analyst import generate_analyst_report
 from app.services.storage import save_analysis_run, get_analysis_run, list_analysis_runs
 from app.services.exporter import create_export_zip_package
+from app.services.renderer import generate_spectral_overlay_png
 
 router = APIRouter(prefix="/api/analysis", tags=["Analysis Pipeline"])
 
@@ -42,10 +45,14 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
     spectral_summary, transitions = simulate_aoi_transitions(
         payload.target, run_id, area_ha
     )
+    topography = compute_dem_topography_summary(bbox)
+
+    metrics_payload = spectral_summary.model_dump()
+    metrics_payload.update(topography)
 
     ai_report = await generate_analyst_report(
         target=payload.target,
-        metrics=spectral_summary.model_dump(),
+        metrics=metrics_payload,
         transitions=[t.model_dump() for t in transitions],
     )
 
@@ -62,7 +69,7 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
         target=payload.target,
         area_hectares=area_ha,
         geojson_data=geojson_envelope,
-        metrics_data=spectral_summary.model_dump(),
+        metrics_data=metrics_payload,
         transitions_data=[t.model_dump() for t in transitions],
         ai_report_data=ai_report.model_dump(),
     )
@@ -85,6 +92,18 @@ async def get_run_details(run_id: str):
     if not run:
         raise HTTPException(status_code=404, detail="Analysis run not found.")
     return run
+
+
+@router.get("/{run_id}/overlay.png")
+async def get_run_overlay_image(run_id: str):
+    run = get_analysis_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Analysis run not found.")
+
+    target = run.get("target", "peat_moisture")
+    metrics = run.get("metrics", {})
+    png_bytes = generate_spectral_overlay_png(target, metrics, width=256, height=256)
+    return StreamingResponse(io.BytesIO(png_bytes), media_type="image/png")
 
 
 @router.get("/{run_id}/export")

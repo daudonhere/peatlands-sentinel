@@ -13,9 +13,14 @@
       </div>
     </div>
     
-    <div class="header-status" aria-live="polite">
-      <span class="status-indicator"></span>
-      <span id="aoi-status-text">AOI: Riau Peat Dome (Default)</span>
+    <div style="display: flex; gap: 0.5rem; align-items: center; pointer-events: auto;">
+      <button id="btn-open-history" type="button" class="btn btn-outline" style="min-height: 36px; padding: 0 0.85rem; font-size: 0.775rem;">
+        Run History
+      </button>
+      <div class="header-status" aria-live="polite">
+        <span class="status-indicator"></span>
+        <span id="aoi-status-text">AOI: Riau Peat Dome (Default)</span>
+      </div>
     </div>
   </header>
 
@@ -74,12 +79,31 @@
         <button id="btn-run-analysis" type="button" class="btn btn-primary">
           Run Satellite Analysis
         </button>
+        <button id="btn-draw-polygon" type="button" class="btn btn-outline">
+          Draw Custom AOI
+        </button>
+        <button id="btn-clear-polygon" type="button" class="btn btn-outline hidden">
+          Clear Drawn AOI
+        </button>
         <button id="btn-inspect-scenes" type="button" class="btn btn-outline">
           Inspect Available Passes
         </button>
       </div>
     </div>
   </div>
+
+  <aside id="history-modal" class="floating-results hidden" style="left: 1rem; right: auto; width: 420px; z-index: 30;" aria-label="Analysis Run History">
+    <div class="results-header">
+      <div>
+        <span class="results-tag">Stored Telemetry</span>
+        <h2 class="results-heading">Analysis History</h2>
+      </div>
+      <button id="history-close-btn" type="button" class="close-btn" aria-label="Close history panel">&times;</button>
+    </div>
+    <div id="history-list" class="results-state">
+      <p class="results-state-desc">Loading stored analysis records...</p>
+    </div>
+  </aside>
 
   <aside id="results-card" class="floating-results" aria-label="Analysis Results Panel" aria-live="polite">
     <div class="results-header">
@@ -125,6 +149,19 @@
       </div>
 
       <div class="analyst-block">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 class="analyst-title" style="margin-bottom: 0;">Spectral Raster Overlay</h3>
+          <label style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem;">
+            <input type="checkbox" id="toggle-raster-layer" checked> Show
+          </label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+          <span style="font-size: 0.7rem; color: var(--text-secondary);">Opacity:</span>
+          <input type="range" id="raster-opacity-slider" min="0" max="100" value="75" style="flex: 1; accent-color: var(--status-emerald);">
+        </div>
+      </div>
+
+      <div class="analyst-block">
         <h3 class="analyst-title">AI Observation Narrative</h3>
         <p id="analyst-summary" class="analyst-text"></p>
       </div>
@@ -156,5 +193,8 @@
 {% block scripts %}
 <script src="/static/js/config.js"></script>
 <script src="/static/js/api.js"></script>
+<script src="/static/js/draw.js"></script>
+<script src="/static/js/overlay.js"></script>
+<script src="/static/js/history.js"></script>
 <script src="/static/js/map.js"></script>
 {% endblock %}

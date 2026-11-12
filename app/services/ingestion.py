@@ -26,3 +26,12 @@ async def search_stac_items(
         resp.raise_for_status()
         data = resp.json()
         return data.get("features", [])
+
+
+async def search_dem_scenes(bbox: list[float]) -> list[dict[str, Any]]:
+    return await search_stac_items(
+        bbox=bbox,
+        datetime_range="2020-01-01/2024-12-31",
+        collections=["cop-dem-glo-30"],
+        max_items=2,
+    )

@@ -72,6 +72,11 @@ async def test_end_to_end_pipeline():
             assert "<qgis" in qgs_content
             assert "AOI Boundary" in qgs_content
 
+        res_overlay = await client.get(f"/api/analysis/{run_id}/overlay.png")
+        assert res_overlay.status_code == 200
+        assert res_overlay.headers["content-type"] == "image/png"
+        assert res_overlay.content.startswith(b"\x89PNG")
+
         res_history = await client.get("/api/analysis/history/list")
         assert res_history.status_code == 200
         history_list = res_history.json()
