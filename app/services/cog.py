@@ -46,7 +46,7 @@ def _read_band_sync(href: str, bbox: list[float], size: int) -> np.ndarray:
 
 
 async def _read_band(href: str, bbox: list[float], size: int) -> np.ndarray:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(_executor, _read_band_sync, href, bbox, size)
 
 

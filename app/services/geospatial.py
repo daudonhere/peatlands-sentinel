@@ -115,7 +115,13 @@ def compute_dem_topography_summary(
         elev_grid = base_elevation_m + dome_factor * 8.5
 
     finite = np.where(np.isfinite(elev_grid), elev_grid, float(np.nanmean(elev_grid)))
-    slopes = calculate_slope_degrees(finite, cell_size_meters=30.0)
+    min_lon, min_lat, max_lon, max_lat = bbox
+    lat_mid = np.radians((min_lat + max_lat) / 2.0)
+    rows, cols = finite.shape
+    cell_lat_m = abs(max_lat - min_lat) * 111320.0 / max(rows - 1, 1)
+    cell_lon_m = abs(max_lon - min_lon) * 111320.0 * np.cos(lat_mid) / max(cols - 1, 1)
+    cell_size_m = float((cell_lat_m + cell_lon_m) / 2.0) or 30.0
+    slopes = calculate_slope_degrees(finite, cell_size_meters=cell_size_m)
 
     return {
         "mean_elevation_m": round(float(np.mean(finite)), 1),

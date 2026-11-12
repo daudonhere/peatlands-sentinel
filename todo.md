@@ -23,40 +23,40 @@ Status: `[ ]` pending, `[x]` done.
 
 ## Medium
 
-4. **Import fragile di `simulate_aoi_transitions`**
-   - File: `app/services/classifier.py` (`simulate_aoi_transitions`)
-   - Masalah: import `TARGET_MODULATORS` di dalam fungsi (didefinisikan di akhir modul) dan akses private `_TRAINING_X/_TRAINING_Y`.
-   - Aksi: pindahkan konstanta ke atas / import di top-level.
+- [x] 4. **Import fragile di `simulate_aoi_transitions`** (moved TARGET_MODULATORS to top, removed inner import)
+  - File: `app/services/classifier.py` (`simulate_aoi_transitions`)
+  - Masalah: import `TARGET_MODULATORS` di dalam fungsi (didefinisikan di akhir modul) dan akses private `_TRAINING_X/_TRAINING_Y`.
+  - Aksi: pindahkan konstanta ke atas / import di top-level.
 
-5. **NaN propagation di renderer zoom**
-   - File: `app/services/renderer.py` (`generate_spectral_overlay_png`)
-   - Masalah: `scipy.ndimage.zoom` tanpa handle NaN.
-   - Aksi: `np.nan_to_num` sebelum zoom.
+- [x] 5. **NaN propagation di renderer zoom** (nan mask preserved via separate zoom)
+  - File: `app/services/renderer.py` (`generate_spectral_overlay_png`)
+  - Masalah: `scipy.ndimage.zoom` tanpa handle NaN.
+  - Aksi: `np.nan_to_num` sebelum zoom.
 
 6. **`map.js` mendekati batas 300 baris**
    - File: `app/static/js/map.js` (296 baris)
    - Masalah: mendekati aturan max 300 baris/file.
    - Aksi: split (mis. results rendering) ke modul terpisah.
 
-7. **`resultsTargetLabel` bisa "undefined"**
-   - File: `app/static/js/map.js`
-   - Masalah: `selectedTargetText.split(". ")[1]` tanpa guard.
-   - Aksi: tambah fallback ke `selectedTargetText`.
+- [x] 7. **`resultsTargetLabel` bisa "undefined"** (guarded)
+  - File: `app/static/js/map.js`
+  - Masalah: `selectedTargetText.split(". ")[1]` tanpa guard.
+  - Aksi: tambah fallback ke `selectedTargetText`.
 
-8. **`asyncio.get_event_loop()` deprecated**
-   - File: `app/services/cog.py` (`_read_band`)
-   - Masalah: deprecated di Python 3.12 (masih jalan, warning).
-   - Aksi: gunakan loop yang sesuai / simpan loop.
+- [x] 8. **`asyncio.get_event_loop()` deprecated** (get_running_loop)
+  - File: `app/services/cog.py` (`_read_band`)
+  - Masalah: deprecated di Python 3.12 (masih jalan, warning).
+  - Aksi: gunakan loop yang sesuai / simpan loop.
 
-9. **Dead code `apply_s2_cloud_mask`**
-   - File: `app/services/geospatial.py`
-   - Masalah: tidak terpakai (YAGNI).
-   - Aksi: hapus atau integrasikan ke pipeline.
+- [x] 9. **Dead code `apply_s2_cloud_mask`** (removed)
+  - File: `app/services/geospatial.py`
+  - Masalah: tidak terpakai (YAGNI).
+  - Aksi: hapus atau integrasikan ke pipeline.
 
-10. **Spacing slope tidak akurat**
-    - File: `app/services/geospatial.py` (`calculate_slope_degrees`)
-    - Masalah: `np.gradient` dengan `cell_size_meters=30` padahal grid geografis bervariasi.
-    - Aksi: hitung spacing dari bbox/shape grid.
+- [x] 10. **Spacing slope tidak akurat** (cell size from bbox)
+  - File: `app/services/geospatial.py` (`calculate_slope_degrees`)
+  - Masalah: `np.gradient` dengan `cell_size_meters=30` padahal grid geografis bervariasi.
+  - Aksi: hitung spacing dari bbox/shape grid.
 
 ## Low / Catatan Desain
 
@@ -80,20 +80,20 @@ Status: `[ ]` pending, `[x]` done.
     - Masalah: jika frontend dipisah domain akan gagal.
     - Aksi: tambah CORS middleware (opsional, same-origin saat ini).
 
-15. **FIRMS CSV parsing bisa throw**
-    - File: `app/services/firms.py` (`fetch_active_fires`)
-    - Masalah: `frp` non-numeric → exception (route tangkap → 502).
-    - Aksi: safe parse dengan fallback 0.0.
+- [x] 15. **FIRMS CSV parsing bisa throw** (safe float parse)
+  - File: `app/services/firms.py` (`fetch_active_fires`)
+  - Masalah: `frp` non-numeric → exception (route tangkap → 502).
+  - Aksi: safe parse dengan fallback 0.0.
 
 16. **Fallback pre arrays = post arrays**
     - File: `app/routes/api/analysis.py` (`_resolve_spectral`)
     - Masalah: jika `_pre_arrays` hilang, pre=post → transisi stabil.
     - Aksi: dokumentasikan / handle eksplisit.
 
-17. **ThreadPoolExecutor tidak di-shutdown**
-    - File: `app/services/cog.py` (`_executor`)
-    - Masalah: module-level, tidak di-cleanup.
-    - Aksi: cleanup saat shutdown (lifespan).
+- [x] 17. **ThreadPoolExecutor tidak di-shutdown** (lifespan shutdown)
+  - File: `app/services/cog.py` (`_executor`)
+  - Masalah: module-level, tidak di-cleanup.
+  - Aksi: cleanup saat shutdown (lifespan).
 
 ---
 

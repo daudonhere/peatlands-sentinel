@@ -14,6 +14,9 @@ from app.services.storage import init_db
 async def lifespan(app: FastAPI):
     init_db()
     yield
+    from app.services import cog as _cog
+
+    _cog._executor.shutdown(wait=False)
 
 
 settings = get_settings()

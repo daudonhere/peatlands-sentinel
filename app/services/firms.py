@@ -7,7 +7,16 @@ from app.config import get_settings
 FIRMS_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
 
 
-async def fetch_active_fires(bbox: list[float], days: int = 3) -> list[dict[str, float | str]]:
+def _safe_float(value: object) -> float:
+    try:
+        return float(value) if value not in (None, "") else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+async def fetch_active_fires(
+    bbox: list[float], days: int = 3
+) -> list[dict[str, float | str]]:
     key = get_settings().firms_map_key
     if not key:
         raise PermissionError("FIRMS_MAP_KEY not configured.")
@@ -24,7 +33,7 @@ async def fetch_active_fires(bbox: list[float], days: int = 3) -> list[dict[str,
             "latitude": float(r["latitude"]),
             "longitude": float(r["longitude"]),
             "confidence": r.get("confidence", ""),
-            "frp": float(r.get("frp") or 0.0),
+            "frp": _safe_float(r.get("frp")),
             "acq_date": r.get("acq_date", ""),
         }
         for r in rows

@@ -84,14 +84,19 @@ def generate_spectral_overlay_png(
             arr = arrays["dnbr"]
         else:
             arr = arrays.get("ndvi", arrays.get("pre_ndvi"))
-        arr_resized = arr
+        nan_mask_src = np.isnan(arr)
         if arr.shape != (height, width):
             zoom = np.array([height / arr.shape[0], width / arr.shape[1]])
             from scipy.ndimage import zoom as nd_zoom
 
-            arr_resized = nd_zoom(arr, zoom, order=1)
-        nan_mask = np.isnan(arr_resized)
-        valid_data = arr_resized[~nan_mask] if (~nan_mask).any() else np.array([0.0])
+            arr_resized = nd_zoom(np.nan_to_num(arr, nan=0.0), zoom, order=1)
+            nan_mask = nd_zoom(nan_mask_src.astype(np.float32), zoom, order=0) > 0.5
+        else:
+            arr_resized = arr
+            nan_mask = nan_mask_src
+        valid_data = (
+            arr[np.isfinite(arr)] if np.isfinite(arr).any() else np.array([0.0])
+        )
         vmin, vmax = (
             float(np.percentile(valid_data, 5)),
             float(np.percentile(valid_data, 95)),

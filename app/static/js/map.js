@@ -238,8 +238,10 @@
       document.getElementById("date-start").value || "2024-01-01";
     const dateEnd = document.getElementById("date-end").value || "2024-12-31";
 
-    resultsTargetLabel.textContent =
-      selectedTargetText.split(". ")[1] || selectedTargetText;
+    const splitLabel = selectedTargetText.split(". ")[1];
+    resultsTargetLabel.textContent = splitLabel
+      ? splitLabel
+      : selectedTargetText;
     resultsHeading.textContent = "Telemetry & AI Diagnostic";
 
     const bbox = getBbox();
