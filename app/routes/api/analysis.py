@@ -14,6 +14,7 @@ from app.services.geospatial import (
     calculate_polygon_area_hectares,
     compute_dem_topography_summary,
 )
+from app.services.hydrology import evaluate_peat_hydrology_profile
 from app.services.classifier import simulate_aoi_transitions
 from app.services.ai_analyst import generate_analyst_report
 from app.services.storage import save_analysis_run, get_analysis_run, list_analysis_runs
@@ -49,6 +50,8 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
 
     metrics_payload = spectral_summary.model_dump()
     metrics_payload.update(topography)
+    hydrology = evaluate_peat_hydrology_profile(metrics_payload)
+    metrics_payload.update(hydrology)
 
     ai_report = await generate_analyst_report(
         target=payload.target,
@@ -95,14 +98,16 @@ async def get_run_details(run_id: str):
 
 
 @router.get("/{run_id}/overlay.png")
-async def get_run_overlay_image(run_id: str):
+async def get_run_overlay_image(run_id: str, period: str = "post"):
     run = get_analysis_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Analysis run not found.")
 
     target = run.get("target", "peat_moisture")
     metrics = run.get("metrics", {})
-    png_bytes = generate_spectral_overlay_png(target, metrics, width=256, height=256)
+    png_bytes = generate_spectral_overlay_png(
+        target, metrics, width=256, height=256, period=period
+    )
     return StreamingResponse(io.BytesIO(png_bytes), media_type="image/png")
 
 

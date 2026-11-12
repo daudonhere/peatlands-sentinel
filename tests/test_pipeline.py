@@ -60,6 +60,7 @@ async def test_end_to_end_pipeline():
             assert any(f.endswith("_report.xlsx") for f in file_list)
             assert any(f.endswith("_preview.svg") for f in file_list)
             assert any(f.endswith("_project.qgs") for f in file_list)
+            assert any(f.endswith("_raster.tif") for f in file_list)
 
             xlsx_filename = [f for f in file_list if f.endswith(".xlsx")][0]
             wb = openpyxl.load_workbook(io.BytesIO(zf.read(xlsx_filename)))

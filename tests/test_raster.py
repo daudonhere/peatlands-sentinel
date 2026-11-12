@@ -6,6 +6,8 @@ from app.services.raster import (
     calculate_dnbr,
     classify_dnbr_severity,
 )
+from app.services.hydrology import evaluate_peat_hydrology_profile
+from app.services.geotiff import generate_geotiff_raster
 
 
 def test_spectral_indices():
@@ -29,6 +31,20 @@ def test_spectral_indices():
     assert classify_dnbr_severity(dnbr) == "Moderate Severity"
 
 
+def test_hydrology_and_geotiff():
+    hydro = evaluate_peat_hydrology_profile(
+        {"mean_ndwi": 0.2, "mean_sar_cross_ratio": -10.0}
+    )
+    assert "water_table_depth_m" in hydro
+    assert "subsidence_rate_cm_year" in hydro
+    assert hydro["hydrology_risk"] in ("Low", "Moderate", "High", "Critical")
+
+    tif = generate_geotiff_raster([102.0, 0.2, 103.0, 0.8], width=32, height=32)
+    assert tif.startswith(b"II*\x00")
+    assert len(tif) > 1000
+
+
 if __name__ == "__main__":
     test_spectral_indices()
+    test_hydrology_and_geotiff()
     print("All raster self-checks passed.")

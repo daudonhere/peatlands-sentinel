@@ -1,6 +1,41 @@
 function createRasterOverlayController(map) {
   const toggleCheckbox = document.getElementById("toggle-raster-layer");
   const opacitySlider = document.getElementById("raster-opacity-slider");
+  const compareSlider = document.getElementById("compare-slider");
+  const compareLabel = document.getElementById("compare-ratio-label");
+
+  function getBaseOpacity() {
+    return opacitySlider ? Number(opacitySlider.value) / 100.0 : 0.75;
+  }
+
+  function applyOpacities() {
+    const base = getBaseOpacity();
+    const ratio = compareSlider ? Number(compareSlider.value) / 100.0 : 1.0;
+
+    const preOpacity = (1.0 - ratio) * base;
+    const postOpacity = ratio * base;
+
+    if (map.getLayer("analysis-raster-pre")) {
+      map.setPaintProperty("analysis-raster-pre", "raster-opacity", preOpacity);
+    }
+    if (map.getLayer("analysis-raster-post")) {
+      map.setPaintProperty(
+        "analysis-raster-post",
+        "raster-opacity",
+        postOpacity,
+      );
+    }
+
+    if (compareLabel) {
+      if (ratio === 1.0) {
+        compareLabel.textContent = "Post (100%)";
+      } else if (ratio === 0.0) {
+        compareLabel.textContent = "Pre (100%)";
+      } else {
+        compareLabel.textContent = `Blend (${Math.round(ratio * 100)}% Post)`;
+      }
+    }
+  }
 
   function setOverlay(runId, bbox) {
     const [w, s, e, n] = bbox;
@@ -11,67 +46,67 @@ function createRasterOverlayController(map) {
       [w, s],
     ];
 
-    if (map.getLayer("analysis-raster-layer")) {
-      map.removeLayer("analysis-raster-layer");
-    }
-    if (map.getSource("analysis-raster-source")) {
-      map.removeSource("analysis-raster-source");
-    }
+    removeOverlay();
 
-    map.addSource("analysis-raster-source", {
+    map.addSource("analysis-raster-pre-source", {
       type: "image",
-      url: `/api/analysis/${runId}/overlay.png`,
+      url: `/api/analysis/${runId}/overlay.png?period=pre`,
+      coordinates: coordinates,
+    });
+    map.addSource("analysis-raster-post-source", {
+      type: "image",
+      url: `/api/analysis/${runId}/overlay.png?period=post`,
       coordinates: coordinates,
     });
 
-    const opacity = opacitySlider ? Number(opacitySlider.value) / 100.0 : 0.75;
     map.addLayer({
-      id: "analysis-raster-layer",
+      id: "analysis-raster-pre",
       type: "raster",
-      source: "analysis-raster-source",
+      source: "analysis-raster-pre-source",
+      paint: { "raster-opacity": 0.0, "raster-fade-duration": 150 },
+    });
+
+    map.addLayer({
+      id: "analysis-raster-post",
+      type: "raster",
+      source: "analysis-raster-post-source",
       paint: {
-        "raster-opacity": opacity,
-        "raster-fade-duration": 300,
+        "raster-opacity": getBaseOpacity(),
+        "raster-fade-duration": 150,
       },
     });
 
-    if (toggleCheckbox) {
-      toggleCheckbox.checked = true;
-    }
+    if (compareSlider) compareSlider.value = 100;
+    applyOpacities();
+
+    if (toggleCheckbox) toggleCheckbox.checked = true;
   }
 
   function removeOverlay() {
-    if (map.getLayer("analysis-raster-layer")) {
-      map.removeLayer("analysis-raster-layer");
-    }
-    if (map.getSource("analysis-raster-source")) {
-      map.removeSource("analysis-raster-source");
-    }
+    ["analysis-raster-post", "analysis-raster-pre"].forEach(function (id) {
+      if (map.getLayer(id)) map.removeLayer(id);
+    });
+    ["analysis-raster-post-source", "analysis-raster-pre-source"].forEach(
+      function (id) {
+        if (map.getSource(id)) map.removeSource(id);
+      },
+    );
   }
 
   if (toggleCheckbox) {
     toggleCheckbox.addEventListener("change", function () {
-      if (map.getLayer("analysis-raster-layer")) {
-        map.setLayoutProperty(
-          "analysis-raster-layer",
-          "visibility",
-          toggleCheckbox.checked ? "visible" : "none",
-        );
+      const vis = toggleCheckbox.checked ? "visible" : "none";
+      if (map.getLayer("analysis-raster-pre")) {
+        map.setLayoutProperty("analysis-raster-pre", "visibility", vis);
+      }
+      if (map.getLayer("analysis-raster-post")) {
+        map.setLayoutProperty("analysis-raster-post", "visibility", vis);
       }
     });
   }
 
-  if (opacitySlider) {
-    opacitySlider.addEventListener("input", function () {
-      if (map.getLayer("analysis-raster-layer")) {
-        map.setPaintProperty(
-          "analysis-raster-layer",
-          "raster-opacity",
-          Number(opacitySlider.value) / 100.0,
-        );
-      }
-    });
-  }
+  if (opacitySlider) opacitySlider.addEventListener("input", applyOpacities);
+  if (compareSlider) compareSlider.addEventListener("input", applyOpacities);
 
   return {
     setOverlay: setOverlay,

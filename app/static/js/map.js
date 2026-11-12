@@ -38,6 +38,8 @@
   const valNdwi = document.getElementById("val-ndwi");
   const valDnbr = document.getElementById("val-dnbr");
   const valSar = document.getElementById("val-sar");
+  const valWtd = document.getElementById("val-wtd");
+  const valSubsidence = document.getElementById("val-subsidence");
   const analystSummary = document.getElementById("analyst-summary");
   const analystActions = document.getElementById("analyst-actions");
 
@@ -91,6 +93,12 @@
     valNdwi.textContent = Number(metrics.mean_ndwi || 0).toFixed(2);
     valDnbr.textContent = Number(metrics.max_dnbr || 0).toFixed(2);
     valSar.textContent = `${Number(metrics.mean_sar_cross_ratio || 0).toFixed(1)} dB`;
+    if (valWtd) {
+      valWtd.textContent = `${Number(metrics.water_table_depth_cm || -35).toFixed(0)} cm`;
+    }
+    if (valSubsidence) {
+      valSubsidence.textContent = `${Number(metrics.subsidence_rate_cm_year || 1.9).toFixed(1)} cm/yr`;
+    }
 
     statusHeadline.textContent = `Threat Status: ${aiReport.threat_level || "Unknown"}`;
     statusSubline.textContent = `Moisture Condition: ${aiReport.peat_moisture_status || "-"} (${runData.area_hectares} Ha)`;

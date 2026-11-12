@@ -6,16 +6,18 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 
 
+from app.services.geotiff import generate_geotiff_raster
+
+
 def generate_qgis_project_xml(
-    run_id: str, geojson_filename: str = "boundary.geojson"
+    run_id: str,
+    geojson_filename: str = "boundary.geojson",
+    geotiff_filename: str = "raster.tif",
 ) -> str:
     return f"""<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis projectname="Peatlands Sentinel - {run_id}" version="3.34.0">
   <homePath path=""/>
   <title>Peatlands Sentinel Analysis {run_id}</title>
-  <autotransaction active="0"/>
-  <evaluateDefaultValues active="0"/>
-  <trust active="0"/>
   <projectCrs>
     <spatialrefsys nativeFormat="Wkt">
       <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]</wkt>
@@ -29,13 +31,22 @@ def generate_qgis_project_xml(
   <layer-tree-group>
     <customproperties/>
     <layer-tree-layer name="AOI Boundary" id="aoi_boundary_layer" source="./{geojson_filename}" provider="ogr" checked="Qt::Checked"/>
-    <customproperties/>
+    <layer-tree-layer name="Spectral Raster" id="spectral_raster_layer" source="./{geotiff_filename}" provider="gdal" checked="Qt::Checked"/>
   </layer-tree-group>
   <projectlayers>
+    <maplayer type="raster" id="spectral_raster_layer">
+      <id>spectral_raster_layer</id>
+      <datasource>./{geotiff_filename}</datasource>
+      <layername>Spectral Raster</layername>
+      <srs>
+        <spatialrefsys nativeFormat="Wkt">
+          <authid>EPSG:4326</authid>
+        </spatialrefsys>
+      </srs>
+    </maplayer>
     <maplayer type="vector" id="aoi_boundary_layer" geometry="Polygon">
       <id>aoi_boundary_layer</id>
       <datasource>./{geojson_filename}</datasource>
-      <keywordList><value></value></keywordList>
       <layername>AOI Boundary</layername>
       <srs>
         <spatialrefsys nativeFormat="Wkt">
@@ -226,7 +237,12 @@ def create_export_zip_package(run_data: dict[str, Any]) -> io.BytesIO:
         )
         zip_file.writestr(f"{run_id}_preview.svg", svg_content)
 
-        qgis_xml = generate_qgis_project_xml(run_id, f"{run_id}_boundary.geojson")
+        tif_bytes = generate_geotiff_raster(bbox)
+        zip_file.writestr(f"{run_id}_raster.tif", tif_bytes)
+
+        qgis_xml = generate_qgis_project_xml(
+            run_id, f"{run_id}_boundary.geojson", f"{run_id}_raster.tif"
+        )
         zip_file.writestr(f"{run_id}_project.qgs", qgis_xml)
 
     zip_buffer.seek(0)

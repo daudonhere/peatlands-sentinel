@@ -23,6 +23,7 @@ def generate_spectral_overlay_png(
     metrics: dict[str, float],
     width: int = 128,
     height: int = 128,
+    period: str = "post",
 ) -> bytes:
     y, x = np.mgrid[0:height, 0:width]
     cx, cy = width / 2.0, height / 2.0
@@ -30,18 +31,17 @@ def generate_spectral_overlay_png(
     tex = np.sin(x * 0.15) * np.cos(y * 0.15) * 0.1
     val = np.clip(1.0 - dist + tex, 0.0, 1.0)
 
-    r = np.zeros((height, width), dtype=np.uint8)
-    g = np.zeros((height, width), dtype=np.uint8)
-    b = np.zeros((height, width), dtype=np.uint8)
     a = np.full((height, width), 185, dtype=np.uint8)
+    a[dist > 0.95] = 0
 
-    edge_mask = dist > 0.95
-    a[edge_mask] = 0
-
-    if target in ("wildfire_dnbr", "forest_to_bare", "deforest_expansion"):
+    if period == "pre":
+        r = ((1.0 - val) * 45).astype(np.uint8)
+        g = (val * 185 + 55).astype(np.uint8)
+        b = ((1.0 - val) * 60 + 20).astype(np.uint8)
+    elif target in ("wildfire_dnbr", "forest_to_bare", "deforest_expansion"):
         r = (val * 230 + 20).astype(np.uint8)
         g = ((1.0 - val) * 160 + 30).astype(np.uint8)
-        b = (np.where(val > 0.7, 30, 80)).astype(np.uint8)
+        b = np.where(val > 0.7, 30, 80).astype(np.uint8)
     elif target in ("peat_moisture", "water_dynamics"):
         r = ((1.0 - val) * 80).astype(np.uint8)
         g = (val * 180 + 40).astype(np.uint8)
