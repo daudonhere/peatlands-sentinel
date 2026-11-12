@@ -24,31 +24,6 @@
     },
   };
 
-  const styleDark = {
-    version: 8,
-    sources: {
-      "carto-dark": {
-        type: "raster",
-        tiles: [
-          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-        ],
-        tileSize: 256,
-        attribution: "&copy; OpenStreetMap contributors, &copy; CARTO",
-      },
-    },
-    layers: [
-      {
-        id: "carto-dark-layer",
-        type: "raster",
-        source: "carto-dark",
-        minzoom: 0,
-        maxzoom: 20,
-      },
-    ],
-  };
-
   const styleSatellite = {
     version: 8,
     sources: {
@@ -75,7 +50,7 @@
   // Map Initialization
   const map = new maplibregl.Map({
     container: "map",
-    style: styleDark,
+    style: styleSatellite,
     center: [102.5, 0.5],
     zoom: 9,
   });
@@ -149,19 +124,6 @@
   resultsCloseBtn.addEventListener("click", function () {
     resultsCard.classList.add("hidden");
   });
-
-  // Basemap Switcher
-  document
-    .querySelectorAll('input[name="basemap-choice"]')
-    .forEach(function (radio) {
-      radio.addEventListener("change", function (e) {
-        if (e.target.value === "satellite") {
-          map.setStyle(styleSatellite);
-        } else {
-          map.setStyle(styleDark);
-        }
-      });
-    });
 
   // Preset Location Selector
   aoiPresetSelect.addEventListener("change", function (e) {
