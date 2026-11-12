@@ -1,13 +1,13 @@
 :root {
   --bg-canvas: #000000;
-  --bg-panel: #141414;
-  --bg-subtle: #1f1f1f;
-  --border-panel: #3a3a3a;
+  --bg-panel: #0a0a0a;
+  --bg-subtle: #1a1a1a;
+  --border-panel: #262626;
   --border-focus: #ffffff;
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
   --text-highlight: #ffffff;
-  --status-emerald: #7a7a7a;
+  --status-emerald: #ffffff;
   --status-amber: #b3b3b3;
   --status-rose: #ffffff;
   --font-sans:
@@ -137,7 +137,7 @@ input:focus-visible {
 }
 
 .btn-outline:hover {
-  background-color: var(--bg-subtle);
+  background-color: #d4d4d4;
 }
 
 .close-btn {
