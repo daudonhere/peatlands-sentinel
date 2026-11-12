@@ -1,6 +1,7 @@
 function createHistoryController(onSelectRun) {
   const listContainer = document.getElementById("history-list");
   const btnOpen = document.getElementById("btn-open-history");
+  const btnOpenDrawer = document.getElementById("btn-open-history-drawer");
 
   async function loadHistory() {
     if (!listContainer) return;
@@ -51,11 +52,16 @@ function createHistoryController(onSelectRun) {
     }
   }
 
+  function openHistory() {
+    loadHistory();
+    if (listContainer) listContainer.scrollIntoView({ behavior: "smooth" });
+  }
+
   if (btnOpen) {
-    btnOpen.addEventListener("click", function () {
-      loadHistory();
-      if (listContainer) listContainer.scrollIntoView({ behavior: "smooth" });
-    });
+    btnOpen.addEventListener("click", openHistory);
+  }
+  if (btnOpenDrawer) {
+    btnOpenDrawer.addEventListener("click", openHistory);
   }
 
   return {

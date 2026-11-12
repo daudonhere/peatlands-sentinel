@@ -194,19 +194,6 @@
     renderAoiPolygon(map, getBbox(), "#ffffff");
   });
 
-  resultsCloseBtn.addEventListener("click", function () {
-    resultsCard.classList.toggle("collapsed");
-    var tr = document.getElementById("drawer-toggle");
-    if (tr) {
-      tr.style.right = resultsCard.classList.contains("collapsed")
-        ? "0px"
-        : "400px";
-      tr.textContent = resultsCard.classList.contains("collapsed")
-        ? "\u00ab"
-        : "\u00bb";
-    }
-  });
-
   if (btnExportZip) {
     btnExportZip.addEventListener("click", function () {
       if (!currentRunId) return;
