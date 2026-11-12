@@ -10,7 +10,6 @@ async def generate_analyst_report(
     metrics: dict[str, Any],
     transitions: list[dict[str, Any]],
 ) -> AIAnalystReport:
-    """Generates an environmental interpretation using configured AI provider with deterministic fallback."""
     settings = get_settings()
 
     system_prompt = (
@@ -32,7 +31,6 @@ async def generate_analyst_report(
         "top_land_transitions": transitions,
     }
 
-    # 1. Try external AI Provider if API key is provided
     if settings.ai_api_key:
         try:
             headers = {
@@ -64,7 +62,6 @@ async def generate_analyst_report(
         except Exception:
             pass
 
-    # 2. Try Local Ollama if configured
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             res = await client.post(
@@ -82,7 +79,6 @@ async def generate_analyst_report(
     except Exception:
         pass
 
-    # 3. Deterministic Heuristic Engine
     ndvi = float(metrics.get("mean_ndvi", 0.5))
     ndwi = float(metrics.get("mean_ndwi", 0.1))
     bsi = float(metrics.get("mean_bsi", -0.1))

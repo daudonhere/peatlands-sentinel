@@ -1,56 +1,9 @@
-// Peatlands Sentinel - MapLibre Single-Page Interactive Controller
 (function () {
   "use strict";
 
-  // Location Presets
-  const PRESETS = {
-    riau: {
-      center: [102.5, 0.5],
-      zoom: 9,
-      name: "Riau Peat Dome (Sumatra)",
-      indices: { ndvi: 0.68, ndwi: 0.22, dnbr: 0.03, sar: "-6.2 dB" },
-    },
-    pulang_pisau: {
-      center: [114.25, -2.75],
-      zoom: 9.5,
-      name: "Pulang Pisau Ex-PLG (Central Kalimantan)",
-      indices: { ndvi: 0.35, ndwi: -0.15, dnbr: 0.42, sar: "-11.8 dB" },
-    },
-    musirawas: {
-      center: [103.8, -2.4],
-      zoom: 9,
-      name: "Musi Banyuasin (South Sumatra)",
-      indices: { ndvi: 0.48, ndwi: 0.05, dnbr: 0.12, sar: "-8.4 dB" },
-    },
-  };
-
-  const styleSatellite = {
-    version: 8,
-    sources: {
-      "esri-imagery": {
-        type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        ],
-        tileSize: 256,
-        attribution: "&copy; Esri, Maxar, Earthstar Geographics",
-      },
-    },
-    layers: [
-      {
-        id: "esri-imagery-layer",
-        type: "raster",
-        source: "esri-imagery",
-        minzoom: 0,
-        maxzoom: 19,
-      },
-    ],
-  };
-
-  // Map Initialization
   const map = new maplibregl.Map({
     container: "map",
-    style: styleSatellite,
+    style: MAP_STYLE_SATELLITE,
     center: [102.5, 0.5],
     zoom: 9,
   });
@@ -60,7 +13,6 @@
     "top-right",
   );
 
-  // DOM Elements
   const coordsText = document.getElementById("coords-text");
   const aoiStatusText = document.getElementById("aoi-status-text");
   const aoiPresetSelect = document.getElementById("aoi-preset");
@@ -91,6 +43,9 @@
 
   const btnRunAnalysis = document.getElementById("btn-run-analysis");
   const btnInspectScenes = document.getElementById("btn-inspect-scenes");
+  const btnExportZip = document.getElementById("btn-export-zip");
+
+  let currentRunId = null;
 
   function getBbox() {
     const b = map.getBounds();
@@ -103,41 +58,9 @@
   }
 
   function updateCoords() {
-    const bbox = getBbox();
-    coordsText.textContent = `[${bbox.join(", ")}]`;
+    coordsText.textContent = `[${getBbox().join(", ")}]`;
   }
 
-  map.on("moveend", updateCoords);
-  map.on("load", function () {
-    updateCoords();
-    renderAoiPolygon(getBbox(), "#10b981");
-  });
-
-  // Dock Collapse Toggle
-  dockToggleBtn.addEventListener("click", function () {
-    const isCollapsed = dockBody.classList.toggle("collapsed");
-    dockToggleBtn.innerHTML = isCollapsed ? "+" : "&minus;";
-    dockToggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
-  });
-
-  // Results Panel Close
-  resultsCloseBtn.addEventListener("click", function () {
-    resultsCard.classList.add("hidden");
-  });
-
-  // Preset Location Selector
-  aoiPresetSelect.addEventListener("change", function (e) {
-    const key = e.target.value;
-    if (key in PRESETS) {
-      const preset = PRESETS[key];
-      map.flyTo({ center: preset.center, zoom: preset.zoom, essential: true });
-      aoiStatusText.textContent = `AOI: ${preset.name}`;
-    } else {
-      aoiStatusText.textContent = "AOI: Custom Viewport";
-    }
-  });
-
-  // AOI Layer Overlay
   function renderAoiPolygon(bbox, colorHex) {
     const [w, s, e, n] = bbox;
     const geojson = {
@@ -182,8 +105,32 @@
     }
   }
 
-  let currentRunId = null;
-  const btnExportZip = document.getElementById("btn-export-zip");
+  map.on("moveend", updateCoords);
+  map.on("load", function () {
+    updateCoords();
+    renderAoiPolygon(getBbox(), "#10b981");
+  });
+
+  dockToggleBtn.addEventListener("click", function () {
+    const isCollapsed = dockBody.classList.toggle("collapsed");
+    dockToggleBtn.innerHTML = isCollapsed ? "+" : "&minus;";
+    dockToggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+  });
+
+  resultsCloseBtn.addEventListener("click", function () {
+    resultsCard.classList.add("hidden");
+  });
+
+  aoiPresetSelect.addEventListener("change", function (e) {
+    const key = e.target.value;
+    if (key in MAP_PRESETS) {
+      const preset = MAP_PRESETS[key];
+      map.flyTo({ center: preset.center, zoom: preset.zoom, essential: true });
+      aoiStatusText.textContent = `AOI: ${preset.name}`;
+    } else {
+      aoiStatusText.textContent = "AOI: Custom Viewport";
+    }
+  });
 
   if (btnExportZip) {
     btnExportZip.addEventListener("click", function () {
@@ -192,7 +139,6 @@
     });
   }
 
-  // Run Satellite Analysis
   btnRunAnalysis.addEventListener("click", async function () {
     resultsCard.classList.remove("hidden");
     resultsEmpty.classList.add("hidden");
@@ -227,21 +173,12 @@
     };
 
     try {
-      const response = await fetch("/api/analysis/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          aoi: geojsonPolygon,
-          target: selectedTargetKey,
-          pre_date_range: "2023-01-01/2023-12-31",
-          post_date_range: `${dateStart}/${dateEnd}`,
-        }),
+      const data = await fetchPipelineAnalysis({
+        aoi: geojsonPolygon,
+        target: selectedTargetKey,
+        pre_date_range: "2023-01-01/2023-12-31",
+        post_date_range: `${dateStart}/${dateEnd}`,
       });
-
-      if (!response.ok) {
-        throw new Error(`API returned HTTP ${response.status}`);
-      }
-      const data = await response.json();
       currentRunId = data.run_id;
 
       const metrics = data.spectral_metrics || {};
@@ -295,30 +232,15 @@
     }
   });
 
-  // Inspect Scenes Button
   btnInspectScenes.addEventListener("click", async function () {
     const originalText = btnInspectScenes.textContent;
     btnInspectScenes.textContent = "Scanning STAC...";
     btnInspectScenes.disabled = true;
 
     try {
-      const response = await fetch("/api/peatlands/scenes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bbox: getBbox(),
-          datetime_range: "2024-01-01/2024-12-31",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await fetchAoiScenes(getBbox());
       const countS2 = (data.optical_scenes || []).length;
       const countS1 = (data.sar_scenes || []).length;
-
       aoiStatusText.textContent = `Found ${countS2} Sentinel-2 and ${countS1} Sentinel-1 passes`;
     } catch (err) {
       aoiStatusText.textContent = "Pass inspection failed: " + err.message;

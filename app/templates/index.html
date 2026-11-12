@@ -2,10 +2,8 @@
 
 {% block content %}
 <div class="sentinel-viewport">
-  <!-- Fullscreen Map Canvas -->
   <div id="map" class="map-full" role="region" aria-label="Interactive Satellite Map Viewport"></div>
 
-  <!-- Floating Header Bar -->
   <header class="floating-header" role="banner">
     <div class="brand-group">
       <div class="brand-badge" aria-hidden="true"></div>
@@ -21,7 +19,6 @@
     </div>
   </header>
 
-  <!-- Floating Interactive Control Dock -->
   <div class="floating-dock" role="region" aria-label="Satellite Analysis Controls">
     <div class="dock-header">
       <span class="dock-title">Monitoring Target</span>
@@ -31,7 +28,6 @@
     </div>
 
     <div id="dock-body" class="dock-content">
-      <!-- Analysis Target Selection -->
       <div class="form-group">
         <label for="analysis-target" class="form-label">Analysis Objective</label>
         <select id="analysis-target" class="form-select">
@@ -48,7 +44,6 @@
         </select>
       </div>
 
-      <!-- Quick Preset AOI Locations -->
       <div class="form-group">
         <label for="aoi-preset" class="form-label">Location Preset (AOI)</label>
         <select id="aoi-preset" class="form-select">
@@ -59,7 +54,6 @@
         </select>
       </div>
 
-      <!-- Date Range Controls -->
       <div class="form-row">
         <div class="form-group flex-1">
           <label for="date-start" class="form-label">Start Date</label>
@@ -71,13 +65,11 @@
         </div>
       </div>
 
-      <!-- Basemap Indicator -->
       <div class="form-group">
         <span class="form-label">Satellite Imagery Basemap</span>
         <div class="coords-box">ESRI World Imagery (Cloudless High-Res)</div>
       </div>
 
-      <!-- Primary Action Buttons -->
       <div class="action-stack">
         <button id="btn-run-analysis" type="button" class="btn btn-primary">
           Run Satellite Analysis
@@ -89,7 +81,6 @@
     </div>
   </div>
 
-  <!-- Floating Results Overlay Card -->
   <aside id="results-card" class="floating-results" aria-label="Analysis Results Panel" aria-live="polite">
     <div class="results-header">
       <div class="results-title-group">
@@ -99,18 +90,15 @@
       <button id="results-close-btn" type="button" class="close-btn" aria-label="Close results panel">&times;</button>
     </div>
 
-    <!-- UI State 1: Empty -->
     <div id="results-empty" class="results-state">
       <p class="results-state-desc">Select an analysis objective and click "Run Satellite Analysis" to compute multi-temporal indices.</p>
     </div>
 
-    <!-- UI State 2: Loading Spinner -->
     <div id="results-loading" class="results-state hidden">
       <div class="sonar-spinner" aria-hidden="true"></div>
       <p class="results-state-desc">Querying STAC assets and computing spectral signatures...</p>
     </div>
 
-    <!-- UI State 3: Active Result Data -->
     <div id="results-content" class="results-state hidden">
       <div class="status-banner" id="status-banner">
         <div class="status-title" id="status-headline">Risk: Low</div>
@@ -151,7 +139,6 @@
       </button>
     </div>
 
-    <!-- UI State 4: Error Notice -->
     <div id="results-error" class="results-state hidden" role="alert">
       <div class="error-box">
         <p id="results-error-text" class="error-text">Failed to retrieve satellite data.</p>
@@ -159,7 +146,6 @@
     </div>
   </aside>
 
-  <!-- Bottom Coordinates & Map Scale Pill -->
   <footer class="floating-coords-pill" aria-label="Map Viewport Coordinates">
     <span class="coord-label">BOUNDS</span>
     <span id="coords-text" class="coord-val">[102.000, 0.200, 103.000, 0.800]</span>
@@ -168,5 +154,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/config.js"></script>
+<script src="/static/js/api.js"></script>
 <script src="/static/js/map.js"></script>
 {% endblock %}

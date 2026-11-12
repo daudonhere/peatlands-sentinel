@@ -1,6 +1,5 @@
 import asyncio
 import io
-import json
 import zipfile
 from httpx import AsyncClient, ASGITransport
 import openpyxl
@@ -11,7 +10,6 @@ from app.main import app
 async def test_end_to_end_pipeline():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Sample Riau peat dome polygon
         geojson_polygon = {
             "type": "Polygon",
             "coordinates": [
@@ -25,7 +23,6 @@ async def test_end_to_end_pipeline():
             ],
         }
 
-        # 1. Test POST /api/analysis/run
         payload = {
             "aoi": geojson_polygon,
             "target": "forest_to_bare",
@@ -46,13 +43,11 @@ async def test_end_to_end_pipeline():
         assert "threat_level" in data["ai_report"]
         assert len(data["land_transitions"]) > 0
 
-        # 2. Test GET /api/analysis/{run_id}
         res_get = await client.get(f"/api/analysis/{run_id}")
         assert res_get.status_code == 200
         saved_data = res_get.json()
         assert saved_data["id"] == run_id
 
-        # 3. Test GET /api/analysis/{run_id}/export (ZIP package)
         res_export = await client.get(f"/api/analysis/{run_id}/export")
         assert res_export.status_code == 200
         assert res_export.headers["content-type"] == "application/zip"
@@ -66,26 +61,21 @@ async def test_end_to_end_pipeline():
             assert any(f.endswith("_preview.svg") for f in file_list)
             assert any(f.endswith("_project.qgs") for f in file_list)
 
-            # Check that Excel workbook is valid and readable
             xlsx_filename = [f for f in file_list if f.endswith(".xlsx")][0]
             wb = openpyxl.load_workbook(io.BytesIO(zf.read(xlsx_filename)))
             assert "Executive Summary" in wb.sheetnames
             assert "Telemetry & Indices" in wb.sheetnames
             assert "Land Transitions" in wb.sheetnames
 
-            # Check that QGIS project contains layer definition
             qgs_filename = [f for f in file_list if f.endswith(".qgs")][0]
             qgs_content = zf.read(qgs_filename).decode("utf-8")
             assert "<qgis" in qgs_content
             assert "AOI Boundary" in qgs_content
 
-        # 4. Test GET /api/analysis/history/list
         res_history = await client.get("/api/analysis/history/list")
         assert res_history.status_code == 200
         history_list = res_history.json()
         assert any(item["id"] == run_id for item in history_list)
-
-        print(f"End-to-end pipeline test PASSED for run_id: {run_id}")
 
 
 if __name__ == "__main__":

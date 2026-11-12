@@ -22,10 +22,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Mount local assets
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-# Mount routes
 app.include_router(views_router)
 app.include_router(peatlands_router)
 app.include_router(analysis_router)

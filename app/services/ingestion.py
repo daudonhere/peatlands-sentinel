@@ -11,7 +11,6 @@ async def search_stac_items(
     max_items: int = 5,
     query: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    """Queries STAC API endpoint for satellite imagery scenes."""
     settings = get_settings()
     payload: dict[str, Any] = {
         "bbox": bbox,

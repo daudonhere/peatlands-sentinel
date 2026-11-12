@@ -9,13 +9,12 @@ router = APIRouter(prefix="/api/peatlands", tags=["Peatlands"])
 
 
 class AOIRequest(BaseModel):
-    bbox: list[float]  # [min_lon, min_lat, max_lon, max_lat]
+    bbox: list[float]
     datetime_range: str = "2024-01-01/2024-12-31"
 
 
 @router.post("/scenes")
 async def get_scenes_for_aoi(payload: AOIRequest):
-    """Finds Sentinel-1 and Sentinel-2 scenes covering the area of interest."""
     if len(payload.bbox) != 4:
         raise HTTPException(
             status_code=400, detail="BBox must contain exactly 4 coordinates."
@@ -65,7 +64,6 @@ async def assess_risk(
     ndwi: float = Query(0.12, ge=-1.0, le=1.0),
     dnbr: float = Query(0.04, ge=-1.0, le=2.0),
 ):
-    """Computes AI-assisted risk status from observed spectral indices."""
     metrics = {
         "mean_ndvi": ndvi,
         "mean_ndwi": ndwi,
