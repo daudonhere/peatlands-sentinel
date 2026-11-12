@@ -131,9 +131,9 @@ input:focus-visible {
 }
 
 .btn-outline {
-  background-color: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-panel);
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
 }
 
 .btn-outline:hover {
