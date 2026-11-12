@@ -105,7 +105,7 @@
 .form-label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .form-select,
