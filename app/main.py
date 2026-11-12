@@ -34,6 +34,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "app": settings.app_name, "version": "0.1.0"}
+
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(views_router)
 app.include_router(peatlands_router)
