@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 import io
 import uuid
@@ -22,14 +23,16 @@ from app.services.classifier import (
     classify_live_arrays,
 )
 from app.services.ai_analyst import generate_analyst_report
-from app.services.storage import save_analysis_run, get_analysis_run, list_analysis_runs
+from app.services.storage import (
+    save_analysis_run,
+    get_analysis_run,
+    get_analysis_arrays,
+    list_analysis_runs,
+)
 from app.services.exporter import create_export_zip_package
 from app.services.renderer import generate_spectral_overlay_png
-from app.services.geotiff import generate_geotiff_raster
 
 router = APIRouter(prefix="/api/analysis", tags=["Analysis Pipeline"])
-
-_live_arrays_cache: dict[str, dict] = {}
 
 
 async def _resolve_spectral(
@@ -37,7 +40,7 @@ async def _resolve_spectral(
     payload: AnalysisPipelineRequest,
     run_id: str,
     area_ha: float,
-) -> tuple[SpectralSummary, list, dict]:
+) -> tuple[SpectralSummary, list, dict, dict]:
     try:
         from app.services import cog as _cog_module
 
@@ -68,6 +71,12 @@ async def _resolve_spectral(
         return summary, transitions, {}, {"source": "simulation"}
 
 
+async def _resolve_dem(bbox: list[float]):
+    from app.services import cog as _cog_module
+
+    return await _cog_module.fetch_live_dem(bbox)
+
+
 @router.post("/run", response_model=AnalysisPipelineResponse)
 async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
     geom_dict = (
@@ -87,10 +96,15 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
     run_id = f"sentinel_{uuid.uuid4().hex[:8]}"
     created_at = datetime.now(timezone.utc).isoformat()
 
-    result = await _resolve_spectral(bbox, payload, run_id, area_ha)
-    spectral_summary, transitions, arrays, source_meta = result
+    (
+        (spectral_summary, transitions, arrays, source_meta),
+        dem_grid,
+    ) = await asyncio.gather(
+        _resolve_spectral(bbox, payload, run_id, area_ha),
+        _resolve_dem(bbox),
+    )
 
-    topography = compute_dem_topography_summary(bbox)
+    topography = compute_dem_topography_summary(bbox, elev_grid=dem_grid)
     metrics_payload = spectral_summary.model_dump()
     metrics_payload.update(topography)
     metrics_payload.update(source_meta)
@@ -110,9 +124,6 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
         "properties": {"run_id": run_id, "target": payload.target, "area_ha": area_ha},
     }
 
-    if arrays:
-        _live_arrays_cache[run_id] = arrays
-
     save_analysis_run(
         run_id=run_id,
         created_at=created_at,
@@ -122,6 +133,7 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
         metrics_data=metrics_payload,
         transitions_data=[t.model_dump() for t in transitions],
         ai_report_data=ai_report.model_dump(),
+        arrays=arrays or None,
     )
 
     return AnalysisPipelineResponse(
@@ -152,7 +164,7 @@ async def get_run_overlay_image(run_id: str, period: str = "post"):
 
     target = run.get("target", "peat_moisture")
     metrics = run.get("metrics", {})
-    arrays = _live_arrays_cache.get(run_id)
+    arrays = get_analysis_arrays(run_id)
     png_bytes = generate_spectral_overlay_png(
         target, metrics, width=256, height=256, period=period, arrays=arrays
     )
@@ -165,7 +177,7 @@ async def export_analysis_bundle(run_id: str):
     if not run:
         raise HTTPException(status_code=404, detail="Analysis run not found.")
 
-    arrays = _live_arrays_cache.get(run_id)
+    arrays = get_analysis_arrays(run_id)
     bbox = run.get("geojson", {}).get("bbox", [0, 0, 1, 1])
     ndvi_arr = arrays.get("ndvi") if arrays else None
     zip_stream = create_export_zip_package(run, raster_values=ndvi_arr, bbox=bbox)

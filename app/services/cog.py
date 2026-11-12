@@ -66,14 +66,33 @@ async def _fetch_s2_bands(
 async def _fetch_s1_bands(
     item: dict, bbox: list[float], size: int
 ) -> dict[str, np.ndarray]:
-    signed = planetary_computer.sign(item)
-    tasks = {
-        b: _read_band(signed["assets"][b]["href"], bbox, size)
-        for b in _S1_BANDS
-        if b in signed["assets"]
-    }
-    results = await asyncio.gather(*tasks.values())
-    return dict(zip(tasks.keys(), results))
+    try:
+        signed = planetary_computer.sign(item)
+        tasks = {
+            b: _read_band(signed["assets"][b]["href"], bbox, size)
+            for b in _S1_BANDS
+            if b in signed["assets"]
+        }
+        if not tasks:
+            return {}
+        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        return {
+            k: r for k, r in zip(tasks.keys(), results) if isinstance(r, np.ndarray)
+        }
+    except Exception:
+        return {}
+
+
+async def fetch_live_dem(bbox: list[float], size: int = 64) -> np.ndarray | None:
+    try:
+        from app.services.ingestion import search_dem_scenes
+
+        items = await search_dem_scenes(bbox)
+        if not items:
+            return None
+        return await _fetch_dem_band(items[0], bbox, size)
+    except Exception:
+        return None
 
 
 async def _fetch_dem_band(item: dict, bbox: list[float], size: int) -> np.ndarray:
@@ -139,7 +158,7 @@ async def fetch_spectral_snapshot(
         _fetch_s2_bands(s2_items[0], bbox, size),
         _fetch_s1_bands(s1_items[0], bbox, size)
         if s1_items
-        else asyncio.coroutine(lambda: {})(),
+        else asyncio.sleep(0, result={}),
     )
 
     s2_idx = _s2_to_indices(s2_bands)

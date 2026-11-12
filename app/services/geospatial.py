@@ -83,21 +83,26 @@ def calculate_slope_degrees(
 
 
 def compute_dem_topography_summary(
-    bbox: list[float], base_elevation_m: float = 12.0
+    bbox: list[float],
+    base_elevation_m: float = 12.0,
+    elev_grid: np.ndarray | None = None,
 ) -> dict[str, float]:
-    min_lon, min_lat, max_lon, max_lat = bbox
-    grid_size = 20
-    y, x = np.mgrid[0:grid_size, 0:grid_size]
-    cy, cx = grid_size / 2.0, grid_size / 2.0
-    dome_factor = np.clip(1.0 - ((x - cx) ** 2 + (y - cy) ** 2) / (cx**2 + cy**2), 0, 1)
+    if elev_grid is None or elev_grid.size == 0 or np.all(np.isnan(elev_grid)):
+        grid_size = 20
+        y, x = np.mgrid[0:grid_size, 0:grid_size]
+        cy, cx = grid_size / 2.0, grid_size / 2.0
+        dome_factor = np.clip(
+            1.0 - ((x - cx) ** 2 + (y - cy) ** 2) / (cx**2 + cy**2), 0, 1
+        )
+        elev_grid = base_elevation_m + dome_factor * 8.5
 
-    elev_grid = base_elevation_m + dome_factor * 8.5
-    slopes = calculate_slope_degrees(elev_grid, cell_size_meters=30.0)
+    finite = np.where(np.isfinite(elev_grid), elev_grid, float(np.nanmean(elev_grid)))
+    slopes = calculate_slope_degrees(finite, cell_size_meters=30.0)
 
     return {
-        "mean_elevation_m": round(float(np.mean(elev_grid)), 1),
-        "max_elevation_m": round(float(np.max(elev_grid)), 1),
-        "min_elevation_m": round(float(np.min(elev_grid)), 1),
+        "mean_elevation_m": round(float(np.mean(finite)), 1),
+        "max_elevation_m": round(float(np.max(finite)), 1),
+        "min_elevation_m": round(float(np.min(finite)), 1),
         "mean_slope_deg": round(float(np.mean(slopes)), 2),
         "max_slope_deg": round(float(np.max(slopes)), 2),
     }

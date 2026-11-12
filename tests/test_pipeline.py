@@ -68,9 +68,16 @@ async def test_end_to_end_pipeline():
             "max_cloud_cover": 20.0,
         }
 
-        with patch(
-            "app.services.cog.fetch_live_pipeline_metrics",
-            new=AsyncMock(return_value=_MOCK_LIVE),
+        mock_dem = np.linspace(5.0, 35.0, 64 * 64, dtype=np.float32).reshape(64, 64)
+        with (
+            patch(
+                "app.services.cog.fetch_live_pipeline_metrics",
+                new=AsyncMock(return_value=_MOCK_LIVE),
+            ),
+            patch(
+                "app.services.cog.fetch_live_dem",
+                new=AsyncMock(return_value=mock_dem),
+            ),
         ):
             res = await client.post("/api/analysis/run", json=payload)
 
@@ -93,6 +100,15 @@ async def test_end_to_end_pipeline():
         assert saved_data["id"] == run_id
         assert saved_data["metrics"]["source"] == "live_cog"
         assert saved_data["metrics"]["valid_pixel_ratio"] == 0.88
+        assert saved_data["metrics"]["max_elevation_m"] == 35.0
+        assert saved_data["metrics"]["min_elevation_m"] == 5.0
+
+        from app.services.storage import get_analysis_arrays
+
+        persisted_arrays = get_analysis_arrays(run_id)
+        assert persisted_arrays is not None
+        assert "ndvi" in persisted_arrays
+        assert persisted_arrays["ndvi"].shape == (128, 128)
 
         res_overlay = await client.get(f"/api/analysis/{run_id}/overlay.png")
         assert res_overlay.status_code == 200
@@ -169,9 +185,15 @@ async def test_fallback_to_simulation():
             "post_date_range": "2024-01-01/2024-12-31",
         }
 
-        with patch(
-            "app.services.cog.fetch_live_pipeline_metrics",
-            new=AsyncMock(side_effect=LookupError("no scene")),
+        with (
+            patch(
+                "app.services.cog.fetch_live_pipeline_metrics",
+                new=AsyncMock(side_effect=LookupError("no scene")),
+            ),
+            patch(
+                "app.services.cog.fetch_live_dem",
+                new=AsyncMock(return_value=None),
+            ),
         ):
             res = await client.post("/api/analysis/run", json=payload)
 
