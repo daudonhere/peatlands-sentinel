@@ -1,96 +1,174 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-layout">
-  <!-- Map Canvas Viewport -->
-  <main class="map-container" id="map" aria-label="Interactive Satellite Map"></main>
+<div class="sentinel-viewport">
+  <!-- Fullscreen Map Canvas -->
+  <div id="map" class="map-full" role="region" aria-label="Interactive Satellite Map Viewport"></div>
 
-  <!-- Control & Analysis Sidebar -->
-  <aside class="sidebar" aria-label="Satellite Analysis Controls">
-    <header class="sidebar-header">
-      <h1 class="app-title">Peatlands Sentinel</h1>
-      <p class="app-subtitle">Multimodal Earth Observation Monitoring</p>
-    </header>
-
-    <section class="control-panel">
-      <h2 class="panel-heading">Area of Interest</h2>
-      <div class="field-group">
-        <label for="bbox-display" class="field-label">Current Bounding Box</label>
-        <div id="bbox-display" class="coords-box" aria-live="polite">Panning map...</div>
+  <!-- Floating Header Bar -->
+  <header class="floating-header" role="banner">
+    <div class="brand-group">
+      <div class="brand-badge" aria-hidden="true"></div>
+      <div>
+        <h1 class="brand-title">Peatlands Sentinel</h1>
+        <p class="brand-caption">AI Satellite Observation for Land Dynamics</p>
       </div>
-      <button id="btn-fetch-scenes" type="button" class="btn btn-primary">
-        Inspect Satellite Scenes
+    </div>
+    
+    <div class="header-status" aria-live="polite">
+      <span class="status-indicator"></span>
+      <span id="aoi-status-text">AOI: Riau Peat Dome (Default)</span>
+    </div>
+  </header>
+
+  <!-- Floating Interactive Control Dock -->
+  <div class="floating-dock" role="region" aria-label="Satellite Analysis Controls">
+    <div class="dock-header">
+      <span class="dock-title">Monitoring Target</span>
+      <button id="dock-toggle-btn" type="button" class="dock-minimize-btn" aria-expanded="true" aria-label="Toggle analysis panel">
+        &minus;
       </button>
-    </section>
+    </div>
 
-    <section class="control-panel">
-      <h2 class="panel-heading">Layer Visualizer</h2>
-      <div class="layer-options" role="group" aria-label="Map Base and Overlays">
-        <label class="layer-radio">
-          <input type="radio" name="basemap" value="osm" checked>
-          <span>Standard Carto</span>
-        </label>
-        <label class="layer-radio">
-          <input type="radio" name="basemap" value="satellite">
-          <span>Satellite True Color</span>
-        </label>
+    <div id="dock-body" class="dock-content">
+      <!-- Analysis Target Selection -->
+      <div class="form-group">
+        <label for="analysis-target" class="form-label">Analysis Objective</label>
+        <select id="analysis-target" class="form-select">
+          <option value="peat_moisture">1. Peatland Moisture and Extent (S1 + S2)</option>
+          <option value="topography_slope">2. Peat Topography and Slope (Copernicus DEM)</option>
+          <option value="forest_to_bare">3. Forest to Bare Land (Deforestation)</option>
+          <option value="forest_to_mining">4. Forest to Mining Excavation</option>
+          <option value="forest_to_palm">5. Forest to Oil Palm Plantation</option>
+          <option value="deforest_expansion">6. Deforestation Expansion Tracking</option>
+          <option value="reclamation">7. Deforestation Reclamation Monitoring</option>
+          <option value="bare_to_veg">8. Bare Land to Vegetation Succession</option>
+          <option value="wildfire_dnbr">9. Wildfire Susceptibility and Burn Severity (dNBR)</option>
+          <option value="water_dynamics">10. Water Dynamics and Peat Canals (MNDWI)</option>
+        </select>
       </div>
-    </section>
 
-    <section class="control-panel">
-      <div class="panel-header-inline">
-        <h2 class="panel-heading">Risk & Moisture Assessment</h2>
-        <button id="btn-run-analyst" type="button" class="btn btn-secondary">
-          Run Analysis
+      <!-- Quick Preset AOI Locations -->
+      <div class="form-group">
+        <label for="aoi-preset" class="form-label">Location Preset (AOI)</label>
+        <select id="aoi-preset" class="form-select">
+          <option value="riau">Riau Peat Dome (Sumatra)</option>
+          <option value="pulang_pisau">Pulang Pisau Ex-PLG (Central Kalimantan)</option>
+          <option value="musirawas">Musi Banyuasin (South Sumatra)</option>
+          <option value="custom">Current Map Viewport</option>
+        </select>
+      </div>
+
+      <!-- Date Range Controls -->
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label for="date-start" class="form-label">Start Date</label>
+          <input type="date" id="date-start" class="form-input" value="2024-01-01">
+        </div>
+        <div class="form-group flex-1">
+          <label for="date-end" class="form-label">End Date</label>
+          <input type="date" id="date-end" class="form-input" value="2024-12-31">
+        </div>
+      </div>
+
+      <!-- Basemap Toggle Group -->
+      <div class="form-group">
+        <span class="form-label">Map Style</span>
+        <div class="segmented-control" role="radiogroup" aria-label="Map Basemap">
+          <label class="segment-option">
+            <input type="radio" name="basemap-choice" value="dark" checked>
+            <span>Carto Dark</span>
+          </label>
+          <label class="segment-option">
+            <input type="radio" name="basemap-choice" value="satellite">
+            <span>True Color Satellite</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Primary Action Buttons -->
+      <div class="action-stack">
+        <button id="btn-run-analysis" type="button" class="btn btn-primary">
+          Run Satellite Analysis
+        </button>
+        <button id="btn-inspect-scenes" type="button" class="btn btn-outline">
+          Inspect Available Passes
         </button>
       </div>
+    </div>
+  </div>
 
-      <!-- UI States: Empty, Loading, Active, Error -->
-      <div id="analyst-state-empty" class="state-container">
-        <p class="state-text">No active risk assessment. Click "Run Analysis" to evaluate current telemetry.</p>
+  <!-- Floating Results Overlay Card -->
+  <aside id="results-card" class="floating-results" aria-label="Analysis Results Panel" aria-live="polite">
+    <div class="results-header">
+      <div class="results-title-group">
+        <span id="results-target-label" class="results-tag">Peatland Moisture</span>
+        <h2 id="results-heading" class="results-heading">Telemetry Overview</h2>
+      </div>
+      <button id="results-close-btn" type="button" class="close-btn" aria-label="Close results panel">&times;</button>
+    </div>
+
+    <!-- UI State 1: Empty -->
+    <div id="results-empty" class="results-state">
+      <p class="results-state-desc">Select an analysis objective and click "Run Satellite Analysis" to compute multi-temporal indices.</p>
+    </div>
+
+    <!-- UI State 2: Loading Spinner -->
+    <div id="results-loading" class="results-state hidden">
+      <div class="sonar-spinner" aria-hidden="true"></div>
+      <p class="results-state-desc">Querying STAC assets and computing spectral signatures...</p>
+    </div>
+
+    <!-- UI State 3: Active Result Data -->
+    <div id="results-content" class="results-state hidden">
+      <div class="status-banner" id="status-banner">
+        <div class="status-title" id="status-headline">Risk: Low</div>
+        <div class="status-sub" id="status-subline">Peat moisture remains within safe baseline levels</div>
       </div>
 
-      <div id="analyst-state-loading" class="state-container hidden" aria-live="polite">
-        <div class="spinner" aria-hidden="true"></div>
-        <p class="state-text">Evaluating satellite indices via AI model...</p>
-      </div>
-
-      <div id="analyst-state-result" class="state-container hidden" aria-live="polite">
-        <div class="metric-row">
-          <span class="metric-label">Threat Level</span>
-          <span id="metric-threat" class="badge">Low</span>
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-label">Vegetation (NDVI)</div>
+          <div class="stat-value" id="val-ndvi">0.68</div>
         </div>
-        <div class="metric-row">
-          <span class="metric-label">Peat Moisture</span>
-          <span id="metric-moisture" class="metric-value">Wet</span>
+        <div class="stat-cell">
+          <div class="stat-label">Water/Moisture (NDWI)</div>
+          <div class="stat-value" id="val-ndwi">0.24</div>
         </div>
-        <div class="metric-block">
-          <span class="metric-label">Fire Risk Narrative</span>
-          <p id="metric-summary" class="metric-narrative"></p>
+        <div class="stat-cell">
+          <div class="stat-label">Burn Ratio (dNBR)</div>
+          <div class="stat-value" id="val-dnbr">0.03</div>
         </div>
-        <div class="metric-block">
-          <span class="metric-label">Recommended Actions</span>
-          <ul id="metric-actions" class="action-list"></ul>
+        <div class="stat-cell">
+          <div class="stat-label">SAR VH/VV Ratio</div>
+          <div class="stat-value" id="val-sar">-6.2 dB</div>
         </div>
       </div>
 
-      <div id="analyst-state-error" class="state-container state-error hidden" role="alert">
-        <p id="analyst-error-msg" class="state-text"></p>
+      <div class="analyst-block">
+        <h3 class="analyst-title">AI Observation Narrative</h3>
+        <p id="analyst-summary" class="analyst-text"></p>
       </div>
-    </section>
 
-    <section class="control-panel scenes-panel">
-      <h2 class="panel-heading">Recent Imagery Scenes</h2>
-      <div id="scenes-loading" class="state-container hidden">
-        <div class="spinner" aria-hidden="true"></div>
-        <p class="state-text">Querying Planetary Computer STAC...</p>
+      <div class="analyst-block">
+        <h3 class="analyst-title">Field Recommendations</h3>
+        <ul id="analyst-actions" class="analyst-list"></ul>
       </div>
-      <div id="scenes-empty" class="state-container">
-        <p class="state-text">Click "Inspect Satellite Scenes" to find matching passes.</p>
+    </div>
+
+    <!-- UI State 4: Error Notice -->
+    <div id="results-error" class="results-state hidden" role="alert">
+      <div class="error-box">
+        <p id="results-error-text" class="error-text">Failed to retrieve satellite data.</p>
       </div>
-      <ul id="scenes-list" class="scenes-list hidden" aria-label="Available satellite acquisitions"></ul>
-    </section>
+    </div>
   </aside>
+
+  <!-- Bottom Coordinates & Map Scale Pill -->
+  <footer class="floating-coords-pill" aria-label="Map Viewport Coordinates">
+    <span class="coord-label">BOUNDS</span>
+    <span id="coords-text" class="coord-val">[102.000, 0.200, 103.000, 0.800]</span>
+  </footer>
 </div>
 {% endblock %}
 
