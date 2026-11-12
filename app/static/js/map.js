@@ -15,7 +15,6 @@
 
   const coordsText = document.getElementById("coords-text");
   const aoiStatusText = document.getElementById("aoi-status-text");
-  const aoiPresetSelect = document.getElementById("aoi-preset");
   const analysisTargetSelect = document.getElementById("analysis-target");
   const dockToggleBtn = document.getElementById("dock-toggle-btn");
   const dockBody = document.getElementById("dock-body");
@@ -195,25 +194,16 @@
     renderAoiPolygon(map, getBbox(), "#ffffff");
   });
 
-  dockToggleBtn.addEventListener("click", function () {
-    const isCollapsed = dockBody.classList.toggle("collapsed");
-    dockToggleBtn.innerHTML = isCollapsed ? "+" : "&minus;";
-    dockToggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
-  });
-
   resultsCloseBtn.addEventListener("click", function () {
-    resultsCard.classList.add("hidden");
-  });
-
-  aoiPresetSelect.addEventListener("change", function (e) {
-    drawCtrl.clear();
-    const key = e.target.value;
-    if (key in MAP_PRESETS) {
-      const preset = MAP_PRESETS[key];
-      map.flyTo({ center: preset.center, zoom: preset.zoom, essential: true });
-      aoiStatusText.textContent = `AOI: ${preset.name}`;
-    } else {
-      aoiStatusText.textContent = "AOI: Custom Viewport";
+    resultsCard.classList.toggle("collapsed");
+    var tr = document.getElementById("drawer-toggle");
+    if (tr) {
+      tr.style.right = resultsCard.classList.contains("collapsed")
+        ? "0px"
+        : "400px";
+      tr.textContent = resultsCard.classList.contains("collapsed")
+        ? "\u00ab"
+        : "\u00bb";
     }
   });
 

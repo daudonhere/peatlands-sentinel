@@ -65,6 +65,7 @@ function createDrawController(map, onGeometryChange) {
   map.addControl(draw);
 
   const btnDraw = document.getElementById("btn-draw-polygon");
+  const btnRedraw = document.getElementById("btn-redraw-polygon");
   const btnClear = document.getElementById("btn-clear-polygon");
 
   let customGeometry = null;
@@ -87,12 +88,17 @@ function createDrawController(map, onGeometryChange) {
   map.on("draw.update", updateDrawnFeature);
   map.on("draw.delete", updateDrawnFeature);
 
+  function startDraw() {
+    draw.deleteAll();
+    draw.changeMode("draw_polygon");
+    if (btnDraw) btnDraw.textContent = "Click map to draw...";
+  }
+
   if (btnDraw) {
-    btnDraw.addEventListener("click", function () {
-      draw.deleteAll();
-      draw.changeMode("draw_polygon");
-      if (btnDraw) btnDraw.textContent = "Click map to draw...";
-    });
+    btnDraw.addEventListener("click", startDraw);
+  }
+  if (btnRedraw) {
+    btnRedraw.addEventListener("click", startDraw);
   }
 
   if (btnClear) {

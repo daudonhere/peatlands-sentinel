@@ -4,36 +4,46 @@
 <div class="sentinel-viewport">
   <div id="map" class="map-full" role="region" aria-label="Interactive Satellite Map Viewport"></div>
 
-  <header class="floating-header" role="banner">
-    <div class="brand-group">
-      <div class="brand-badge" aria-hidden="true"></div>
+  <aside id="sidebar" class="sidebar" aria-label="Satellite Analysis Controls">
+    <div class="sidebar-header">
       <div>
-        <h1 class="brand-title">Peatlands Sentinel</h1>
-        <p class="brand-caption">AI Satellite Observation for Land Dynamics</p>
+        <h1 class="sidebar-title">Peatlands Sentinel</h1>
+        <p class="sidebar-sub">AI Satellite Observation for Land Dynamics</p>
       </div>
     </div>
-    
-    <div style="display: flex; gap: 0.5rem; align-items: center; pointer-events: auto;">
-      <button id="btn-open-history" type="button" class="btn btn-outline" style="min-height: 36px; padding: 0 0.85rem; font-size: 0.775rem;">
-        Run History
-      </button>
-      <div class="header-status" aria-live="polite">
-        <span class="status-indicator"></span>
-        <span id="aoi-status-text">AOI: Riau Peat Dome (Default)</span>
+
+    <div class="sidebar-body">
+      <div class="card">
+        <label for="aoi-geojson" class="form-label">Location Preset (AOI)</label>
+        <textarea id="aoi-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw AOI'></textarea>
+        <div class="btn-row">
+          <button id="btn-draw-polygon" type="button" class="btn-sm">Draw AOI</button>
+          <button id="btn-redraw-polygon" type="button" class="btn-sm">Redraw</button>
+          <button id="btn-clear-polygon" type="button" class="btn-sm hidden">Clear</button>
+        </div>
       </div>
-    </div>
-  </header>
 
-  <div class="floating-dock" role="region" aria-label="Satellite Analysis Controls">
-    <div class="dock-header">
-      <span class="dock-title">Monitoring Target</span>
-      <button id="dock-toggle-btn" type="button" class="dock-minimize-btn" aria-expanded="true" aria-label="Toggle analysis panel">
-        &minus;
-      </button>
-    </div>
+      <div class="card">
+        <label for="boundary-geojson" class="form-label">Boundaries</label>
+        <textarea id="boundary-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw boundaries'></textarea>
+        <div class="btn-row">
+          <button id="btn-draw-boundary" type="button" class="btn-sm">Draw Boundary</button>
+          <button id="btn-redraw-boundary" type="button" class="btn-sm">Redraw</button>
+          <button id="btn-clear-boundary" type="button" class="btn-sm hidden">Clear</button>
+        </div>
+      </div>
 
-    <div id="dock-body" class="dock-content">
-      <div class="form-group">
+      <div class="section">
+        <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
+        <select id="basemap-select" class="form-select">
+          <option>ESRI World Imagery (Cloudless High-Res)</option>
+          <option>Sentinel-2 True Color</option>
+          <option>Sentinel-2 False Color</option>
+          <option>OpenStreetMap</option>
+        </select>
+      </div>
+
+      <div class="section">
         <label for="analysis-target" class="form-label">Analysis Objective</label>
         <select id="analysis-target" class="form-select">
           <option value="peat_moisture">1. Peatland Moisture and Extent (S1 + S2)</option>
@@ -49,186 +59,155 @@
         </select>
       </div>
 
-      <div class="form-group">
-        <label for="aoi-preset" class="form-label">Location Preset (AOI)</label>
-        <select id="aoi-preset" class="form-select">
-          <option value="riau">Riau Peat Dome (Sumatra)</option>
-          <option value="pulang_pisau">Pulang Pisau Ex-PLG (Central Kalimantan)</option>
-          <option value="musirawas">Musi Banyuasin (South Sumatra)</option>
-          <option value="custom">Current Map Viewport</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group flex-1">
-          <label for="date-start" class="form-label">Start Date</label>
-          <input type="date" id="date-start" class="form-input" value="2024-01-01">
-        </div>
-        <div class="form-group flex-1">
-          <label for="date-end" class="form-label">End Date</label>
-          <input type="date" id="date-end" class="form-input" value="2024-12-31">
+      <div class="section">
+        <label class="form-label">Analysis Period</label>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="date-start" class="form-label">Start Date</label>
+            <input type="date" id="date-start" class="form-input" value="2024-01-01">
+          </div>
+          <div class="form-group flex-1">
+            <label for="date-end" class="form-label">End Date</label>
+            <input type="date" id="date-end" class="form-input" value="2024-12-31">
+          </div>
         </div>
       </div>
-
-      <div class="form-group">
-        <span class="form-label">Satellite Imagery Basemap</span>
-        <div class="coords-box">ESRI World Imagery (Cloudless High-Res)</div>
-      </div>
-
-      <div class="action-stack">
-        <button id="btn-run-analysis" type="button" class="btn btn-primary">
-          Run Satellite Analysis
-        </button>
-        <button id="btn-draw-polygon" type="button" class="btn btn-outline">
-          Draw Custom AOI
-        </button>
-        <button id="btn-clear-polygon" type="button" class="btn btn-outline hidden">
-          Clear Drawn AOI
-        </button>
-        <button id="btn-inspect-scenes" type="button" class="btn btn-outline">
-          Inspect Available Passes
-        </button>
-      </div>
     </div>
-  </div>
 
-  <aside id="history-modal" class="floating-results hidden" style="left: 1rem; right: auto; width: 420px; z-index: 30;" aria-label="Analysis Run History">
-    <div class="results-header">
-      <div>
-        <span class="results-tag">Stored Telemetry</span>
-        <h2 class="results-heading">Analysis History</h2>
-      </div>
-      <button id="history-close-btn" type="button" class="close-btn" aria-label="Close history panel">&times;</button>
-    </div>
-    <div id="history-list" class="results-state">
-      <p class="results-state-desc">Loading stored analysis records...</p>
+    <div class="sidebar-footer">
+      <button id="btn-run-analysis" type="button" class="btn btn-primary">Run Satellite Analysis</button>
+      <button id="btn-inspect-scenes" type="button" class="btn btn-outline">Inspect Available Passes</button>
+      <button id="btn-open-history" type="button" class="btn btn-outline">Run History</button>
     </div>
   </aside>
+  <button id="sidebar-toggle" type="button" class="edge-toggle left" aria-label="Toggle sidebar">&laquo;</button>
 
-  <aside id="results-card" class="floating-results" aria-label="Analysis Results Panel" aria-live="polite">
-    <div class="results-header">
-      <div class="results-title-group">
-        <span id="results-target-label" class="results-tag">Peatland Moisture</span>
-        <h2 id="results-heading" class="results-heading">Telemetry Overview</h2>
+  <aside id="results-card" class="drawer" aria-label="Analysis Results Panel" aria-live="polite">
+    <div class="drawer-header">
+      <div>
+        <span id="results-target-label" class="drawer-tag">Peatland Moisture</span>
+        <h2 id="results-heading" class="drawer-heading">Telemetry Overview</h2>
       </div>
       <button id="results-close-btn" type="button" class="close-btn" aria-label="Close results panel">&times;</button>
     </div>
 
-    <div id="results-empty" class="results-state">
-      <p class="results-state-desc">Select an analysis objective and click "Run Satellite Analysis" to compute multi-temporal indices.</p>
-    </div>
-
-    <div id="results-loading" class="results-state hidden">
-      <div class="sonar-spinner" aria-hidden="true"></div>
-      <p class="results-state-desc">Querying STAC assets and computing spectral signatures...</p>
-    </div>
-
-    <div id="results-content" class="results-state hidden">
-      <div class="status-banner" id="status-banner">
-        <div class="status-title" id="status-headline">Risk: Low</div>
-        <div class="status-sub" id="status-subline">Peat moisture remains within safe baseline levels</div>
+    <div class="drawer-body">
+      <div id="results-empty" class="results-state">
+        <p class="results-state-desc">Select an analysis objective and click "Run Satellite Analysis" to compute multi-temporal indices.</p>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-cell">
-          <div class="stat-label">Vegetation (NDVI)</div>
-          <div class="stat-value" id="val-ndvi">0.68</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Water/Moisture (NDWI)</div>
-          <div class="stat-value" id="val-ndwi">0.24</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Burn Ratio (dNBR)</div>
-          <div class="stat-value" id="val-dnbr">0.03</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">SAR VH/VV Ratio</div>
-          <div class="stat-value" id="val-sar">-6.2 dB</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Water Table (WTD)</div>
-          <div class="stat-value" id="val-wtd">-35 cm</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Est. Subsidence</div>
-          <div class="stat-value" id="val-subsidence">1.9 cm/yr</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Est. CO2 Loss</div>
-          <div class="stat-value" id="val-co2">- tCO2e/ha</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Telemetry Source</div>
-          <div class="stat-value" id="val-source" style="font-size: 0.8rem;">-</div>
-        </div>
+      <div id="results-loading" class="results-state hidden">
+        <div class="sonar-spinner" aria-hidden="true"></div>
+        <p class="results-state-desc">Querying STAC assets and computing spectral signatures...</p>
       </div>
 
-      <div class="analyst-block">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div id="results-content" class="results-state hidden">
+        <div class="status-banner" id="status-banner">
+          <div class="status-title" id="status-headline">Risk: Low</div>
+          <div class="status-sub" id="status-subline">Peat moisture remains within safe baseline levels</div>
+        </div>
+
+        <div class="bounds-line">Bounds: <span id="coords-text">[102.000, 0.200, 103.000, 0.800]</span></div>
+
+        <div class="stats-grid">
+          <div class="stat-cell">
+            <div class="stat-label">Vegetation (NDVI)</div>
+            <div class="stat-value" id="val-ndvi">0.68</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Water/Moisture (NDWI)</div>
+            <div class="stat-value" id="val-ndwi">0.24</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Burn Ratio (dNBR)</div>
+            <div class="stat-value" id="val-dnbr">0.03</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">SAR VH/VV Ratio</div>
+            <div class="stat-value" id="val-sar">-6.2 dB</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Water Table (WTD)</div>
+            <div class="stat-value" id="val-wtd">-35 cm</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Est. Subsidence</div>
+            <div class="stat-value" id="val-subsidence">1.9 cm/yr</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Est. CO2 Loss</div>
+            <div class="stat-value" id="val-co2">- tCO2e/ha</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Telemetry Source</div>
+            <div class="stat-value" id="val-source" style="font-size: 0.8rem;">-</div>
+          </div>
+        </div>
+
+        <div class="card">
           <h3 class="analyst-title" style="margin-bottom: 0;">Multi-Temporal Comparison</h3>
-          <label style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.5rem;">
+            <span>Pre (Baseline)</span>
+            <span id="compare-ratio-label">Post (100%)</span>
+          </div>
+          <input type="range" id="compare-slider" min="0" max="100" value="100" style="width: 100%; accent-color: #ffffff; margin-top: 0.25rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+            <span style="font-size: 0.7rem; color: var(--text-secondary);">Opacity:</span>
+            <input type="range" id="raster-opacity-slider" min="0" max="100" value="75" style="flex: 1; accent-color: #ffffff;">
+          </div>
+          <label style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem;">
             <input type="checkbox" id="toggle-raster-layer" checked> Show
           </label>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.5rem;">
-          <span>Pre (Baseline)</span>
-          <span id="compare-ratio-label">Post (100%)</span>
+
+        <div class="card">
+          <h3 class="analyst-title">Land Conversion (Ha)</h3>
+          <div id="transition-chart" class="bar-chart"></div>
         </div>
-        <input type="range" id="compare-slider" min="0" max="100" value="100" style="width: 100%; accent-color: #ffffff; margin-top: 0.25rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-          <span style="font-size: 0.7rem; color: var(--text-secondary);">Opacity:</span>
-          <input type="range" id="raster-opacity-slider" min="0" max="100" value="75" style="flex: 1; accent-color: #ffffff;">
+
+        <div class="card">
+          <h3 class="analyst-title">Canal Blocking Simulation</h3>
+          <input type="range" id="dams-slider" min="0" max="20" value="2" style="width: 100%; accent-color: #ffffff;">
+          <div id="dams-label" class="history-date" style="margin-top: 0.4rem;">2 dams / 100 Ha</div>
+          <p id="intervention-result" class="analyst-text" style="margin-top: 0.4rem;">Run analysis, then adjust slider.</p>
         </div>
-      </div>
 
-      <div class="analyst-block">
-        <h3 class="analyst-title">Land Conversion (Ha)</h3>
-        <div id="transition-chart" class="bar-chart"></div>
-      </div>
-
-      <div class="analyst-block">
-        <h3 class="analyst-title">Canal Blocking Simulation</h3>
-        <input type="range" id="dams-slider" min="0" max="20" value="2" style="width: 100%; accent-color: #ffffff;">
-        <div id="dams-label" class="history-date">2 dams / 100 Ha</div>
-        <p id="intervention-result" class="analyst-text">Run analysis, then adjust slider.</p>
-      </div>
-
-      <div class="analyst-block">
-        <h3 class="analyst-title">Field Validation</h3>
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
-          <button id="btn-fires" type="button" class="btn btn-outline btn-sm">Active Fires (FIRMS)</button>
-          <button id="btn-live-ndvi" type="button" class="btn btn-outline btn-sm">Live NDVI (COG)</button>
+        <div class="card">
+          <h3 class="analyst-title">Field Validation</h3>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+            <button id="btn-fires" type="button" class="btn btn-outline btn-sm">Active Fires (FIRMS)</button>
+            <button id="btn-live-ndvi" type="button" class="btn btn-outline btn-sm">Live NDVI (COG)</button>
+          </div>
+          <p id="insight-status" class="analyst-text" style="margin-top: 0.4rem;"></p>
         </div>
-        <p id="insight-status" class="analyst-text" style="margin-top: 0.4rem;"></p>
+
+        <div class="card">
+          <h3 class="analyst-title">AI Observation Narrative</h3>
+          <p id="analyst-summary" class="analyst-text"></p>
+        </div>
+
+        <div class="card">
+          <h3 class="analyst-title">Field Recommendations</h3>
+          <ul id="analyst-actions" class="analyst-list"></ul>
+        </div>
+
+        <div class="pass-status">Found 4 Sentinel-2 and 4 Sentinel-1 passes</div>
+
+        <div id="history-list" class="results-state"></div>
+
+        <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem;">
+          Export GIS Bundle (ZIP, XLSX, QGIS)
+        </button>
       </div>
 
-      <div class="analyst-block">
-        <h3 class="analyst-title">AI Observation Narrative</h3>
-        <p id="analyst-summary" class="analyst-text"></p>
-      </div>
-
-      <div class="analyst-block">
-        <h3 class="analyst-title">Field Recommendations</h3>
-        <ul id="analyst-actions" class="analyst-list"></ul>
-      </div>
-
-      <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem;">
-        Export GIS Bundle (ZIP, XLSX, QGIS)
-      </button>
-    </div>
-
-    <div id="results-error" class="results-state hidden" role="alert">
-      <div class="error-box">
-        <p id="results-error-text" class="error-text">Failed to retrieve satellite data.</p>
+      <div id="results-error" class="results-state hidden" role="alert">
+        <div class="error-box">
+          <p id="results-error-text" class="error-text">Failed to retrieve satellite data.</p>
+        </div>
       </div>
     </div>
   </aside>
-
-  <footer class="floating-coords-pill" aria-label="Map Viewport Coordinates">
-    <span class="coord-label">BOUNDS</span>
-    <span id="coords-text" class="coord-val">[102.000, 0.200, 103.000, 0.800]</span>
-  </footer>
+  <button id="drawer-toggle" type="button" class="edge-toggle right" aria-label="Toggle results drawer">&raquo;</button>
 </div>
 {% endblock %}
 
@@ -240,4 +219,19 @@
 <script src="/static/js/history.js"></script>
 <script src="/static/js/insights.js"></script>
 <script src="/static/js/map.js"></script>
+<script>
+  (function () {
+    var sb = document.getElementById("sidebar");
+    var dr = document.getElementById("results-card");
+    var tl = document.getElementById("sidebar-toggle");
+    var tr = document.getElementById("drawer-toggle");
+    function sync() {
+      if (tl) { tl.style.left = sb.classList.contains("collapsed") ? "0px" : "360px"; tl.textContent = sb.classList.contains("collapsed") ? "\u00bb" : "\u00ab"; }
+      if (tr) { tr.style.right = dr.classList.contains("collapsed") ? "0px" : "400px"; tr.textContent = dr.classList.contains("collapsed") ? "\u00ab" : "\u00bb"; }
+    }
+    if (tl) tl.addEventListener("click", function () { sb.classList.toggle("collapsed"); sync(); });
+    if (tr) tr.addEventListener("click", function () { dr.classList.toggle("collapsed"); sync(); });
+    sync();
+  })();
+</script>
 {% endblock %}

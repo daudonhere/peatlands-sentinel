@@ -1,10 +1,9 @@
 function createHistoryController(onSelectRun) {
-  const modal = document.getElementById("history-modal");
-  const btnOpen = document.getElementById("btn-open-history");
-  const btnClose = document.getElementById("history-close-btn");
   const listContainer = document.getElementById("history-list");
+  const btnOpen = document.getElementById("btn-open-history");
 
   async function loadHistory() {
+    if (!listContainer) return;
     listContainer.innerHTML =
       '<p class="results-state-desc">Loading stored analysis records...</p>';
     try {
@@ -43,7 +42,6 @@ function createHistoryController(onSelectRun) {
           .addEventListener("click", async function () {
             const runDetails = await fetchRunDetails(run.id);
             if (onSelectRun) onSelectRun(runDetails);
-            modal.classList.add("hidden");
           });
 
         listContainer.appendChild(item);
@@ -55,14 +53,8 @@ function createHistoryController(onSelectRun) {
 
   if (btnOpen) {
     btnOpen.addEventListener("click", function () {
-      modal.classList.remove("hidden");
       loadHistory();
-    });
-  }
-
-  if (btnClose) {
-    btnClose.addEventListener("click", function () {
-      modal.classList.add("hidden");
+      if (listContainer) listContainer.scrollIntoView({ behavior: "smooth" });
     });
   }
 
