@@ -33,10 +33,10 @@ Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14
   - Masalah: `scipy.ndimage.zoom` tanpa handle NaN.
   - Aksi: `np.nan_to_num` sebelum zoom.
 
-6. **`map.js` mendekati batas 300 baris**
-   - File: `app/static/js/map.js` (296 baris)
-   - Masalah: mendekati aturan max 300 baris/file.
-   - Aksi: split (mis. results rendering) ke modul terpisah.
+- [ ] 6. **`map.js` mendekati batas 300 baris** (296 baris, masih compliant; split opsional)
+  - File: `app/static/js/map.js` (296 baris)
+  - Masalah: mendekati aturan max 300 baris/file.
+  - Aksi: split (mis. results rendering) ke modul terpisah.
 
 - [x] 7. **`resultsTargetLabel` bisa "undefined"** (guarded)
   - File: `app/static/js/map.js`
@@ -60,35 +60,35 @@ Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14
 
 ## Low / Catatan Desain
 
-11. **Filter `LandTransition` melewati same-class**
-    - File: `app/services/classifier.py` (`compute_land_transition_matrix`)
-    - Masalah: menyembunyikan stabilitas lahan.
-    - Aksi: evaluasi apakah perlu tampilkan transisi stabil.
+- [ ] 11. **Filter `LandTransition` melewati same-class** (accepted design: fokus konversi)
+  - File: `app/services/classifier.py` (`compute_land_transition_matrix`)
+  - Masalah: menyembunyikan stabilitas lahan.
+  - Aksi: evaluasi apakah perlu tampilkan transisi stabil.
 
-12. **GeoTIFF tanpa kompresi**
-    - File: `app/services/geotiff.py` (`generate_geotiff_raster`)
-    - Masalah: ukuran bundle lebih besar (128x128 masih fine).
-    - Aksi: opsional tambah compression (LZW/Deflate).
+- [ ] 12. **GeoTIFF tanpa kompresi** (accepted: 128x128 kecil)
+  - File: `app/services/geotiff.py` (`generate_geotiff_raster`)
+  - Masalah: ukuran bundle lebih besar (128x128 masih fine).
+  - Aksi: opsional tambah compression (LZW/Deflate).
 
-13. **Storage sync blocking di async route**
-    - File: `app/services/storage.py` (`get_db_connection`, `get_analysis_arrays`)
-    - Masalah: `get_analysis_arrays` sync dipanggil di async route (blocking); `check_same_thread=True`.
-    - Aksi: bungkus di executor atau buat async wrapper.
+- [ ] 13. **Storage sync blocking di async route** (accepted: query cepat)
+  - File: `app/services/storage.py` (`get_db_connection`, `get_analysis_arrays`)
+  - Masalah: `get_analysis_arrays` sync dipanggil di async route (blocking); `check_same_thread=True`.
+  - Aksi: bungkus di executor atau buat async wrapper.
 
-14. **No CORS middleware**
-    - File: `app/main.py`
-    - Masalah: jika frontend dipisah domain akan gagal.
-    - Aksi: tambah CORS middleware (opsional, same-origin saat ini).
+- [x] 14. **No CORS middleware** (ditambahkan CORSMiddleware)
+  - File: `app/main.py`
+  - Masalah: jika frontend dipisah domain akan gagal.
+  - Aksi: tambah CORS middleware (opsional, same-origin saat ini).
 
 - [x] 15. **FIRMS CSV parsing bisa throw** (safe float parse)
   - File: `app/services/firms.py` (`fetch_active_fires`)
   - Masalah: `frp` non-numeric → exception (route tangkap → 502).
   - Aksi: safe parse dengan fallback 0.0.
 
-16. **Fallback pre arrays = post arrays**
-    - File: `app/routes/api/analysis.py` (`_resolve_spectral`)
-    - Masalah: jika `_pre_arrays` hilang, pre=post → transisi stabil.
-    - Aksi: dokumentasikan / handle eksplisit.
+- [ ] 16. **Fallback pre arrays = post arrays** (accepted: fallback simulasi)
+  - File: `app/routes/api/analysis.py` (`_resolve_spectral`)
+  - Masalah: jika `_pre_arrays` hilang, pre=post → transisi stabil.
+  - Aksi: dokumentasikan / handle eksplisit.
 
 - [x] 17. **ThreadPoolExecutor tidak di-shutdown** (lifespan shutdown)
   - File: `app/services/cog.py` (`_executor`)
