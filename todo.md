@@ -55,24 +55,35 @@ Tujuan: perluas peatlands-sentinel agar mencakup kemampuan sentinel-field-analyt
 - [ ] Tampilkan nilai akurasi (overall accuracy) & kappa di halaman web.
 - [ ] Sertakan akurasi & kappa di chart yang di-download (ZIP).
 
-## Frontend Redesign (Superdesign)
+## Frontend Redesign
 
-Tujuan: redesign UI menjadi dashboard sidebar kiri + drawer kanan hasil analisa. Catat dulu, lalu buat design di Superdesign untuk review sebelum implementasi.
+Tujuan: redesign UI menjadi dashboard sidebar kiri + drawer kanan hasil analisa, tema monochrome dark. Design awal dibuat sebagai mockup statis (`docs/design-mockup.html`) untuk review, lalu diimplementasikan ke template/CSS/JS asli.
 
-Layout target:
+### Selesai
 
-- Sidebar kiri, header: "Peatlands Sentinel" + subtitle "AI Satellite Observation for Land Dynamics", tanpa logo.
-- Menu di sidebar:
-  - Location Preset: input lokasi via GeoJSON (textarea) ATAU draw AOI.
-  - Boundaries: input boundaries via GeoJSON (textarea) ATAU draw boundaries.
-  - Analysis Objective: dropdown target analisa.
-  - Start & End Date: periode analisa.
-  - Satellite Imagery Basemap: pilih citra satelit (tidak hanya ESRI World Imagery).
-  - Bawah: tombol "Run Satellite Analysis" & "Inspect Available Passes".
-  - Tombol kecil draw/redraw/clear AOI & boundary di samping textarea.
-- Saat run analisa selesai: muncul card/sidebar/drawer dari sisi kanan berisi hasil analisa lengkap (seperti saat ini) + button + history + status "Found X Sentinel-2 and Y Sentinel-1 passes" + line/plot chart.
-- Semua komponen yang melebihi layar bisa scroll, tanpa indikator scrollbar.
-- Tema monochrome dark (hitam/putih), map tetap berwarna.
+- [x] Mockup statis `docs/design-mockup.html` untuk review sebelum implementasi.
+- [x] Sidebar kiri, header: "Peatlands Sentinel" + subtitle "AI Satellite Observation for Land Dynamics", tanpa logo.
+- [x] Area of Interest: textarea GeoJSON + tombol kecil Draw / Redraw / Clear yang rata kanan.
+- [x] Boundaries: textarea GeoJSON + tombol kecil Draw / Redraw / Clear.
+- [x] Analysis Objective: dropdown 10 target analisa.
+- [x] Analysis Period: start date + end date.
+- [x] Satellite Imagery Basemap: dropdown pilihan citra (UI).
+- [x] Footer sidebar: tombol "Run Satellite Analysis" & "Inspect Available Passes".
+- [x] Drawer kanan: hasil analisa lengkap + tombol Run History + status "Found X Sentinel-2 and Y Sentinel-1 passes".
+- [x] Sidebar & drawer bisa collapse, toggle hanya di sisi luar (tanpa ikon X di dalam card).
+- [x] Scroll tanpa indikator scrollbar.
+- [x] Tema monochrome dark: panel gelap, card abu, teks putih, tombol putih + hover abu, textarea hitam.
+- [x] Map tetap berwarna (ESRI World Imagery).
+
+### Sisa Pekerjaan
+
+- [ ] Wire `#basemap-select` ke MapLibre: ganti style per opsi (ESRI World Imagery, Sentinel-2 true color, Sentinel-2 false color, OpenStreetMap) lewat `setStyle` + layer AOI di-render ulang.
+- [ ] Tambah scatter plot multi-series (indeks pre vs post per kelas) di drawer, dengan gridline + legend, tanpa card wrapper.
+- [ ] Tambah line chart statistik (time series NDVI/NDWI per periode) di drawer, dengan gridline + legend, tanpa card wrapper.
+- [ ] Tampilkan overall accuracy & kappa di drawer (setelah classifier menghasilkan confusion matrix).
+- [ ] Preview peta berwarna di UI (true color / false color / NDMI), bukan hanya overlay monochrome.
+- [ ] Verifikasi layout responsif (<=900px): sidebar & drawer jadi sheet bawah, toggle luar disembunyikan.
+- [ ] Samakan `docs/design-mockup.html` dengan implementasi final setelah semua poin di atas selesai.
 
 ## Future Phase: Maritime / Coastal Detection
 
