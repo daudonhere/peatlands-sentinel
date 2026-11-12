@@ -1,16 +1,12 @@
-# Local & Agent Instructions
 AGENTS.md
 .opencode/
 
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
 
-# C extensions
 *.so
 
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -30,7 +26,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Unit test / coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -46,7 +41,6 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Environments
 .env
 .env.local
 .envrc
@@ -57,7 +51,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Databases & Cache
 *.sqlite3
 *.db
 *.db-shm
@@ -66,12 +59,10 @@ venv.bak/
 data/
 cache/
 
-# IDE / Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
 .DS_Store
 Thumbs.db
