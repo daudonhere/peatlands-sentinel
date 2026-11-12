@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -39,6 +39,11 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "app": settings.app_name, "version": "0.1.0"}
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return Response(status_code=204)
 
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

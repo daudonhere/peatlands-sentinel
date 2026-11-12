@@ -44,11 +44,14 @@ async def _resolve_spectral(
     try:
         from app.services import cog as _cog_module
 
-        live = await _cog_module.fetch_live_pipeline_metrics(
-            bbox=bbox,
-            pre_date_range=payload.pre_date_range,
-            post_date_range=payload.post_date_range,
-            max_cloud=payload.max_cloud_cover,
+        live = await asyncio.wait_for(
+            _cog_module.fetch_live_pipeline_metrics(
+                bbox=bbox,
+                pre_date_range=payload.pre_date_range,
+                post_date_range=payload.post_date_range,
+                max_cloud=payload.max_cloud_cover,
+            ),
+            timeout=12.0,
         )
         summary = build_spectral_summary_from_live(live)
         transitions = classify_live_arrays(
@@ -80,7 +83,10 @@ async def _resolve_spectral(
 async def _resolve_dem(bbox: list[float]):
     from app.services import cog as _cog_module
 
-    return await _cog_module.fetch_live_dem(bbox)
+    try:
+        return await asyncio.wait_for(_cog_module.fetch_live_dem(bbox), timeout=8.0)
+    except Exception:
+        return None
 
 
 @router.post("/run", response_model=AnalysisPipelineResponse)

@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -22,14 +24,18 @@ async def active_fires(payload: BBoxRequest):
     except PermissionError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"FIRMS request failed: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"FIRMS request failed: {exc}"
+        ) from exc
     return {"count": len(fires), "fires": fires}
 
 
 @router.post("/live-ndvi")
 async def live_ndvi(payload: BBoxRequest):
     try:
-        return await live_ndvi_for_aoi(payload.bbox, payload.datetime_range)
+        return await asyncio.wait_for(
+            live_ndvi_for_aoi(payload.bbox, payload.datetime_range), timeout=12.0
+        )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
@@ -37,7 +43,9 @@ async def live_ndvi(payload: BBoxRequest):
 
 
 @router.get("/{run_id}/intervention")
-async def canal_blocking(run_id: str, dams_per_100ha: float = Query(2.0, ge=0.0, le=20.0)):
+async def canal_blocking(
+    run_id: str, dams_per_100ha: float = Query(2.0, ge=0.0, le=20.0)
+):
     run = get_analysis_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Analysis run not found.")
