@@ -52,6 +52,8 @@ Tujuan: perluas peatlands-sentinel agar mencakup kemampuan sentinel-field-analyt
 
 - [ ] Tampilkan chart (NDVI time series, transisi) di halaman web.
 - [ ] Preview peta berwarna di UI (bukan hanya overlay monochrome).
+- [ ] Tampilkan nilai akurasi (overall accuracy) & kappa di halaman web.
+- [ ] Sertakan akurasi & kappa di chart yang di-download (ZIP).
 
 ## High
 
