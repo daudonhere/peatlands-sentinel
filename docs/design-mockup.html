@@ -25,10 +25,14 @@
     .map { position: absolute; inset: 0; z-index: 1; background: linear-gradient(135deg, #1a3a2a 0%, #2a4a3a 40%, #3a5a4a 100%); }
     .map::after { content: "SATELLITE MAP (colored)"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.35); font-size: 1.5rem; letter-spacing: 0.2em; }
 
-    .sidebar { position: absolute; top: 1rem; left: 1rem; bottom: 1rem; width: 360px; max-width: calc(100vw - 2rem); z-index: 20; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; }
-    .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); }
+    /* flush panels */
+    .sidebar { position: absolute; top: 0; left: 0; bottom: 0; width: 360px; max-width: calc(100vw - 2rem); z-index: 20; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s ease, width 0.2s ease; }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
     .sidebar-title { font-size: 1.05rem; font-weight: 700; }
     .sidebar-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+    .collapse-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 0.9rem; line-height: 1; padding: 0.2rem 0.5rem; border-radius: var(--radius); cursor: pointer; }
+    .collapse-btn:hover { color: var(--text); border-color: var(--text); }
     .sidebar-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.875rem; overflow-y: auto; flex: 1; }
     .section { display: flex; flex-direction: column; gap: 0.35rem; }
     .label { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
@@ -39,15 +43,18 @@
     .btn-row { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
     .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius); border: none; cursor: pointer; }
     .btn-primary { background: #ffffff; color: #000000; }
+    .btn-primary:hover { background: #d4d4d4; }
     .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
     .btn-sm { min-height: 28px; padding: 0 0.6rem; font-size: 0.725rem; background: var(--subtle); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
     .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; }
 
-    .drawer { position: absolute; top: 1rem; right: 1rem; bottom: 1rem; width: 400px; max-width: calc(100vw - 2rem); z-index: 20; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; }
+    .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 400px; max-width: calc(100vw - 2rem); z-index: 20; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s ease; }
+    .drawer.collapsed { transform: translateX(100%); }
     .drawer-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid var(--border); }
     .drawer-tag { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: var(--text); }
     .drawer-heading { font-size: 0.95rem; font-weight: 600; margin-top: 0.15rem; }
-    .close-btn { background: none; border: none; color: var(--muted); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+    .close-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 1rem; line-height: 1; padding: 0.2rem 0.5rem; border-radius: var(--radius); cursor: pointer; }
+    .close-btn:hover { color: var(--text); border-color: var(--text); }
     .drawer-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.875rem; overflow-y: auto; flex: 1; }
     .status-banner { padding: 0.75rem; border-radius: var(--radius); background: var(--subtle); border: 1px solid var(--border); }
     .status-title { font-size: 0.875rem; font-weight: 700; }
@@ -55,20 +62,26 @@
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
     .stat { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.75rem; }
     .stat-label { font-size: 0.7rem; color: var(--muted); }
-    .stat-value { font-size: 1rem; font-weight: 700; font-family: var(--font-mono, monospace); margin-top: 0.2rem; }
+    .stat-value { font-size: 1rem; font-weight: 700; font-family: ui-monospace, monospace; margin-top: 0.2rem; }
     .block { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; }
     .block-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.4rem; }
     .block-text { font-size: 0.8rem; line-height: 1.45; color: var(--text); }
     .list { list-style: square; padding-left: 1.25rem; margin-top: 0.35rem; font-size: 0.775rem; color: #d4d4d4; display: flex; flex-direction: column; gap: 0.25rem; }
-    .chart { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; height: 160px; display: flex; align-items: flex-end; gap: 4px; }
-    .chart-bar { flex: 1; background: #ffffff; border-radius: 2px; min-height: 4px; }
+    .scatter { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem; height: 180px; }
+    .scatter svg { width: 100%; height: 100%; }
     .history { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.75rem; }
     .pass-status { font-size: 0.75rem; color: var(--muted); padding: 0.25rem 0; }
-    .coords-pill { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); z-index: 20; background: var(--panel); border: 1px solid var(--border); padding: 0.4rem 0.875rem; border-radius: var(--radius); display: flex; align-items: center; gap: 0.5rem; pointer-events: none; font-size: 0.75rem; }
+    .bounds-line { font-size: 0.75rem; color: var(--muted); font-family: ui-monospace, monospace; padding: 0.25rem 0; }
+
+    .edge-toggle { position: absolute; top: 50%; transform: translateY(-50%); z-index: 25; background: var(--panel); border: 1px solid var(--border); color: var(--text); width: 24px; height: 48px; border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
+    .edge-toggle.left { left: 360px; border-left: none; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    .edge-toggle.right { right: 400px; border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    .sidebar.collapsed ~ .edge-toggle.left { left: 0; }
+    .drawer.collapsed ~ .edge-toggle.right { right: 0; }
 
     @media (max-width: 900px) {
-      .sidebar, .drawer { position: absolute; top: auto; bottom: 1rem; left: 0.5rem; right: 0.5rem; width: auto; max-height: 50vh; }
-      .drawer { right: 0.5rem; }
+      .sidebar, .drawer { position: absolute; top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 50vh; }
+      .edge-toggle { display: none; }
     }
   </style>
 </head>
@@ -76,10 +89,13 @@
   <div class="viewport">
     <div class="map"></div>
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-title">Peatlands Sentinel</div>
-        <div class="sidebar-sub">AI Satellite Observation for Land Dynamics</div>
+        <div>
+          <div class="sidebar-title">Peatlands Sentinel</div>
+          <div class="sidebar-sub">AI Satellite Observation for Land Dynamics</div>
+        </div>
+        <button class="collapse-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed'); syncToggles();">&laquo;</button>
       </div>
       <div class="sidebar-body">
         <div class="section">
@@ -137,20 +153,22 @@
         <button class="btn btn-outline">Inspect Available Passes</button>
       </div>
     </aside>
+    <button class="edge-toggle left" id="toggleLeft" onclick="document.getElementById('sidebar').classList.toggle('collapsed'); syncToggles();">&laquo;</button>
 
-    <aside class="drawer">
+    <aside class="drawer" id="drawer">
       <div class="drawer-header">
         <div>
           <div class="drawer-tag">Peatland Moisture and Extent (S1 + S2)</div>
           <div class="drawer-heading">Telemetry &amp; AI Diagnostic</div>
         </div>
-        <button class="close-btn">&times;</button>
+        <button class="close-btn" onclick="document.getElementById('drawer').classList.toggle('collapsed'); syncToggles();">&times;</button>
       </div>
       <div class="drawer-body">
         <div class="status-banner">
           <div class="status-title">Threat Status: Low</div>
           <div class="status-sub">Moisture Condition: Wet (913,645.65 Ha)</div>
         </div>
+        <div class="bounds-line">Bounds: [101.5813, 0.3311, 103.4187, 0.6689]</div>
         <div class="stats">
           <div class="stat"><div class="stat-label">Vegetation (NDVI)</div><div class="stat-value">0.62</div></div>
           <div class="stat"><div class="stat-label">Water/Moisture (NDWI)</div><div class="stat-value">0.28</div></div>
@@ -163,7 +181,7 @@
         </div>
         <div class="block">
           <div class="block-title">Multi-Temporal Comparison</div>
-          <div class="row" style="justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem;">
             <span>Pre (Baseline)</span><span>Post (100%)</span>
           </div>
           <input type="range" min="0" max="100" value="100" style="width: 100%; accent-color: #ffffff; margin-top: 0.25rem;" />
@@ -173,16 +191,21 @@
           </div>
         </div>
         <div class="block">
-          <div class="block-title">NDVI Time Series</div>
-          <div class="chart">
-            <div class="chart-bar" style="height: 40%;"></div>
-            <div class="chart-bar" style="height: 55%;"></div>
-            <div class="chart-bar" style="height: 35%;"></div>
-            <div class="chart-bar" style="height: 70%;"></div>
-            <div class="chart-bar" style="height: 60%;"></div>
-            <div class="chart-bar" style="height: 80%;"></div>
-            <div class="chart-bar" style="height: 50%;"></div>
-            <div class="chart-bar" style="height: 75%;"></div>
+          <div class="block-title">NDVI Time Series (Scatter)</div>
+          <div class="scatter">
+            <svg viewBox="0 0 300 160" preserveAspectRatio="none">
+              <line x1="20" y1="140" x2="280" y2="140" stroke="#3a3a3a" stroke-width="1" />
+              <line x1="20" y1="20" x2="20" y2="140" stroke="#3a3a3a" stroke-width="1" />
+              <circle cx="40" cy="90" r="3" fill="#ffffff" />
+              <circle cx="70" cy="75" r="3" fill="#ffffff" />
+              <circle cx="100" cy="100" r="3" fill="#ffffff" />
+              <circle cx="130" cy="60" r="3" fill="#ffffff" />
+              <circle cx="160" cy="50" r="3" fill="#ffffff" />
+              <circle cx="190" cy="80" r="3" fill="#ffffff" />
+              <circle cx="220" cy="45" r="3" fill="#ffffff" />
+              <circle cx="250" cy="65" r="3" fill="#ffffff" />
+              <circle cx="275" cy="55" r="3" fill="#ffffff" />
+            </svg>
           </div>
         </div>
         <div class="block">
@@ -225,11 +248,21 @@
         <button class="btn btn-outline" style="width: 100%;">Export GIS Bundle (ZIP, XLSX, QGIS)</button>
       </div>
     </aside>
+    <button class="edge-toggle right" id="toggleRight" onclick="document.getElementById('drawer').classList.toggle('collapsed'); syncToggles();">&raquo;</button>
 
-    <div class="coords-pill">
-      <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;">BOUNDS</span>
-      <span style="font-family: monospace; font-size: 0.75rem;">[101.5813, 0.3311, 103.4187, 0.6689]</span>
-    </div>
+    <script>
+      function syncToggles() {
+        const sb = document.getElementById('sidebar');
+        const dr = document.getElementById('drawer');
+        const tl = document.getElementById('toggleLeft');
+        const tr = document.getElementById('toggleRight');
+        tl.style.left = sb.classList.contains('collapsed') ? '0px' : '360px';
+        tl.textContent = sb.classList.contains('collapsed') ? '\u00bb' : '\u00ab';
+        tr.style.right = dr.classList.contains('collapsed') ? '0px' : '400px';
+        tr.textContent = dr.classList.contains('collapsed') ? '\u00ab' : '\u00bb';
+      }
+      syncToggles();
+    </script>
   </div>
 </body>
 </html>
