@@ -40,6 +40,8 @@
   const valSar = document.getElementById("val-sar");
   const valWtd = document.getElementById("val-wtd");
   const valSubsidence = document.getElementById("val-subsidence");
+  const valCo2 = document.getElementById("val-co2");
+  const valSource = document.getElementById("val-source");
   const analystSummary = document.getElementById("analyst-summary");
   const analystActions = document.getElementById("analyst-actions");
 
@@ -99,12 +101,28 @@
     if (valSubsidence) {
       valSubsidence.textContent = `${Number(metrics.subsidence_rate_cm_year || 1.9).toFixed(1)} cm/yr`;
     }
+    if (valCo2) {
+      valCo2.textContent = `${Number(metrics.co2_emission_tco2e_ha_year || 0).toFixed(1)} tCO2e/ha`;
+    }
+    if (valSource) {
+      const src = metrics.source === "live_cog" ? "Live COG" : "Simulation";
+      const dt = metrics.post_datetime ? ` (${metrics.post_datetime})` : "";
+      valSource.textContent = `${src}${dt}`;
+      valSource.style.color =
+        metrics.source === "live_cog"
+          ? "var(--status-emerald)"
+          : "var(--status-amber)";
+    }
 
     statusHeadline.textContent = `Threat Status: ${aiReport.threat_level || "Unknown"}`;
     statusSubline.textContent = `Moisture Condition: ${aiReport.peat_moisture_status || "-"} (${runData.area_hectares} Ha)`;
 
     const boundaryColor = applyThreatStyles(aiReport.threat_level);
-    renderAoiPolygon(map, bbox, boundaryColor);
+    const geometry =
+      runData.geojson && runData.geojson.geometry
+        ? runData.geojson.geometry
+        : bbox;
+    renderAoiPolygon(map, geometry, boundaryColor);
 
     analystSummary.textContent = `${aiReport.fire_risk_summary || ""} ${aiReport.classification_reasoning || ""}`;
     analystActions.innerHTML = "";
@@ -114,7 +132,9 @@
       analystActions.appendChild(li);
     });
 
-    insightsCtrl.renderTransitions(runData.land_transitions || runData.transitions);
+    insightsCtrl.renderTransitions(
+      runData.land_transitions || runData.transitions,
+    );
     insightsCtrl.refreshIntervention();
     resultsContent.classList.remove("hidden");
   }

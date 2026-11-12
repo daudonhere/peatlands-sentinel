@@ -25,7 +25,8 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
       })
       .slice(0, 6);
     if (!top.length) {
-      box.innerHTML = '<p class="results-state-desc">No land class conversion detected.</p>';
+      box.innerHTML =
+        '<p class="results-state-desc">No land class conversion detected.</p>';
       return;
     }
     const max = top[0].area_hectares || 1;
@@ -96,7 +97,9 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     withBusy($("btn-live-ndvi"), "Reading COG...", async function () {
       try {
         const d = await fetchLiveNdvi(getBbox(), getDateRange());
-        status.textContent = `Live NDVI ${d.mean_ndvi} (${d.datetime.substring(0, 10)}, ${Math.round(d.valid_pixel_ratio * 100)}% clear)`;
+        const dt = d.datetime ? d.datetime.substring(0, 10) : "-";
+        const clear = Math.round((d.valid_pixel_ratio || 0) * 100);
+        status.textContent = `Live NDVI ${d.mean_ndvi} (${dt}, ${clear}% clear)`;
       } catch (err) {
         status.textContent = err.message;
       }
@@ -107,7 +110,11 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
   async function updateIntervention() {
     const runId = getRunId();
     $("dams-label").textContent = `${slider.value} dams / 100 Ha`;
-    if (!runId) return;
+    if (!runId) {
+      $("intervention-result").textContent =
+        "Run analysis first to simulate canal blocking.";
+      return;
+    }
     try {
       const r = await fetchIntervention(runId, slider.value);
       $("intervention-result").textContent =
@@ -118,7 +125,11 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
       $("intervention-result").textContent = err.message;
     }
   }
+  slider.addEventListener("input", updateIntervention);
   slider.addEventListener("change", updateIntervention);
 
-  return { renderTransitions: renderTransitions, refreshIntervention: updateIntervention };
+  return {
+    renderTransitions: renderTransitions,
+    refreshIntervention: updateIntervention,
+  };
 }

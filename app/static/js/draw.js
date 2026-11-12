@@ -1,8 +1,8 @@
-function renderAoiPolygon(map, bbox, colorHex) {
-  const [w, s, e, n] = bbox;
-  const geojson = {
-    type: "Feature",
-    geometry: {
+function renderAoiPolygon(map, geometryOrBbox, colorHex) {
+  let geometry;
+  if (Array.isArray(geometryOrBbox) && geometryOrBbox.length === 4) {
+    const [w, s, e, n] = geometryOrBbox;
+    geometry = {
       type: "Polygon",
       coordinates: [
         [
@@ -13,11 +13,24 @@ function renderAoiPolygon(map, bbox, colorHex) {
           [w, s],
         ],
       ],
-    },
+    };
+  } else if (geometryOrBbox && geometryOrBbox.type) {
+    geometry = geometryOrBbox;
+  } else {
+    return;
+  }
+
+  const geojson = {
+    type: "Feature",
+    geometry: geometry,
   };
 
   if (map.getSource("aoi-boundary")) {
     map.getSource("aoi-boundary").setData(geojson);
+    if (colorHex) {
+      map.setPaintProperty("aoi-fill", "fill-color", colorHex);
+      map.setPaintProperty("aoi-stroke", "line-color", colorHex);
+    }
   } else {
     map.addSource("aoi-boundary", { type: "geojson", data: geojson });
     map.addLayer({
@@ -25,7 +38,7 @@ function renderAoiPolygon(map, bbox, colorHex) {
       type: "fill",
       source: "aoi-boundary",
       paint: {
-        "fill-color": colorHex,
+        "fill-color": colorHex || "#10b981",
         "fill-opacity": 0.12,
       },
     });
@@ -34,7 +47,7 @@ function renderAoiPolygon(map, bbox, colorHex) {
       type: "line",
       source: "aoi-boundary",
       paint: {
-        "line-color": colorHex,
+        "line-color": colorHex || "#10b981",
         "line-width": 2,
         "line-dasharray": [2, 2],
       },
