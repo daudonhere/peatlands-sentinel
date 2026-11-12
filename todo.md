@@ -1,8 +1,8 @@
 # Peatlands Sentinel - Review Findings Todo
 
-Hasil review struktur kode (17 temuan). High (1-3) selesai dikerjakan.
+Hasil review struktur kode (17 temuan). High (1-3) + Medium/Low sebagian selesai dikerjakan.
 
-Status: `[ ]` pending, `[x]` done.
+Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14, 16.
 
 ## High
 
