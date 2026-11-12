@@ -1,36 +1,48 @@
 # Peatlands Sentinel
 
-Sistem monitoring lahan gambut, deforestasi, dan deteksi dini kebakaran hutan berbasis citra satelit multimodal (Sentinel-1 SAR dan Sentinel-2 MSI).
+Multimodal satellite monitoring system for peatlands conservation, deforestation alerts, and wildfire detection using Sentinel-1 SAR and Sentinel-2 optical imagery.
 
-## Arsitektur Monolith
+## Architecture
 
-Aplikasi dibangun sebagai arsitektur Python tunggal (zero `node_modules`):
+Monolithic Python application (zero `node_modules`):
 
-- **Backend**: FastAPI dan Jinja2.
-- **Frontend / GIS**: MapLibre GL JS dan Turf.js via CDN.
-- **Data Ingestion**: Planetary Computer STAC API (Sentinel-1, Sentinel-2).
+- **Backend**: FastAPI and Jinja2 templates.
+- **Frontend / GIS**: MapLibre GL JS and Turf.js loaded via CDN.
+- **Data Ingestion**: Planetary Computer STAC API (Sentinel-1 GRD, Sentinel-2 L2A).
 - **Processing**: Rasterio, NumPy, SciPy (NDVI, NDWI, NBR, dNBR, SAR backscatter ratio).
 - **AI Analyst**: Ollama structured JSON validation via Pydantic.
 
-## Menjalankan Aplikasi
+## Prerequisites
 
-1. Buat environment Python (3.11 atau 3.12):
+- Python 3.11 or 3.12
+- [uv](https://github.com/astral-sh/uv) (recommended) or standard venv
+
+## Quick Start
+
+1. Create and activate a virtual environment:
 
 ```bash
-uv venv --python 3.12
+uv venv --python 3.12 .venv
 source .venv/bin/activate
+```
+
+2. Install dependencies:
+
+```bash
 uv pip install -e .
 ```
 
-2. Jalankan server aplikasi:
+3. Launch the application:
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-3. Buka browser pada `http://localhost:8000`.
+4. Open `http://localhost:8000` in your browser.
 
-## Menjalankan Pengujian
+## Running Tests
+
+Execute self-check unit tests for raster computations:
 
 ```bash
 python -m tests.test_raster
