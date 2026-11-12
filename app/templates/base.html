@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  
+  <!-- MapLibre GL JS & CSS via CDN (zero node_modules) -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" crossorigin="anonymous">
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" crossorigin="anonymous"></script>
+
+  <!-- Turf.js for client-side spatial calculations -->
+  <script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js" crossorigin="anonymous"></script>
+
+  <!-- Local App Styles -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="app-body">
+  {% block content %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

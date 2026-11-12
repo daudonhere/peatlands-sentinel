@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-layout">
+  <!-- Map Canvas Viewport -->
+  <main class="map-container" id="map" aria-label="Interactive Satellite Map"></main>
+
+  <!-- Control & Analysis Sidebar -->
+  <aside class="sidebar" aria-label="Satellite Analysis Controls">
+    <header class="sidebar-header">
+      <h1 class="app-title">Peatlands Sentinel</h1>
+      <p class="app-subtitle">Multimodal Earth Observation Monitoring</p>
+    </header>
+
+    <section class="control-panel">
+      <h2 class="panel-heading">Area of Interest</h2>
+      <div class="field-group">
+        <label for="bbox-display" class="field-label">Current Bounding Box</label>
+        <div id="bbox-display" class="coords-box" aria-live="polite">Panning map...</div>
+      </div>
+      <button id="btn-fetch-scenes" type="button" class="btn btn-primary">
+        Inspect Satellite Scenes
+      </button>
+    </section>
+
+    <section class="control-panel">
+      <h2 class="panel-heading">Layer Visualizer</h2>
+      <div class="layer-options" role="group" aria-label="Map Base and Overlays">
+        <label class="layer-radio">
+          <input type="radio" name="basemap" value="osm" checked>
+          <span>Standard Carto</span>
+        </label>
+        <label class="layer-radio">
+          <input type="radio" name="basemap" value="satellite">
+          <span>Satellite True Color</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="control-panel">
+      <div class="panel-header-inline">
+        <h2 class="panel-heading">Risk & Moisture Assessment</h2>
+        <button id="btn-run-analyst" type="button" class="btn btn-secondary">
+          Run Analysis
+        </button>
+      </div>
+
+      <!-- UI States: Empty, Loading, Active, Error -->
+      <div id="analyst-state-empty" class="state-container">
+        <p class="state-text">No active risk assessment. Click "Run Analysis" to evaluate current telemetry.</p>
+      </div>
+
+      <div id="analyst-state-loading" class="state-container hidden" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="state-text">Evaluating satellite indices via AI model...</p>
+      </div>
+
+      <div id="analyst-state-result" class="state-container hidden" aria-live="polite">
+        <div class="metric-row">
+          <span class="metric-label">Threat Level</span>
+          <span id="metric-threat" class="badge">Low</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Peat Moisture</span>
+          <span id="metric-moisture" class="metric-value">Wet</span>
+        </div>
+        <div class="metric-block">
+          <span class="metric-label">Fire Risk Narrative</span>
+          <p id="metric-summary" class="metric-narrative"></p>
+        </div>
+        <div class="metric-block">
+          <span class="metric-label">Recommended Actions</span>
+          <ul id="metric-actions" class="action-list"></ul>
+        </div>
+      </div>
+
+      <div id="analyst-state-error" class="state-container state-error hidden" role="alert">
+        <p id="analyst-error-msg" class="state-text"></p>
+      </div>
+    </section>
+
+    <section class="control-panel scenes-panel">
+      <h2 class="panel-heading">Recent Imagery Scenes</h2>
+      <div id="scenes-loading" class="state-container hidden">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="state-text">Querying Planetary Computer STAC...</p>
+      </div>
+      <div id="scenes-empty" class="state-container">
+        <p class="state-text">Click "Inspect Satellite Scenes" to find matching passes.</p>
+      </div>
+      <ul id="scenes-list" class="scenes-list hidden" aria-label="Available satellite acquisitions"></ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/map.js"></script>
+{% endblock %}

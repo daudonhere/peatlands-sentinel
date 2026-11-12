@@ -1,0 +1,36 @@
+[project]
+name = "peatlands-sentinel"
+version = "0.1.0"
+description = "Peatland, deforestation, and wildfire monitoring using Sentinel-1/2 multimodal satellite imagery"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "jinja2>=3.1.4",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "httpx>=0.28.0",
+    "numpy>=2.0.0",
+    "rasterio>=1.4.0",
+    "shapely>=2.0.0",
+    "pystac-client>=0.8.0",
+    "planetary-computer>=1.0.0",
+    "scipy>=1.14.0",
+    "scikit-image>=0.24.0",
+    "scikit-learn>=1.5.0",
+    "openpyxl>=3.1.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
