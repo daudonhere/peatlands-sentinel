@@ -31,14 +31,14 @@
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: var(--text-primary);
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
 }
 
 .drawer-heading {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-top: 0.15rem;
 }
 
 .close-btn {
@@ -280,9 +280,13 @@
 }
 
 .btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 28px;
   padding: 0 0.6rem;
   font-size: 0.725rem;
+  font-weight: 600;
   background-color: #ffffff;
   color: #000000;
   border: 1px solid #ffffff;
