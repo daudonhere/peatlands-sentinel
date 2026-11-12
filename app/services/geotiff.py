@@ -12,8 +12,18 @@ def generate_geotiff_raster(
     pixel_scale_x = abs(max_lon - min_lon) / float(width)
     pixel_scale_y = abs(max_lat - min_lat) / float(height)
 
-    if values is not None and values.shape == (height, width):
-        raster = np.clip(values, 0, 255).astype(np.uint8).tobytes()
+    if values is not None and values.ndim == 2:
+        from scipy.ndimage import zoom as nd_zoom
+
+        if values.shape != (height, width):
+            scale = (height / values.shape[0], width / values.shape[1])
+            values = nd_zoom(values, scale, order=1)
+        finite = values[np.isfinite(values)]
+        vmin = float(finite.min()) if finite.size else 0.0
+        vmax = float(finite.max()) if finite.size else 1.0
+        span = vmax - vmin if vmax != vmin else 1.0
+        scaled = np.clip((np.nan_to_num(values, nan=vmin) - vmin) / span * 255, 0, 255)
+        raster = scaled.astype(np.uint8).tobytes()
     else:
         y, x = np.mgrid[0:height, 0:width]
         cx, cy = width / 2.0, height / 2.0

@@ -213,7 +213,13 @@ def generate_excel_report(run_data: dict[str, Any]) -> io.BytesIO:
     return output
 
 
-def create_export_zip_package(run_data: dict[str, Any]) -> io.BytesIO:
+def create_export_zip_package(
+    run_data: dict[str, Any],
+    raster_values: "np.ndarray | None" = None,
+    bbox: list[float] | None = None,
+) -> io.BytesIO:
+    import numpy as np
+
     zip_buffer = io.BytesIO()
     run_id = run_data.get("id", "run")
 
@@ -237,7 +243,10 @@ def create_export_zip_package(run_data: dict[str, Any]) -> io.BytesIO:
         )
         zip_file.writestr(f"{run_id}_preview.svg", svg_content)
 
-        tif_bytes = generate_geotiff_raster(bbox)
+        tif_bytes = generate_geotiff_raster(
+            bbox or run_data.get("geojson", {}).get("bbox", [0, 0, 1, 1]),
+            values=raster_values,
+        )
         zip_file.writestr(f"{run_id}_raster.tif", tif_bytes)
 
         qgis_xml = generate_qgis_project_xml(
