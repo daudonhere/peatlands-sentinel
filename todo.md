@@ -55,6 +55,25 @@ Tujuan: perluas peatlands-sentinel agar mencakup kemampuan sentinel-field-analyt
 - [ ] Tampilkan nilai akurasi (overall accuracy) & kappa di halaman web.
 - [ ] Sertakan akurasi & kappa di chart yang di-download (ZIP).
 
+## Frontend Redesign (Superdesign)
+
+Tujuan: redesign UI menjadi dashboard sidebar kiri + drawer kanan hasil analisa. Catat dulu, lalu buat design di Superdesign untuk review sebelum implementasi.
+
+Layout target:
+
+- Sidebar kiri, header: "Peatlands Sentinel" + subtitle "AI Satellite Observation for Land Dynamics", tanpa logo.
+- Menu di sidebar:
+  - Location Preset: input lokasi via GeoJSON (textarea) ATAU draw AOI.
+  - Boundaries: input boundaries via GeoJSON (textarea) ATAU draw boundaries.
+  - Analysis Objective: dropdown target analisa.
+  - Start & End Date: periode analisa.
+  - Satellite Imagery Basemap: pilih citra satelit (tidak hanya ESRI World Imagery).
+  - Bawah: tombol "Run Satellite Analysis" & "Inspect Available Passes".
+  - Tombol kecil draw/redraw/clear AOI & boundary di samping textarea.
+- Saat run analisa selesai: muncul card/sidebar/drawer dari sisi kanan berisi hasil analisa lengkap (seperti saat ini) + button + history + status "Found X Sentinel-2 and Y Sentinel-1 passes" + line/plot chart.
+- Semua komponen yang melebihi layar bisa scroll, tanpa indikator scrollbar.
+- Tema monochrome dark (hitam/putih), map tetap berwarna.
+
 ## Future Phase: Maritime / Coastal Detection
 
 Tujuan: deteksi kondisi maritim dan pantai, termasuk fenomena "air laut naik ke daratan" akibat epirogenesa positif (daratan turun sehingga terlihat seperti air laut naik).
