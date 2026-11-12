@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Peatlands Sentinel - Design Mockup</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --panel: #141414;
+      --subtle: #1f1f1f;
+      --border: #3a3a3a;
+      --text: #ffffff;
+      --muted: #a0a0a0;
+      --radius: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+    /* hide scrollbars */
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+    *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+    .viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+    .map { position: absolute; inset: 0; z-index: 1; background: linear-gradient(135deg, #1a3a2a 0%, #2a4a3a 40%, #3a5a4a 100%); }
+    .map::after { content: "SATELLITE MAP (colored)"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.35); font-size: 1.5rem; letter-spacing: 0.2em; }
+
+    .sidebar { position: absolute; top: 1rem; left: 1rem; bottom: 1rem; width: 360px; max-width: calc(100vw - 2rem); z-index: 20; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; }
+    .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); }
+    .sidebar-title { font-size: 1.05rem; font-weight: 700; }
+    .sidebar-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+    .sidebar-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.875rem; overflow-y: auto; flex: 1; }
+    .section { display: flex; flex-direction: column; gap: 0.35rem; }
+    .label { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+    .textarea { width: 100%; min-height: 72px; background: var(--subtle); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 0.55rem 0.75rem; font-size: 0.8rem; font-family: ui-monospace, monospace; resize: vertical; }
+    .row { display: flex; gap: 0.5rem; align-items: center; }
+    .input { width: 100%; background: var(--subtle); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 0.55rem 0.75rem; font-size: 0.825rem; }
+    .select { width: 100%; background: var(--subtle); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 0.55rem 0.75rem; font-size: 0.825rem; }
+    .btn-row { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 1rem; font-size: 0.85rem; font-weight: 600; border-radius: var(--radius); border: none; cursor: pointer; }
+    .btn-primary { background: #ffffff; color: #000000; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-sm { min-height: 28px; padding: 0 0.6rem; font-size: 0.725rem; background: var(--subtle); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+    .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .drawer { position: absolute; top: 1rem; right: 1rem; bottom: 1rem; width: 400px; max-width: calc(100vw - 2rem); z-index: 20; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; }
+    .drawer-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid var(--border); }
+    .drawer-tag { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: var(--text); }
+    .drawer-heading { font-size: 0.95rem; font-weight: 600; margin-top: 0.15rem; }
+    .close-btn { background: none; border: none; color: var(--muted); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+    .drawer-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.875rem; overflow-y: auto; flex: 1; }
+    .status-banner { padding: 0.75rem; border-radius: var(--radius); background: var(--subtle); border: 1px solid var(--border); }
+    .status-title { font-size: 0.875rem; font-weight: 700; }
+    .status-sub { font-size: 0.775rem; color: var(--text); margin-top: 0.2rem; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .stat { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.75rem; }
+    .stat-label { font-size: 0.7rem; color: var(--muted); }
+    .stat-value { font-size: 1rem; font-weight: 700; font-family: var(--font-mono, monospace); margin-top: 0.2rem; }
+    .block { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; }
+    .block-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.4rem; }
+    .block-text { font-size: 0.8rem; line-height: 1.45; color: var(--text); }
+    .list { list-style: square; padding-left: 1.25rem; margin-top: 0.35rem; font-size: 0.775rem; color: #d4d4d4; display: flex; flex-direction: column; gap: 0.25rem; }
+    .chart { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; height: 160px; display: flex; align-items: flex-end; gap: 4px; }
+    .chart-bar { flex: 1; background: #ffffff; border-radius: 2px; min-height: 4px; }
+    .history { background: var(--subtle); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.75rem; }
+    .pass-status { font-size: 0.75rem; color: var(--muted); padding: 0.25rem 0; }
+    .coords-pill { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); z-index: 20; background: var(--panel); border: 1px solid var(--border); padding: 0.4rem 0.875rem; border-radius: var(--radius); display: flex; align-items: center; gap: 0.5rem; pointer-events: none; font-size: 0.75rem; }
+
+    @media (max-width: 900px) {
+      .sidebar, .drawer { position: absolute; top: auto; bottom: 1rem; left: 0.5rem; right: 0.5rem; width: auto; max-height: 50vh; }
+      .drawer { right: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <div class="map"></div>
+
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Peatlands Sentinel</div>
+        <div class="sidebar-sub">AI Satellite Observation for Land Dynamics</div>
+      </div>
+      <div class="sidebar-body">
+        <div class="section">
+          <div class="label">Location Preset (AOI)</div>
+          <textarea class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw AOI'></textarea>
+          <div class="btn-row">
+            <button class="btn-sm">Draw AOI</button>
+            <button class="btn-sm">Redraw</button>
+            <button class="btn-sm">Clear</button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="label">Boundaries</div>
+          <textarea class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw boundaries'></textarea>
+          <div class="btn-row">
+            <button class="btn-sm">Draw Boundary</button>
+            <button class="btn-sm">Redraw</button>
+            <button class="btn-sm">Clear</button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="label">Analysis Objective</div>
+          <select class="select">
+            <option>1. Peatland Moisture and Extent (S1 + S2)</option>
+            <option>2. Peat Topography and Slope (Copernicus DEM)</option>
+            <option>3. Forest to Bare Land (Deforestation)</option>
+            <option>4. Forest to Mining Excavation</option>
+            <option>5. Forest to Oil Palm Plantation</option>
+            <option>6. Deforestation Expansion Tracking</option>
+            <option>7. Deforestation Reclamation Monitoring</option>
+            <option>8. Bare Land to Vegetation Succession</option>
+            <option>9. Wildfire Susceptibility and Burn Severity (dNBR)</option>
+            <option>10. Water Dynamics and Peat Canals (MNDWI)</option>
+          </select>
+        </div>
+        <div class="section">
+          <div class="label">Analysis Period</div>
+          <div class="row">
+            <input class="input" type="date" value="2024-01-01" />
+            <input class="input" type="date" value="2024-12-31" />
+          </div>
+        </div>
+        <div class="section">
+          <div class="label">Satellite Imagery Basemap</div>
+          <select class="select">
+            <option>ESRI World Imagery (Cloudless High-Res)</option>
+            <option>Sentinel-2 True Color</option>
+            <option>Sentinel-2 False Color</option>
+            <option>OpenStreetMap</option>
+          </select>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-primary">Run Satellite Analysis</button>
+        <button class="btn btn-outline">Inspect Available Passes</button>
+      </div>
+    </aside>
+
+    <aside class="drawer">
+      <div class="drawer-header">
+        <div>
+          <div class="drawer-tag">Peatland Moisture and Extent (S1 + S2)</div>
+          <div class="drawer-heading">Telemetry &amp; AI Diagnostic</div>
+        </div>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <div class="status-banner">
+          <div class="status-title">Threat Status: Low</div>
+          <div class="status-sub">Moisture Condition: Wet (913,645.65 Ha)</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Vegetation (NDVI)</div><div class="stat-value">0.62</div></div>
+          <div class="stat"><div class="stat-label">Water/Moisture (NDWI)</div><div class="stat-value">0.28</div></div>
+          <div class="stat"><div class="stat-label">Burn Ratio (dNBR)</div><div class="stat-value">0.02</div></div>
+          <div class="stat"><div class="stat-label">SAR VH/VV Ratio</div><div class="stat-value">-6.5 dB</div></div>
+          <div class="stat"><div class="stat-label">Water Table (WTD)</div><div class="stat-value">-35 cm</div></div>
+          <div class="stat"><div class="stat-label">Est. Subsidence</div><div class="stat-value">1.9 cm/yr</div></div>
+          <div class="stat"><div class="stat-label">Est. CO2 Loss</div><div class="stat-value">0.0 tCO2e/ha</div></div>
+          <div class="stat"><div class="stat-label">Telemetry Source</div><div class="stat-value">Simulation</div></div>
+        </div>
+        <div class="block">
+          <div class="block-title">Multi-Temporal Comparison</div>
+          <div class="row" style="justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem;">
+            <span>Pre (Baseline)</span><span>Post (100%)</span>
+          </div>
+          <input type="range" min="0" max="100" value="100" style="width: 100%; accent-color: #ffffff; margin-top: 0.25rem;" />
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+            <span style="font-size: 0.7rem; color: var(--muted);">Opacity:</span>
+            <input type="range" min="0" max="100" value="75" style="flex: 1; accent-color: #ffffff;" />
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">NDVI Time Series</div>
+          <div class="chart">
+            <div class="chart-bar" style="height: 40%;"></div>
+            <div class="chart-bar" style="height: 55%;"></div>
+            <div class="chart-bar" style="height: 35%;"></div>
+            <div class="chart-bar" style="height: 70%;"></div>
+            <div class="chart-bar" style="height: 60%;"></div>
+            <div class="chart-bar" style="height: 80%;"></div>
+            <div class="chart-bar" style="height: 50%;"></div>
+            <div class="chart-bar" style="height: 75%;"></div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Land Conversion (Ha)</div>
+          <p style="font-size: 0.8rem; color: var(--muted);">No land class conversion detected.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Canal Blocking Simulation</div>
+          <input type="range" min="0" max="20" value="2" style="width: 100%; accent-color: #ffffff;" />
+          <div style="font-size: 0.75rem; margin-top: 0.4rem;">2 dams / 100 Ha</div>
+          <p style="font-size: 0.775rem; color: var(--muted); margin-top: 0.4rem;">WTD -10 to 0 cm | 8314175.4 tCO2e/yr | 18273 dams | meets -40 cm</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Field Validation</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-outline" style="flex:1; min-height:32px; font-size:0.725rem;">Active Fires (FIRMS)</button>
+            <button class="btn btn-outline" style="flex:1; min-height:32px; font-size:0.725rem;">Live NDVI (COG)</button>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">AI Observation Narrative</div>
+          <p class="block-text">Hydrological balance stable. Dense canopy coverage acts as a natural moisture barrier. Target peat_moisture: Canopy health remains optimal (NDVI: 0.62) with positive water retention (NDWI: 0.28).</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Field Recommendations</div>
+          <ul class="list"><li>Maintain baseline environmental surveillance</li></ul>
+        </div>
+        <div class="pass-status">Found 4 Sentinel-2 and 4 Sentinel-1 passes</div>
+        <div class="history">
+          <div style="font-family: monospace; font-size: 0.75rem; font-weight: 600;">sentinel_6453f52e</div>
+          <div style="font-size: 0.7rem; color: var(--muted);">2026-11-12T20:13:10Z</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+            <span>peat_moisture</span><span>913645.65 Ha</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.2rem;">
+            <button class="btn-sm">View</button>
+            <button class="btn-sm">Export</button>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="width: 100%;">Export GIS Bundle (ZIP, XLSX, QGIS)</button>
+      </div>
+    </aside>
+
+    <div class="coords-pill">
+      <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;">BOUNDS</span>
+      <span style="font-family: monospace; font-size: 0.75rem;">[101.5813, 0.3311, 103.4187, 0.6689]</span>
+    </div>
+  </div>
+</body>
+</html>
