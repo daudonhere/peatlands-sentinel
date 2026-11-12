@@ -5,13 +5,14 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.routes.views import router as views_router
 from app.routes.api.peatlands import router as peatlands_router
+from app.routes.api.analysis import router as analysis_router
+from app.services.storage import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Lifecycle startup hook
+    init_db()
     yield
-    # Lifecycle shutdown hook
 
 
 settings = get_settings()
@@ -27,3 +28,4 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Mount routes
 app.include_router(views_router)
 app.include_router(peatlands_router)
+app.include_router(analysis_router)

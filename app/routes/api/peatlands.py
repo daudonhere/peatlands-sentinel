@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.services.ingestion import search_stac_items
-from app.services.ai_analyst import generate_analyst_brief, RiskAssessment
+from app.services.ai_analyst import generate_analyst_report
+from app.schemas.analysis import AIAnalystReport
 
 router = APIRouter(prefix="/api/peatlands", tags=["Peatlands"])
 
@@ -58,7 +59,7 @@ async def get_scenes_for_aoi(payload: AOIRequest):
         ) from exc
 
 
-@router.get("/assess-risk", response_model=RiskAssessment)
+@router.get("/assess-risk", response_model=AIAnalystReport)
 async def assess_risk(
     ndvi: float = Query(0.65, ge=-1.0, le=1.0),
     ndwi: float = Query(0.12, ge=-1.0, le=1.0),
@@ -70,4 +71,8 @@ async def assess_risk(
         "mean_ndwi": ndwi,
         "max_dnbr": dnbr,
     }
-    return await generate_analyst_brief(metrics)
+    return await generate_analyst_report(
+        target="peat_moisture",
+        metrics=metrics,
+        transitions=[],
+    )
