@@ -21,6 +21,10 @@ def calculate_mndwi(green: np.ndarray, swir1: np.ndarray) -> np.ndarray:
     return compute_normalized_ratio(green, swir1)
 
 
+def calculate_ndmi(nir: np.ndarray, swir1: np.ndarray) -> np.ndarray:
+    return compute_normalized_ratio(nir, swir1)
+
+
 def calculate_nbr(nir: np.ndarray, swir: np.ndarray) -> np.ndarray:
     return compute_normalized_ratio(nir, swir)
 

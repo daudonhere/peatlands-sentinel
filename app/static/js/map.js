@@ -66,23 +66,22 @@
   }
 
   function applyThreatStyles(threatLevel) {
-    let boundaryColor = "#7a7a7a";
-    if (threatLevel === "Critical" || threatLevel === "High") {
-      boundaryColor = "#ffffff";
-      statusBanner.style.backgroundColor = "#1a1a1a";
-      statusBanner.style.borderColor = "#ffffff";
-      statusHeadline.style.color = "#ffffff";
-    } else if (threatLevel === "Moderate") {
-      boundaryColor = "#b3b3b3";
-      statusBanner.style.backgroundColor = "#1a1a1a";
-      statusBanner.style.borderColor = "#b3b3b3";
-      statusHeadline.style.color = "#b3b3b3";
-    } else {
-      statusBanner.style.backgroundColor = "#141414";
-      statusBanner.style.borderColor = "#555555";
-      statusHeadline.style.color = "#a0a0a0";
-    }
-    return boundaryColor;
+    const isHigh = threatLevel === "Critical" || threatLevel === "High";
+    const isMod = threatLevel === "Moderate";
+    const color = isHigh ? "#ffffff" : isMod ? "#b3b3b3" : "#7a7a7a";
+    statusBanner.style.backgroundColor =
+      isHigh || isMod ? "#1a1a1a" : "#141414";
+    statusBanner.style.borderColor = isHigh
+      ? "#ffffff"
+      : isMod
+        ? "#b3b3b3"
+        : "#555555";
+    statusHeadline.style.color = isHigh
+      ? "#ffffff"
+      : isMod
+        ? "#b3b3b3"
+        : "#a0a0a0";
+    return color;
   }
 
   function displayAnalysisData(runData, bbox) {
@@ -134,6 +133,9 @@
     insightsCtrl.renderTransitions(
       runData.land_transitions || runData.transitions,
     );
+    insightsCtrl.renderTimeSeries(runData.time_series);
+    insightsCtrl.renderClassScatter(runData.class_scatter);
+    insightsCtrl.renderModelAccuracy(runData.accuracy);
     insightsCtrl.refreshIntervention();
     resultsContent.classList.remove("hidden");
   }
@@ -146,6 +148,10 @@
       aoiStatusText.textContent = "AOI: Viewport";
     }
   });
+
+  function getActiveGeometry() {
+    return activeCustomGeometry || drawCtrl.getGeometry();
+  }
 
   const overlayCtrl = createRasterOverlayController(map);
 
@@ -185,7 +191,7 @@
 
   map.on("moveend", function () {
     updateCoords();
-    if (!activeCustomGeometry && !currentRunId) {
+    if (!getActiveGeometry() && !currentRunId) {
       renderAoiPolygon(map, getBbox(), "#ffffff");
     }
   });
@@ -198,6 +204,13 @@
     btnExportZip.addEventListener("click", function () {
       if (!currentRunId) return;
       window.location.href = `/api/analysis/${currentRunId}/export`;
+    });
+  }
+
+  const basemapSelect = document.getElementById("basemap-select");
+  if (basemapSelect) {
+    basemapSelect.addEventListener("change", function () {
+      switchBasemap(map, basemapSelect.value);
     });
   }
 
@@ -214,6 +227,8 @@
     const dateStart =
       document.getElementById("date-start").value || "2024-01-01";
     const dateEnd = document.getElementById("date-end").value || "2024-12-31";
+    const dataSourceSelect = document.getElementById("data-source-select");
+    const granularitySelect = document.getElementById("granularity-select");
 
     const splitLabel = selectedTargetText.split(". ")[1];
     resultsTargetLabel.textContent = splitLabel
@@ -223,7 +238,7 @@
 
     const bbox = getBbox();
     const [w, s, e, n] = bbox;
-    const payloadPolygon = activeCustomGeometry || {
+    const payloadPolygon = getActiveGeometry() || {
       type: "Polygon",
       coordinates: [
         [
@@ -242,6 +257,10 @@
         target: selectedTargetKey,
         pre_date_range: "2023-01-01/2023-12-31",
         post_date_range: `${dateStart}/${dateEnd}`,
+        data_source: dataSourceSelect
+          ? dataSourceSelect.value
+          : "planetary_computer",
+        granularity: granularitySelect ? granularitySelect.value : "weekly",
       });
 
       displayAnalysisData(data, bbox);

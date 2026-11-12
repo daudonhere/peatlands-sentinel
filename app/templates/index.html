@@ -41,44 +41,68 @@
         <div class="card-section">
           <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
           <select id="basemap-select" class="form-select">
-          <option>ESRI World Imagery (Cloudless High-Res)</option>
-          <option>Sentinel-2 True Color</option>
-          <option>Sentinel-2 False Color</option>
-          <option>OpenStreetMap</option>
-        </select>
-      </div>
+            <option value="esri">ESRI World Imagery (Cloudless High-Res)</option>
+            <option value="esri_topo">ESRI World Topo Map</option>
+            <option value="esri_terrain">ESRI World Terrain</option>
+            <option value="osm">OpenStreetMap Standard</option>
+            <option value="osm_hot">OpenStreetMap HOT (Humanitarian)</option>
+            <option value="osm_humanitarian">OSM Humanitarian Style</option>
+            <option value="stamen_terrain">Stamen Terrain</option>
+            <option value="stamen_toner">Stamen Toner (B&W)</option>
+            <option value="stamen_watercolor">Stamen Watercolor</option>
+            <option value="cartodb_voyager">CartoDB Voyager</option>
+            <option value="cartodb_positron">CartoDB Positron (Light)</option>
+          </select>
+        </div>
 
-      <div class="card-section">
-        <label for="analysis-target" class="form-label">Analysis Objective</label>
-        <select id="analysis-target" class="form-select">
-          <option value="peat_moisture">1. Peatland Moisture and Extent (S1 + S2)</option>
-          <option value="topography_slope">2. Peat Topography and Slope (Copernicus DEM)</option>
-          <option value="forest_to_bare">3. Forest to Bare Land (Deforestation)</option>
-          <option value="forest_to_mining">4. Forest to Mining Excavation</option>
-          <option value="forest_to_palm">5. Forest to Oil Palm Plantation</option>
-          <option value="deforest_expansion">6. Deforestation Expansion Tracking</option>
-          <option value="reclamation">7. Deforestation Reclamation Monitoring</option>
-          <option value="bare_to_veg">8. Bare Land to Vegetation Succession</option>
-          <option value="wildfire_dnbr">9. Wildfire Susceptibility and Burn Severity (dNBR)</option>
-          <option value="water_dynamics">10. Water Dynamics and Peat Canals (MNDWI)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-section">
-        <label class="form-label">Analysis Period</label>
-        <div class="form-row">
-          <div class="form-group flex-1">
-            <label for="date-start" class="form-label">Start Date</label>
-            <input type="date" id="date-start" class="form-input" value="2024-01-01">
-          </div>
-          <div class="form-group flex-1">
-            <label for="date-end" class="form-label">End Date</label>
-            <input type="date" id="date-end" class="form-input" value="2024-12-31">
-          </div>
+        <div class="card-section">
+          <label for="analysis-target" class="form-label">Analysis Objective</label>
+          <select id="analysis-target" class="form-select">
+            <option value="peat_moisture">1. Peatland Moisture and Extent (S1 + S2)</option>
+            <option value="topography_slope">2. Peat Topography and Slope (Copernicus DEM)</option>
+            <option value="forest_to_bare">3. Forest to Bare Land (Deforestation)</option>
+            <option value="forest_to_mining">4. Forest to Mining Excavation</option>
+            <option value="forest_to_palm">5. Forest to Oil Palm Plantation</option>
+            <option value="deforest_expansion">6. Deforestation Expansion Tracking</option>
+            <option value="reclamation">7. Deforestation Reclamation Monitoring</option>
+            <option value="bare_to_veg">8. Bare Land to Vegetation Succession</option>
+            <option value="wildfire_dnbr">9. Wildfire Susceptibility and Burn Severity (dNBR)</option>
+            <option value="water_dynamics">10. Water Dynamics and Peat Canals (MNDWI)</option>
+          </select>
         </div>
       </div>
+
+      <div class="card">
+        <div class="card-section">
+          <label class="form-label">Analysis Period & Engine</label>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="date-start" class="form-label">Start Date</label>
+              <input type="date" id="date-start" class="form-input" value="2024-01-01">
+            </div>
+            <div class="form-group flex-1">
+              <label for="date-end" class="form-label">End Date</label>
+              <input type="date" id="date-end" class="form-input" value="2024-12-31">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top: 0.5rem;">
+            <div class="form-group flex-1">
+              <label for="data-source-select" class="form-label">Engine</label>
+              <select id="data-source-select" class="form-select">
+                <option value="planetary_computer">Planetary Computer (STAC)</option>
+                <option value="gee">Google Earth Engine</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="granularity-select" class="form-label">Cadence</label>
+              <select id="granularity-select" class="form-select">
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -173,6 +197,34 @@
         </div>
 
         <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="analyst-title" style="margin: 0;">Multi-Temporal Index Trend</h3>
+            <span id="ts-granularity-badge" style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">NDVI / NDWI / NDMI</span>
+          </div>
+          <div id="timeseries-chart" style="margin-top: 0.5rem; width: 100%; min-height: 120px;"></div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="analyst-title" style="margin: 0;">Spectral Feature Clusters</h3>
+            <span style="font-size: 0.65rem; color: var(--text-secondary);">NDVI vs BSI</span>
+          </div>
+          <div id="scatter-chart" style="margin-top: 0.5rem; width: 100%; min-height: 120px;"></div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="analyst-title" style="margin: 0;">Model Validation</h3>
+            <span id="val-accuracy-badge" style="font-size: 0.7rem; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 2px 6px; border-radius: 2px;">OA: -</span>
+          </div>
+          <div id="accuracy-metrics" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.5rem; font-size: 0.75rem;">
+            <div><span style="color: var(--text-secondary);">Overall Acc:</span> <strong id="val-overall-acc">-</strong></div>
+            <div><span style="color: var(--text-secondary);">Kappa:</span> <strong id="val-kappa">-</strong></div>
+            <div><span style="color: var(--text-secondary);">Samples:</span> <strong id="val-samples">-</strong></div>
+          </div>
+        </div>
+
+        <div class="card">
           <h3 class="analyst-title">Canal Blocking Simulation</h3>
           <input type="range" id="dams-slider" min="0" max="20" value="2" style="width: 100%; accent-color: #ffffff;">
           <div id="dams-label" class="history-date" style="margin-top: 0.4rem;">2 dams / 100 Ha</div>
@@ -221,7 +273,8 @@
 {% block scripts %}
 <script src="/static/js/config.js"></script>
 <script src="/static/js/api.js"></script>
-<script src="/static/js/draw.js"></script>
+<script src="/static/js/draw-core.js"></script>
+<script src="/static/js/draw-controller.js"></script>
 <script src="/static/js/overlay.js"></script>
 <script src="/static/js/history.js"></script>
 <script src="/static/js/insights.js"></script>

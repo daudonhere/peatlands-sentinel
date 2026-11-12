@@ -207,52 +207,27 @@ def generate_excel_report(run_data: dict[str, Any]) -> io.BytesIO:
     ws_trans.column_dimensions["C"].width = 18
     ws_trans.column_dimensions["D"].width = 14
 
+    accuracy = run_data.get("accuracy") or {}
+    if accuracy:
+        ws_acc = wb.create_sheet(title="Model Accuracy")
+        ws_acc.append(["Metric", "Value"])
+        for cell in ws_acc["1:1"]:
+            cell.font = header_font
+            cell.fill = header_fill
+        ws_acc.append(["Overall accuracy", accuracy.get("overall_accuracy")])
+        ws_acc.append(["Kappa", accuracy.get("kappa")])
+        ws_acc.append(["Samples", accuracy.get("samples")])
+        ws_acc.append([])
+        ws_acc.append(["Class", *accuracy.get("class_names", [])])
+        for index, row in enumerate(accuracy.get("confusion_matrix", [])):
+            names = accuracy.get("class_names", [])
+            label = names[index] if index < len(names) else str(index)
+            ws_acc.append([label, *row])
+        ws_acc.column_dimensions["A"].width = 28
+
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
     return output
 
 
-def create_export_zip_package(
-    run_data: dict[str, Any],
-    raster_values: "np.ndarray | None" = None,
-    bbox: list[float] | None = None,
-) -> io.BytesIO:
-    import numpy as np
-
-    zip_buffer = io.BytesIO()
-    run_id = run_data.get("id", "run")
-
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        geojson_str = json.dumps(run_data.get("geojson", {}), indent=2)
-        zip_file.writestr(f"{run_id}_boundary.geojson", geojson_str)
-
-        summary_str = json.dumps(run_data, indent=2)
-        zip_file.writestr(f"{run_id}_summary.json", summary_str)
-
-        excel_stream = generate_excel_report(run_data)
-        zip_file.writestr(f"{run_id}_report.xlsx", excel_stream.getvalue())
-
-        ai_report = run_data.get("ai_report", {})
-        bbox = run_data.get("geojson", {}).get("bbox", [0, 0, 0, 0])
-        svg_content = generate_svg_preview(
-            target=run_data.get("target", "analysis"),
-            threat=ai_report.get("threat_level", "Low"),
-            bbox=bbox,
-            area_ha=run_data.get("area_hectares", 0.0),
-        )
-        zip_file.writestr(f"{run_id}_preview.svg", svg_content)
-
-        tif_bytes = generate_geotiff_raster(
-            bbox or run_data.get("geojson", {}).get("bbox", [0, 0, 1, 1]),
-            values=raster_values,
-        )
-        zip_file.writestr(f"{run_id}_raster.tif", tif_bytes)
-
-        qgis_xml = generate_qgis_project_xml(
-            run_id, f"{run_id}_boundary.geojson", f"{run_id}_raster.tif"
-        )
-        zip_file.writestr(f"{run_id}_project.qgs", qgis_xml)
-
-    zip_buffer.seek(0)
-    return zip_buffer

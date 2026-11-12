@@ -127,6 +127,7 @@ def compute_dem_topography_summary(
         "mean_elevation_m": round(float(np.mean(finite)), 1),
         "max_elevation_m": round(float(np.max(finite)), 1),
         "min_elevation_m": round(float(np.min(finite)), 1),
+        "elevation_relief_m": round(float(np.max(finite) - np.min(finite)), 1),
         "mean_slope_deg": round(float(np.mean(slopes)), 2),
         "max_slope_deg": round(float(np.max(slopes)), 2),
     }

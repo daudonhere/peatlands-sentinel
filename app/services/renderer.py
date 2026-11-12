@@ -131,3 +131,19 @@ def generate_spectral_overlay_png(
 
     rgba = np.dstack([r, g, b, a]).tobytes()
     return _encode_png(width, height, rgba)
+
+
+def render_index_png(values: np.ndarray, index: str, size: int = 256) -> bytes:
+    from scipy.ndimage import zoom as nd_zoom
+
+    from app.services.charts import colorize_index
+
+    arr = np.asarray(values, dtype=np.float32)
+    if arr.ndim != 2:
+        arr = np.zeros((size, size), dtype=np.float32)
+    if arr.shape != (size, size):
+        zoom = np.array([size / arr.shape[0], size / arr.shape[1]])
+        arr = nd_zoom(np.nan_to_num(arr, nan=0.0), zoom, order=1)
+    r, g, b = colorize_index(arr, index)
+    alpha = np.full((size, size), 255, dtype=np.uint8)
+    return _encode_png(size, size, np.dstack([r, g, b, alpha]).tobytes())

@@ -35,11 +35,18 @@ class AnalysisPipelineRequest(BaseModel):
         description="Monitoring acquisition window (ISO 8601 interval)",
     )
     max_cloud_cover: float = Field(default=25.0, ge=0.0, le=100.0)
+    data_source: Literal["planetary_computer", "gee"] | None = None
+    granularity: Literal["weekly", "monthly", "yearly"] = "monthly"
+    composite_season: str | None = Field(
+        default=None,
+        description="Optional seasonal window in MM-DD/MM-DD form",
+    )
 
 
 class SpectralSummary(BaseModel):
     mean_ndvi: float
     mean_ndwi: float
+    mean_ndmi: float = 0.0
     mean_nbr: float
     mean_bsi: float
     max_dnbr: float
@@ -51,6 +58,29 @@ class LandTransition(BaseModel):
     to_class: str
     area_hectares: float
     change_percentage: float
+
+
+class ModelAccuracy(BaseModel):
+    overall_accuracy: float
+    kappa: float
+    confusion_matrix: list[list[int]]
+    class_names: list[str]
+    samples: int
+
+
+class TimeSeriesPoint(BaseModel):
+    period: str
+    ndvi: float
+    ndwi: float
+    ndmi: float
+
+
+class ClassScatterPoint(BaseModel):
+    land_class: str
+    pre_ndvi: float
+    post_ndvi: float
+    pre_ndmi: float
+    post_ndmi: float
 
 
 class AIAnalystReport(BaseModel):
@@ -69,4 +99,9 @@ class AnalysisPipelineResponse(BaseModel):
     spectral_metrics: SpectralSummary
     land_transitions: list[LandTransition]
     ai_report: AIAnalystReport
+    telemetry: dict[str, Any] = Field(default_factory=dict)
+    accuracy: ModelAccuracy | None = None
+    time_series: list[TimeSeriesPoint] = Field(default_factory=list)
+    class_scatter: list[ClassScatterPoint] = Field(default_factory=list)
+    data_source: str = "planetary_computer"
     export_available: bool = True

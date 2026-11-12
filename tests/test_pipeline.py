@@ -93,6 +93,9 @@ async def test_end_to_end_pipeline():
         assert metrics["mean_ndvi"] == 0.42
         assert "threat_level" in data["ai_report"]
         assert len(data["land_transitions"]) > 0
+        assert data["accuracy"]["overall_accuracy"] > 0.0
+        assert len(data["time_series"]) > 0
+        assert len(data["class_scatter"]) > 0
 
         res_get = await client.get(f"/api/analysis/{run_id}")
         assert res_get.status_code == 200
@@ -128,12 +131,19 @@ async def test_end_to_end_pipeline():
             assert any(f.endswith("_preview.svg") for f in file_list)
             assert any(f.endswith("_raster.tif") for f in file_list)
             assert any(f.endswith("_project.qgs") for f in file_list)
+            assert any(f.endswith("_boundary.gpkg") for f in file_list)
+            assert any(f.endswith("_report.md") for f in file_list)
+            assert any(f.endswith("_transitions.csv") for f in file_list)
+
+            gpkg_bytes = zf.read([f for f in file_list if f.endswith(".gpkg")][0])
+            assert gpkg_bytes.startswith(b"SQLite format 3\x00")
 
             xlsx_name = [f for f in file_list if f.endswith(".xlsx")][0]
             wb = openpyxl.load_workbook(io.BytesIO(zf.read(xlsx_name)))
             assert "Executive Summary" in wb.sheetnames
             assert "Telemetry & Indices" in wb.sheetnames
             assert "Land Transitions" in wb.sheetnames
+            assert "Model Accuracy" in wb.sheetnames
 
             tif_bytes = zf.read([f for f in file_list if f.endswith(".tif")][0])
             assert tif_bytes.startswith(b"II*\x00")

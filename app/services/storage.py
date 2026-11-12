@@ -28,14 +28,16 @@ def init_db() -> None:
                 metrics TEXT NOT NULL,
                 transitions TEXT NOT NULL,
                 ai_report TEXT NOT NULL,
-                arrays_blob BLOB
+                arrays_blob BLOB,
+                extra TEXT
             )
             """
         )
-        try:
-            conn.execute("ALTER TABLE analysis_runs ADD COLUMN arrays_blob BLOB")
-        except sqlite3.OperationalError:
-            pass
+        for column in ("arrays_blob BLOB", "extra TEXT"):
+            try:
+                conn.execute(f"ALTER TABLE analysis_runs ADD COLUMN {column}")
+            except sqlite3.OperationalError:
+                pass
         conn.commit()
 
 
@@ -66,14 +68,15 @@ def save_analysis_run(
     transitions_data: list[dict[str, Any]],
     ai_report_data: dict[str, Any],
     arrays: dict[str, np.ndarray] | None = None,
+    extra_data: dict[str, Any] | None = None,
 ) -> None:
     init_db()
     with get_db_connection() as conn:
         conn.execute(
             """
             INSERT OR REPLACE INTO analysis_runs
-            (id, created_at, target, area_hectares, geojson, metrics, transitions, ai_report, arrays_blob)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, created_at, target, area_hectares, geojson, metrics, transitions, ai_report, arrays_blob, extra)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -85,6 +88,7 @@ def save_analysis_run(
                 json.dumps(transitions_data),
                 json.dumps(ai_report_data),
                 _pack_arrays(arrays),
+                json.dumps(extra_data or {}),
             ),
         )
         conn.commit()
@@ -94,12 +98,13 @@ def get_analysis_run(run_id: str) -> dict[str, Any] | None:
     init_db()
     with get_db_connection() as conn:
         cursor = conn.execute(
-            "SELECT id, created_at, target, area_hectares, geojson, metrics, transitions, ai_report FROM analysis_runs WHERE id = ?",
+            "SELECT id, created_at, target, area_hectares, geojson, metrics, transitions, ai_report, extra FROM analysis_runs WHERE id = ?",
             (run_id,),
         )
         row = cursor.fetchone()
         if not row:
             return None
+        extra = json.loads(row["extra"] or "{}")
         return {
             "id": row["id"],
             "created_at": row["created_at"],
@@ -109,6 +114,10 @@ def get_analysis_run(run_id: str) -> dict[str, Any] | None:
             "metrics": json.loads(row["metrics"]),
             "transitions": json.loads(row["transitions"]),
             "ai_report": json.loads(row["ai_report"]),
+            "accuracy": extra.get("accuracy"),
+            "time_series": extra.get("time_series", []),
+            "class_scatter": extra.get("class_scatter", []),
+            "data_source": extra.get("data_source"),
         }
 
 

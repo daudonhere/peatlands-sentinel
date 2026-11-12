@@ -3,133 +3,16 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 from app.schemas.analysis import LandTransition, SpectralSummary
-
-CLASS_NAMES = {
-    0: "Primary Forest",
-    1: "Wet Peatland",
-    2: "Bare Land / Cleared",
-    3: "Oil Palm Plantation",
-    4: "Mining Excavation",
-    5: "Water Body",
-}
-
-_FEATURES = ["ndvi", "ndwi", "nbr", "bsi", "sar_vv", "sar_vh"]
-
-_TRAINING_X = np.array(
-    [
-        [0.84, 0.18, 0.72, -0.38, -11.2, -17.5],
-        [0.80, 0.14, 0.68, -0.32, -11.8, -18.1],
-        [0.76, 0.22, 0.65, -0.28, -12.5, -19.0],
-        [0.72, 0.10, 0.60, -0.24, -13.0, -19.8],
-        [0.65, 0.38, 0.52, -0.20, -13.5, -20.2],
-        [0.60, 0.42, 0.48, -0.16, -14.0, -20.8],
-        [0.58, 0.32, 0.44, -0.18, -13.8, -20.4],
-        [0.20, -0.22, 0.12, 0.44, -19.8, -26.5],
-        [0.15, -0.28, 0.08, 0.50, -20.5, -27.2],
-        [0.12, -0.18, 0.06, 0.38, -18.8, -25.5],
-        [0.60, 0.06, 0.42, 0.04, -13.2, -19.6],
-        [0.65, 0.04, 0.46, 0.02, -13.0, -19.2],
-        [0.58, 0.08, 0.40, 0.06, -13.6, -20.0],
-        [0.08, -0.38, -0.12, 0.65, -22.0, -28.8],
-        [0.05, -0.42, -0.18, 0.72, -23.2, -30.0],
-        [0.10, -0.35, -0.08, 0.60, -21.5, -28.0],
-        [-0.12, 0.72, 0.65, -0.55, -24.5, -31.5],
-        [-0.18, 0.68, 0.60, -0.60, -25.2, -32.2],
-        [-0.08, 0.78, 0.70, -0.48, -23.8, -30.8],
-        [0.70, 0.08, 0.55, -0.14, -12.2, -18.8],
-        [0.74, 0.12, 0.58, -0.18, -11.8, -18.2],
-        [0.68, 0.06, 0.52, -0.12, -12.6, -19.2],
-    ],
-    dtype=np.float32,
+from app.services.reference_data import (
+    CLASS_NAMES,
+    FEATURES,
+    TARGET_MODULATORS,
+    TRAINING_X,
+    TRAINING_Y,
 )
 
-_TRAINING_Y = np.array(
-    [0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 0, 0, 0],
-    dtype=np.int32,
-)
-
-TARGET_MODULATORS = {
-    "peat_moisture": {
-        "ndvi": 0.62,
-        "ndwi": 0.28,
-        "nbr": 0.55,
-        "bsi": -0.22,
-        "dnbr": 0.02,
-        "sar": -6.5,
-    },
-    "topography_slope": {
-        "ndvi": 0.68,
-        "ndwi": 0.12,
-        "nbr": 0.60,
-        "bsi": -0.18,
-        "dnbr": 0.01,
-        "sar": -7.2,
-    },
-    "forest_to_bare": {
-        "ndvi": 0.24,
-        "ndwi": -0.20,
-        "nbr": 0.10,
-        "bsi": 0.42,
-        "dnbr": 0.28,
-        "sar": -14.5,
-    },
-    "forest_to_mining": {
-        "ndvi": 0.12,
-        "ndwi": -0.32,
-        "nbr": -0.05,
-        "bsi": 0.62,
-        "dnbr": 0.35,
-        "sar": -18.2,
-    },
-    "forest_to_palm": {
-        "ndvi": 0.58,
-        "ndwi": 0.04,
-        "nbr": 0.44,
-        "bsi": 0.02,
-        "dnbr": 0.14,
-        "sar": -9.8,
-    },
-    "deforest_expansion": {
-        "ndvi": 0.31,
-        "ndwi": -0.16,
-        "nbr": 0.18,
-        "bsi": 0.36,
-        "dnbr": 0.25,
-        "sar": -13.0,
-    },
-    "reclamation": {
-        "ndvi": 0.52,
-        "ndwi": 0.08,
-        "nbr": 0.40,
-        "bsi": -0.05,
-        "dnbr": -0.15,
-        "sar": -8.5,
-    },
-    "bare_to_veg": {
-        "ndvi": 0.48,
-        "ndwi": 0.02,
-        "nbr": 0.35,
-        "bsi": -0.02,
-        "dnbr": -0.10,
-        "sar": -9.2,
-    },
-    "wildfire_dnbr": {
-        "ndvi": 0.18,
-        "ndwi": -0.28,
-        "nbr": -0.12,
-        "bsi": 0.48,
-        "dnbr": 0.58,
-        "sar": -16.0,
-    },
-    "water_dynamics": {
-        "ndvi": -0.05,
-        "ndwi": 0.72,
-        "nbr": -0.20,
-        "bsi": -0.45,
-        "dnbr": 0.00,
-        "sar": -21.0,
-    },
-}
+_TRAINING_MATRIX = np.array(TRAINING_X, dtype=np.float32)
+_TRAINING_LABELS = np.array(TRAINING_Y, dtype=np.int32)
 
 
 @lru_cache(maxsize=1)
@@ -141,8 +24,22 @@ def get_trained_classifier() -> RandomForestClassifier:
         random_state=42,
         n_jobs=-1,
     )
-    rf.fit(_TRAINING_X, _TRAINING_Y)
+    rf.fit(_TRAINING_MATRIX, _TRAINING_LABELS)
     return rf
+
+
+def training_dataset() -> tuple[np.ndarray, np.ndarray]:
+    return _TRAINING_MATRIX.copy(), _TRAINING_LABELS.copy()
+
+
+def feature_names() -> list[str]:
+    return list(FEATURES)
+
+
+def _as_grid(values: np.ndarray, reference: np.ndarray) -> np.ndarray:
+    if values.shape == reference.shape:
+        return values
+    return np.full(reference.shape, float(values.flat[0]), dtype=np.float32)
 
 
 def _build_pixel_features(
@@ -175,6 +72,21 @@ def classify_raster_pixels(features_matrix: np.ndarray) -> np.ndarray:
     return result
 
 
+def classify_arrays(arrays: dict) -> np.ndarray:
+    nan_grid = np.full((128, 128), np.nan, dtype=np.float32)
+    ndvi = arrays.get("ndvi", nan_grid)
+    shape = ndvi.shape if ndvi.ndim == 2 else (128, 128)
+    filler = np.full(shape, np.nan, dtype=np.float32)
+    features = _build_pixel_features(
+        ndvi,
+        _as_grid(arrays.get("ndwi", filler), ndvi),
+        _as_grid(arrays.get("nbr", filler), ndvi),
+        _as_grid(arrays.get("bsi", filler), ndvi),
+        _as_grid(arrays.get("cross_ratio", filler), ndvi),
+    )
+    return classify_raster_pixels(features)
+
+
 def compute_land_transition_matrix(
     pre_classes: np.ndarray, post_classes: np.ndarray, total_area_ha: float
 ) -> list[LandTransition]:
@@ -204,7 +116,7 @@ def compute_land_transition_matrix(
             )
         )
     return (
-        transitions[:6]
+        transitions[:8]
         if transitions
         else [
             LandTransition(
@@ -221,6 +133,7 @@ def build_spectral_summary_from_live(live: dict) -> SpectralSummary:
     return SpectralSummary(
         mean_ndvi=live["mean_ndvi"],
         mean_ndwi=live["mean_ndwi"],
+        mean_ndmi=live.get("mean_ndmi", 0.0),
         mean_nbr=live["mean_nbr"],
         mean_bsi=live["mean_bsi"],
         max_dnbr=live["max_dnbr"],
@@ -231,49 +144,20 @@ def build_spectral_summary_from_live(live: dict) -> SpectralSummary:
 def classify_live_arrays(
     pre_live: dict, post_live: dict, area_ha: float
 ) -> list[LandTransition]:
-    pa = pre_live.get("_arrays", {})
-    oa = post_live.get("_arrays", {})
-
-    nan_grid = np.full((128, 128), np.nan, dtype=np.float32)
-    pre_feat = _build_pixel_features(
-        pa.get("ndvi", nan_grid),
-        pa.get("ndwi", nan_grid) if "ndwi" in pa else nan_grid,
-        pa.get("nbr", nan_grid),
-        pa.get("bsi", nan_grid),
-        pa.get("cross_ratio", nan_grid),
-    )
-    post_feat = _build_pixel_features(
-        oa.get("ndvi", nan_grid),
-        oa.get("ndwi", nan_grid) if "ndwi" in oa else nan_grid,
-        oa.get("nbr", nan_grid),
-        oa.get("bsi", nan_grid),
-        oa.get("cross_ratio", nan_grid),
-    )
-
     return compute_land_transition_matrix(
-        classify_raster_pixels(pre_feat),
-        classify_raster_pixels(post_feat),
+        classify_arrays(pre_live.get("_arrays", {})),
+        classify_arrays(post_live.get("_arrays", {})),
         area_ha,
     )
 
 
-def simulate_aoi_transitions(
-    target: str, run_id: str, area_ha: float
-) -> tuple[SpectralSummary, list[LandTransition]]:
-    spec = TARGET_MODULATORS.get(target, TARGET_MODULATORS["peat_moisture"])
-    summary = SpectralSummary(
-        mean_ndvi=spec["ndvi"],
-        mean_ndwi=spec["ndwi"],
-        mean_nbr=spec["nbr"],
-        mean_bsi=spec["bsi"],
-        max_dnbr=spec["dnbr"],
-        mean_sar_cross_ratio=spec["sar"],
-    )
-    seed = abs(hash(run_id)) % (2**32)
-    rng = np.random.default_rng(seed)
-    noise = rng.normal(0, 0.04, (256, 6)).astype(np.float32)
-    base_pre = np.array([0.78, 0.14, 0.65, -0.28, -11.8, -18.1], dtype=np.float32)
-    base_post = np.array(
+def target_profile(target: str) -> dict:
+    return TARGET_MODULATORS.get(target, TARGET_MODULATORS["peat_moisture"])
+
+
+def _profile_features(target: str) -> np.ndarray:
+    spec = target_profile(target)
+    return np.array(
         [
             spec["ndvi"],
             spec["ndwi"],
@@ -284,9 +168,60 @@ def simulate_aoi_transitions(
         ],
         dtype=np.float32,
     )
-    pre_feat = np.clip(base_pre + noise, -1.0, 1.0)
-    post_feat = np.clip(base_post + noise, -1.0, 1.0)
+
+
+def simulate_features(
+    target: str, run_id: str, rows: int = 256
+) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(abs(hash(run_id)) % (2**32))
+    noise = rng.normal(0, 0.04, (rows, 6)).astype(np.float32)
+    base_pre = np.array([0.78, 0.14, 0.65, -0.28, -11.8, -18.1], dtype=np.float32)
+    base_post = _profile_features(target)
+    pre = np.column_stack(
+        [np.clip(base_pre + noise, -1.0, 1.0)[:, :4], base_pre[4:] + noise[:, 4:]]
+    ).astype(np.float32)
+    post = np.column_stack(
+        [np.clip(base_post + noise, -1.0, 1.0)[:, :4], base_post[4:] + noise[:, 4:]]
+    ).astype(np.float32)
+    return pre, post
+
+
+def simulate_aoi_transitions(
+    target: str, run_id: str, area_ha: float
+) -> tuple[SpectralSummary, list[LandTransition]]:
+    spec = target_profile(target)
+    summary = SpectralSummary(
+        mean_ndvi=spec["ndvi"],
+        mean_ndwi=spec["ndwi"],
+        mean_ndmi=spec.get("ndmi", 0.0),
+        mean_nbr=spec["nbr"],
+        mean_bsi=spec["bsi"],
+        max_dnbr=spec["dnbr"],
+        mean_sar_cross_ratio=spec["sar"],
+    )
+    pre, post = simulate_features(target, run_id)
     transitions = compute_land_transition_matrix(
-        classify_raster_pixels(pre_feat), classify_raster_pixels(post_feat), area_ha
+        classify_raster_pixels(pre), classify_raster_pixels(post), area_ha
     )
     return summary, transitions
+
+
+def simulate_arrays(target: str, run_id: str) -> dict:
+    spec = target_profile(target)
+    rng = np.random.default_rng(abs(hash(run_id + target)) % (2**32))
+    grid = 128
+
+    def field(center: float, spread: float) -> np.ndarray:
+        base = np.full((grid, grid), center, dtype=np.float32)
+        return np.clip(base + rng.normal(0, spread, (grid, grid)), -1.0, 1.0).astype(
+            np.float32
+        )
+
+    return {
+        "ndvi": field(spec["ndvi"], 0.06),
+        "ndwi": field(spec["ndwi"], 0.05),
+        "ndmi": field(spec.get("ndmi", 0.1), 0.06),
+        "nbr": field(spec["nbr"], 0.05),
+        "bsi": field(spec["bsi"], 0.05),
+        "cross_ratio": field(spec["sar"], 0.9),
+    }

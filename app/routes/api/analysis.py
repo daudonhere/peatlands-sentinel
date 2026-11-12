@@ -9,84 +9,30 @@ from app.schemas.analysis import (
     AnalysisPipelineRequest,
     AnalysisPipelineResponse,
     GeoJSONFeature,
-    SpectralSummary,
-)
-from app.services.geospatial import (
-    extract_bbox_from_geometry,
-    calculate_polygon_area_hectares,
-    compute_dem_topography_summary,
-)
-from app.services.hydrology import evaluate_peat_hydrology_profile
-from app.services.classifier import (
-    simulate_aoi_transitions,
-    build_spectral_summary_from_live,
-    classify_live_arrays,
+    ModelAccuracy,
 )
 from app.services.ai_analyst import generate_analyst_report
-from app.services.storage import (
-    save_analysis_run,
-    get_analysis_run,
-    get_analysis_arrays,
-    list_analysis_runs,
+from app.services.bundle import create_export_zip_package
+from app.services.geospatial import (
+    calculate_polygon_area_hectares,
+    compute_dem_topography_summary,
+    extract_bbox_from_geometry,
 )
-from app.services.exporter import create_export_zip_package
-from app.services.renderer import generate_spectral_overlay_png
+from app.services.pipeline import (
+    enrich_metrics,
+    resolve_dem,
+    resolve_spectral,
+    resolve_time_series,
+)
+from app.services.renderer import generate_spectral_overlay_png, render_index_png
+from app.services.storage import (
+    get_analysis_arrays,
+    get_analysis_run,
+    list_analysis_runs,
+    save_analysis_run,
+)
 
 router = APIRouter(prefix="/api/analysis", tags=["Analysis Pipeline"])
-
-
-async def _resolve_spectral(
-    bbox: list[float],
-    payload: AnalysisPipelineRequest,
-    run_id: str,
-    area_ha: float,
-) -> tuple[SpectralSummary, list, dict, dict]:
-    try:
-        from app.services import cog as _cog_module
-
-        live = await asyncio.wait_for(
-            _cog_module.fetch_live_pipeline_metrics(
-                bbox=bbox,
-                pre_date_range=payload.pre_date_range,
-                post_date_range=payload.post_date_range,
-                max_cloud=payload.max_cloud_cover,
-            ),
-            timeout=12.0,
-        )
-        summary = build_spectral_summary_from_live(live)
-        transitions = classify_live_arrays(
-            {"_arrays": live.get("_pre_arrays", live["_arrays"])},
-            {"_arrays": live["_arrays"]},
-            area_ha,
-        )
-        arrays = {
-            **live["_arrays"],
-            "pre_ndvi": live.get("_pre_arrays", {}).get(
-                "ndvi", live["_arrays"]["ndvi"]
-            ),
-            "pre_nbr": live.get("_pre_arrays", {}).get("nbr", live["_arrays"]["nbr"]),
-        }
-        extra = {
-            "source": live.get("source", "live_cog"),
-            "pre_scene_id": live.get("pre_scene_id"),
-            "post_scene_id": live.get("post_scene_id"),
-            "pre_datetime": live.get("pre_datetime"),
-            "post_datetime": live.get("post_datetime"),
-            "valid_pixel_ratio": live.get("valid_pixel_ratio"),
-        }
-        return summary, transitions, arrays, extra
-    except Exception:
-        summary, transitions = simulate_aoi_transitions(payload.target, run_id, area_ha)
-        return summary, transitions, {}, {"source": "simulation"}
-
-
-async def _resolve_dem(bbox: list[float]):
-    from app.services import cog as _cog_module
-
-    try:
-        return await asyncio.wait_for(_cog_module.fetch_live_dem(bbox), timeout=8.0)
-    except Exception:
-        return None
 
 
 @router.post("/run", response_model=AnalysisPipelineResponse)
@@ -109,19 +55,21 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
     created_at = datetime.now(timezone.utc).isoformat()
 
     (
-        (spectral_summary, transitions, arrays, source_meta),
+        (spectral_summary, transitions, arrays, source_meta, scatter),
         dem_grid,
     ) = await asyncio.gather(
-        _resolve_spectral(bbox, payload, run_id, area_ha),
-        _resolve_dem(bbox),
+        resolve_spectral(bbox, payload, run_id, area_ha),
+        resolve_dem(bbox),
     )
 
     topography = compute_dem_topography_summary(bbox, elev_grid=dem_grid)
     metrics_payload = spectral_summary.model_dump()
     metrics_payload.update(topography)
     metrics_payload.update(source_meta)
-    hydrology = evaluate_peat_hydrology_profile(metrics_payload)
-    metrics_payload.update(hydrology)
+    enriched = enrich_metrics(metrics_payload)
+    metrics_payload = enriched["metrics"]
+    accuracy = ModelAccuracy.model_validate(enriched["accuracy"])
+    time_series = await resolve_time_series(bbox, payload, run_id, spectral_summary)
 
     ai_report = await generate_analyst_report(
         target=payload.target,
@@ -146,6 +94,14 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
         transitions_data=[t.model_dump() for t in transitions],
         ai_report_data=ai_report.model_dump(),
         arrays=arrays or None,
+        extra_data={
+            "accuracy": accuracy.model_dump(),
+            "time_series": [point.model_dump() for point in time_series],
+            "class_scatter": [point.model_dump() for point in scatter],
+            "data_source": source_meta.get(
+                "source", payload.data_source or "planetary_computer"
+            ),
+        },
     )
 
     return AnalysisPipelineResponse(
@@ -156,6 +112,13 @@ async def run_analysis_pipeline(payload: AnalysisPipelineRequest):
         spectral_metrics=spectral_summary,
         land_transitions=transitions,
         ai_report=ai_report,
+        telemetry=metrics_payload,
+        accuracy=accuracy,
+        time_series=time_series,
+        class_scatter=scatter,
+        data_source=source_meta.get(
+            "source", payload.data_source or "planetary_computer"
+        ),
         export_available=True,
     )
 
@@ -169,17 +132,25 @@ async def get_run_details(run_id: str):
 
 
 @router.get("/{run_id}/overlay.png")
-async def get_run_overlay_image(run_id: str, period: str = "post"):
+async def get_run_overlay_image(run_id: str, period: str = "post", index: str = "ndvi"):
     run = get_analysis_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Analysis run not found.")
 
-    target = run.get("target", "peat_moisture")
-    metrics = run.get("metrics", {})
-    arrays = get_analysis_arrays(run_id)
-    png_bytes = generate_spectral_overlay_png(
-        target, metrics, width=256, height=256, period=period, arrays=arrays
-    )
+    arrays = get_analysis_arrays(run_id) or {}
+    key = f"pre_{index}" if period == "pre" and f"pre_{index}" in arrays else index
+    values = arrays.get(key)
+    if values is not None and index != "ndvi":
+        png_bytes = render_index_png(values, index)
+    else:
+        png_bytes = generate_spectral_overlay_png(
+            run.get("target", "peat_moisture"),
+            run.get("metrics", {}),
+            width=256,
+            height=256,
+            period=period,
+            arrays=arrays,
+        )
     return StreamingResponse(io.BytesIO(png_bytes), media_type="image/png")
 
 
@@ -192,7 +163,9 @@ async def export_analysis_bundle(run_id: str):
     arrays = get_analysis_arrays(run_id)
     bbox = run.get("geojson", {}).get("bbox", [0, 0, 1, 1])
     ndvi_arr = arrays.get("ndvi") if arrays else None
-    zip_stream = create_export_zip_package(run, raster_values=ndvi_arr, bbox=bbox)
+    zip_stream = create_export_zip_package(
+        run, raster_values=ndvi_arr, bbox=bbox, arrays=arrays
+    )
     filename = f"{run_id}_export.zip"
 
     return StreamingResponse(
