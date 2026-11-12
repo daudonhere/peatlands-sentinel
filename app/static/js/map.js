@@ -184,7 +184,12 @@
     overlayCtrl.setOverlay(runDetails.id, bbox);
   });
 
-  map.on("moveend", updateCoords);
+  map.on("moveend", function () {
+    updateCoords();
+    if (!activeCustomGeometry && !currentRunId) {
+      renderAoiPolygon(map, getBbox(), "#10b981");
+    }
+  });
   map.on("load", function () {
     updateCoords();
     renderAoiPolygon(map, getBbox(), "#10b981");

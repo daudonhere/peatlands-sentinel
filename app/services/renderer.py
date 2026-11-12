@@ -77,8 +77,13 @@ def generate_spectral_overlay_png(
     period: str = "post",
     arrays: dict | None = None,
 ) -> bytes:
-    if arrays and "ndvi" in arrays and arrays["ndvi"].shape[0] > 1:
-        arr = arrays.get("dnbr" if "dnbr" in arrays and period == "post" else "ndvi")
+    if arrays and ("ndvi" in arrays or "pre_ndvi" in arrays):
+        if period == "pre" and "pre_ndvi" in arrays:
+            arr = arrays["pre_ndvi"]
+        elif period == "post" and target == "wildfire_dnbr" and "dnbr" in arrays:
+            arr = arrays["dnbr"]
+        else:
+            arr = arrays.get("ndvi", arrays.get("pre_ndvi"))
         arr_resized = arr
         if arr.shape != (height, width):
             zoom = np.array([height / arr.shape[0], width / arr.shape[1]])

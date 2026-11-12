@@ -56,7 +56,13 @@ async def _resolve_spectral(
             {"_arrays": live["_arrays"]},
             area_ha,
         )
-        arrays = live["_arrays"]
+        arrays = {
+            **live["_arrays"],
+            "pre_ndvi": live.get("_pre_arrays", {}).get(
+                "ndvi", live["_arrays"]["ndvi"]
+            ),
+            "pre_nbr": live.get("_pre_arrays", {}).get("nbr", live["_arrays"]["nbr"]),
+        }
         extra = {
             "source": live.get("source", "live_cog"),
             "pre_scene_id": live.get("pre_scene_id"),
