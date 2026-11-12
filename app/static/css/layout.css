@@ -84,7 +84,20 @@
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+.card-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-panel);
+}
+
+.card-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .form-group {

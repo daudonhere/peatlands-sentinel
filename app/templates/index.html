@@ -14,28 +14,29 @@
 
     <div class="sidebar-body">
       <div class="card">
-        <label for="aoi-geojson" class="form-label">Area of Interest</label>
-        <textarea id="aoi-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw AOI'></textarea>
-        <div class="btn-row">
-          <button id="btn-draw-polygon" type="button" class="btn-sm">Draw AOI</button>
-          <button id="btn-redraw-polygon" type="button" class="btn-sm">Redraw</button>
-          <button id="btn-clear-polygon" type="button" class="btn-sm hidden">Clear</button>
+        <div class="card-section">
+          <label for="aoi-geojson" class="form-label">Area of Interest</label>
+          <textarea id="aoi-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw AOI'></textarea>
+          <div class="btn-row">
+            <button id="btn-draw-polygon" type="button" class="btn-sm">Draw AOI</button>
+            <button id="btn-redraw-polygon" type="button" class="btn-sm">Redraw</button>
+            <button id="btn-clear-polygon" type="button" class="btn-sm hidden">Clear</button>
+          </div>
         </div>
-      </div>
 
-      <div class="card">
-        <label for="boundary-geojson" class="form-label">Boundaries</label>
-        <textarea id="boundary-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw boundaries'></textarea>
-        <div class="btn-row">
-          <button id="btn-draw-boundary" type="button" class="btn-sm">Draw Boundary</button>
-          <button id="btn-redraw-boundary" type="button" class="btn-sm">Redraw</button>
-          <button id="btn-clear-boundary" type="button" class="btn-sm hidden">Clear</button>
+        <div class="card-section">
+          <label for="boundary-geojson" class="form-label">Boundaries</label>
+          <textarea id="boundary-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw boundaries'></textarea>
+          <div class="btn-row">
+            <button id="btn-draw-boundary" type="button" class="btn-sm">Draw Boundary</button>
+            <button id="btn-redraw-boundary" type="button" class="btn-sm">Redraw</button>
+            <button id="btn-clear-boundary" type="button" class="btn-sm hidden">Clear</button>
+          </div>
         </div>
-      </div>
 
-      <div class="card">
-        <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
-        <select id="basemap-select" class="form-select">
+        <div class="card-section">
+          <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
+          <select id="basemap-select" class="form-select">
           <option>ESRI World Imagery (Cloudless High-Res)</option>
           <option>Sentinel-2 True Color</option>
           <option>Sentinel-2 False Color</option>
@@ -43,7 +44,7 @@
         </select>
       </div>
 
-      <div class="card">
+      <div class="card-section">
         <label for="analysis-target" class="form-label">Analysis Objective</label>
         <select id="analysis-target" class="form-select">
           <option value="peat_moisture">1. Peatland Moisture and Extent (S1 + S2)</option>
@@ -58,8 +59,10 @@
           <option value="water_dynamics">10. Water Dynamics and Peat Canals (MNDWI)</option>
         </select>
       </div>
+    </div>
 
-      <div class="section">
+    <div class="card">
+      <div class="card-section">
         <label class="form-label">Analysis Period</label>
         <div class="form-row">
           <div class="form-group flex-1">
@@ -71,6 +74,7 @@
             <input type="date" id="date-end" class="form-input" value="2024-12-31">
           </div>
         </div>
+      </div>
       </div>
     </div>
 
