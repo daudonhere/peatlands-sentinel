@@ -4,6 +4,55 @@ Hasil review struktur kode (17 temuan). Semua item selesai (14 dengan perubahan 
 
 Status: `[ ]` pending, `[x]` done. Selesai: 1-17.
 
+## Feature Expansion (from sentinel-field-analytics)
+
+Tujuan: perluas peatlands-sentinel agar mencakup kemampuan sentinel-field-analytics (GEE, cropland, NDMI, chart, dsb.) tanpa kehilangan fitur existing.
+
+### Data Source & Ingestion
+
+- [ ] Tambah sumber data Google Earth Engine (S2_SR_HARMONIZED, ESA WorldCover) sebagai alternatif/pendamping Planetary Computer.
+- [ ] Dukung Landsat + DEM (Copernicus) via GEE.
+- [ ] Abstraksi data source (Planetary Computer vs GEE) agar bisa dipilih per analisis.
+
+### Domain & Analisis (lebih luas)
+
+- [ ] Perluas domain: cropland/lahan tumbuhan, tidak hanya gambut/deforestasi/kebakaran.
+- [ ] Tambah analisis potensi bencana: longsor, potensi gempa, dan ancaman lain yang bisa dideteksi citra.
+- [ ] Klasifikasi lahan: built_up, bare, vegetation, water (+ wheat/cropland) selain 6 kelas existing.
+
+### Indeks Spektral & Temporal
+
+- [ ] Tambah NDMI (moisture index).
+- [ ] Buat semua indeks bisa diatur per minggu/bulan/tahun (NDVI time series).
+- [ ] Composite seasonal (Aug 01 – Nov 01) seperti sentinel-field-analytics.
+
+### Machine Learning
+
+- [ ] Tambah RF via GEE smileRandomForest (sebagai opsi backend ML).
+- [ ] Stratified sampling dari WorldCover.
+- [ ] Confusion matrix + overall accuracy + kappa report.
+
+### Hidrologi (lebih lengkap)
+
+- [ ] Perluas modul hidrologi: WTD, subsidence, CO2 + tambahan parameter (drainase, kanal, dll).
+
+### AI Analyst
+
+- [ ] Hapus fallback lokal (Ollama localhost). Gunakan Ollama Cloud / OpenRouter.
+- [ ] API key & model diatur di .env (OLLAMA_API_KEY, OLLAMA_URL, OLLAMA_MODEL / OPENROUTER_API_KEY, OPENROUTER_MODEL).
+- [ ] Tetap pakai HTTPX + Pydantic untuk request/validasi.
+
+### Storage & Export (ZIP)
+
+- [ ] ZIP berisi: SVG maps, AOI, PNG maps, CSV, XLSX, GPKG, QGS, markdown (seperti sentinel-field-analytics).
+- [ ] Tambah gambar berwarna (true color, false color, NDWI, NDMI, water mask, landcover, change map).
+- [ ] Tambah chart (NDVI curve, bar chart transisi) ke dalam ZIP.
+
+### Visualisasi Web
+
+- [ ] Tampilkan chart (NDVI time series, transisi) di halaman web.
+- [ ] Preview peta berwarna di UI (bukan hanya overlay monochrome).
+
 ## High
 
 - [x] 1. **Inkonsistensi cloud mask SCL** (dead code removed)
