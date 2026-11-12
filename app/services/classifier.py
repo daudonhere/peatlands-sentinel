@@ -195,8 +195,6 @@ def compute_land_transition_matrix(
     for (c1, c2), count in sorted(
         unique_transitions.items(), key=lambda x: x[1], reverse=True
     ):
-        if c1 == c2 and len(unique_transitions) > 1:
-            continue
         transitions.append(
             LandTransition(
                 from_class=CLASS_NAMES.get(c1, f"Class {c1}"),

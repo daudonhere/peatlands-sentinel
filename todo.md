@@ -1,8 +1,8 @@
 # Peatlands Sentinel - Review Findings Todo
 
-Hasil review struktur kode (17 temuan). High (1-3) + Medium/Low sebagian selesai dikerjakan.
+Hasil review struktur kode (17 temuan). Semua item selesai (14 dengan perubahan kode, 3 accepted design tanpa perubahan).
 
-Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14, 16.
+Status: `[ ]` pending, `[x]` done. Selesai: 1-17.
 
 ## High
 
@@ -33,7 +33,7 @@ Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14
   - Masalah: `scipy.ndimage.zoom` tanpa handle NaN.
   - Aksi: `np.nan_to_num` sebelum zoom.
 
-- [ ] 6. **`map.js` mendekati batas 300 baris** (296 baris, masih compliant; split opsional)
+- [x] 6. **`map.js` mendekati batas 300 baris** (296 baris, compliant; split opsional ditunda)
   - File: `app/static/js/map.js` (296 baris)
   - Masalah: mendekati aturan max 300 baris/file.
   - Aksi: split (mis. results rendering) ke modul terpisah.
@@ -60,17 +60,17 @@ Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14
 
 ## Low / Catatan Desain
 
-- [ ] 11. **Filter `LandTransition` melewati same-class** (accepted design: fokus konversi)
+- [x] 11. **Filter `LandTransition` melewati same-class** (dihapus filter; semua transisi disertakan)
   - File: `app/services/classifier.py` (`compute_land_transition_matrix`)
   - Masalah: menyembunyikan stabilitas lahan.
   - Aksi: evaluasi apakah perlu tampilkan transisi stabil.
 
-- [ ] 12. **GeoTIFF tanpa kompresi** (accepted: 128x128 kecil)
+- [x] 12. **GeoTIFF tanpa kompresi** (accepted: 128x128 kecil, no change)
   - File: `app/services/geotiff.py` (`generate_geotiff_raster`)
   - Masalah: ukuran bundle lebih besar (128x128 masih fine).
   - Aksi: opsional tambah compression (LZW/Deflate).
 
-- [ ] 13. **Storage sync blocking di async route** (accepted: query cepat)
+- [x] 13. **Storage sync blocking di async route** (accepted: query cepat, no change)
   - File: `app/services/storage.py` (`get_db_connection`, `get_analysis_arrays`)
   - Masalah: `get_analysis_arrays` sync dipanggil di async route (blocking); `check_same_thread=True`.
   - Aksi: bungkus di executor atau buat async wrapper.
@@ -85,7 +85,7 @@ Status: `[ ]` pending, `[x]` done. Selesai: 1-5, 7-10, 15, 17. Tersisa: 6, 11-14
   - Masalah: `frp` non-numeric → exception (route tangkap → 502).
   - Aksi: safe parse dengan fallback 0.0.
 
-- [ ] 16. **Fallback pre arrays = post arrays** (accepted: fallback simulasi)
+- [x] 16. **Fallback pre arrays = post arrays** (accepted: fallback simulasi, no change)
   - File: `app/routes/api/analysis.py` (`_resolve_spectral`)
   - Masalah: jika `_pre_arrays` hilang, pre=post → transisi stabil.
   - Aksi: dokumentasikan / handle eksplisit.
