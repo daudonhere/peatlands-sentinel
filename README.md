@@ -1,40 +1,40 @@
 # Peatlands Sentinel
 
-Sistem pemantauan lahan gambut dan perubahan tutupan lahan multi-temporal berbasis citra satelit multimodal (Sentinel-1 SAR, Sentinel-2 Optical, Copernicus DEM, Landsat 8/9, ESA WorldCover) dengan machine learning, estimasi hidrologi gambut, simulasi sekat kanal, multi-hazard assessment, dan AI analyst.
+Multi-temporal peatland monitoring and land cover change detection system using multimodal satellite imagery (Sentinel-1 SAR, Sentinel-2 Optical, Copernicus DEM, Landsat 8/9, ESA WorldCover) with machine learning, peat hydrology estimation, canal blocking simulation, multi-hazard assessment, and AI analyst.
 
-## Fitur Utama
+## Key Features
 
-- **Multimodal Satellite Ingestion**: Pembacaan langsung Cloud-Optimized GeoTIFF (COG) via Planetary Computer STAC (Sentinel-2 L2A spektral B02-B12 + SCL, Sentinel-1 RTC polarisasi VV/VH, Copernicus DEM GLO-30 30m, Landsat 8/9 SR, ESA WorldCover v200).
-- **Google Earth Engine Support**: Alternatif sumber data via GEE (S2_SR_HARMONIZED, S1_GRD, LC08/LC09, WorldCover) dengan RF classifier native (`smileRandomForest`).
-- **Indeks Spektral Lengkap**: NDVI, NDWI/MNDWI, NBR & dNBR, BSI, SAR cross-ratio VH/VV, **NDMI** (Normalized Difference Moisture Index).
+- **Multimodal Satellite Ingestion**: Direct Cloud-Optimized GeoTIFF (COG) reading via Planetary Computer STAC (Sentinel-2 L2A spectral B02-B12 + SCL, Sentinel-1 RTC VV/VH polarization, Copernicus DEM GLO-30 30m, Landsat 8/9 SR, ESA WorldCover v200).
+- **Google Earth Engine Support**: Alternative data source via GEE (S2_SR_HARMONIZED, S1_GRD, LC08/LC09, WorldCover) with native RF classifier (`smileRandomForest`).
+- **Complete Spectral Indices**: NDVI, NDWI/MNDWI, NBR & dNBR, BSI, SAR cross-ratio VH/VV, **NDMI** (Normalized Difference Moisture Index).
 - **Time Series & Seasonal Composite**: NDVI/NDWI/NDMI weekly/monthly/yearly aggregation, seasonal window (Aug 01 – Nov 01).
-- **Model Hidrologi & Emisi Karbon Gambut**: WTD berbasis PP 71/2014 & PP 57/2016 (ambang aman -40 cm), laju amblesan, emisi karbon (0.91 tCO2e/ha/th per cm drainase), drainase intensity, kanal density, water retention capacity.
-- **Multi-Hazard Assessment**: Longsor (slope + SAR anomaly + NDVI drop), deformasi tanah (InSAR proxy via S1 coherence), inundasi pesisir (MNDWI + DEM < 2m).
-- **Simulasi Intervensi Sekat Kanal**: Kalkulasi kenaikan muka air, luas pemulihan, potensi reduksi emisi (tCO2e/th).
-- **Deteksi Titik Panas Kebakaran (Hotspots)**: Integrasi NASA FIRMS VIIRS real-time.
-- **Klasifikasi Tutupan Lahan 8 Kelas**: Hutan Alami, Lahan Gambut Basah, Lahan Terbuka, Kebun Sawit, Tambang Terbuka, Badan Air, **Built-up Area, Cropland/Agriculture**.
-- **Model Validation**: Stratified cross-validation, confusion matrix, overall accuracy, Cohen's kappa, per-class scatter (NDVI vs BSI).
+- **Peat Hydrology & Carbon Emissions Model**: WTD based on PP 71/2014 & PP 57/2016 (safe threshold -40 cm), subsidence rate, carbon emissions (0.91 tCO2e/ha/yr per cm drainage; Hooijer et al., 2012), drainage intensity, canal density, water retention capacity.
+- **Multi-Hazard Assessment**: Landslide (slope + SAR anomaly + NDVI drop), ground deformation (InSAR proxy via S1 coherence), coastal inundation (MNDWI + DEM < 2m).
+- **Canal Blocking Intervention Simulation**: Water table rise, hydrological recovery area, potential carbon emission reduction (tCO2e/yr).
+- **Active Fire Hotspot Detection**: NASA FIRMS VIIRS (SNPP / NOAA-20/21) real-time integration.
+- **8-Class Land Cover Classification**: Natural Forest, Wet Peatland, Bare Land, Oil Palm Plantation, Open Mining, Water Bodies, **Built-up Area, Cropland/Agriculture**.
+- **Model Validation**: Stratified cross-validation, confusion matrix, overall accuracy, Cohen's kappa, per-class spectral scatter (NDVI vs BSI).
 - **AI Analyst**: Multi-provider (OpenAI-compatible, Ollama Cloud, OpenRouter) via HTTPX + Pydantic, deterministic heuristic fallback.
-- **Peta Interaktif Tanpa Build Tools**: Frontend mandiri (zero node_modules) menggunakan MapLibre GL JS, custom point-based AOI drawing, Turf.js via CDN.
-- **Point-Based AOI Drawing**: Klik-titik (vertex), garis preview live, double-click/klik dekat titik awal untuk close polygon. Boundaries dibatasi di luar AOI, warna berbeda (AOI: hijau, Boundaries: merah).
-- **Basemap Gratis 11 Pilihan**: ESRI World Imagery/Topo/Terrain, OSM Standard/HOT/Humanitarian, Stamen Terrain/Toner/Watercolor, CartoDB Voyager/Positron — **tanpa API key**.
-- **Dual Raster Overlay & Blend Slider**: Visualisasi komposit spektral pre vs post dengan kontrol opasitas, overlay per indeks (NDVI/NDWI/NDMI/BSI/dNBR).
-- **Charts Inline**: Time series line chart (NDVI/NDWI/NDMI), spectral scatter (NDVI vs BSI per kelas), model accuracy badge (OA, Kappa, samples).
-- **Ekspor Bundel GIS Lengkap (ZIP)**:
+- **Interactive Map Without Build Tools**: Standalone frontend (zero node_modules) using MapLibre GL JS, custom point-based AOI drawing, Turf.js via CDN.
+- **Point-Based AOI Drawing**: Click vertices, live line preview, double-click/click near first point to close polygon. Boundaries restricted outside AOI, distinct colors (AOI: green, Boundaries: red).
+- **11 Free Basemaps**: ESRI World Imagery/Topo/Terrain, OSM Standard/HOT/Humanitarian, Stamen Terrain/Toner/Watercolor, CartoDB Voyager/Positron — **no API key required**.
+- **Dual Raster Overlay & Blend Slider**: Pre vs post spectral composite visualization with opacity control, per-index overlay (NDVI/NDWI/NDMI/BSI/dNBR).
+- **Inline Charts**: Time series line chart (NDVI/NDWI/NDMI), spectral scatter (NDVI vs BSI per class), model accuracy badge (OA, Kappa, samples).
+- **Complete GIS Export Bundle (ZIP)**:
   - GeoTIFF georeferenced EPSG:4326 (`.tif`)
   - **OGC GeoPackage** (`.gpkg`) — SQLite-based, valid EPSG:4326 metadata
-  - Template proyek desktop QGIS XML (`.qgs`) siap buka
-  - Batas vektor GeoJSON (`.geojson`)
-  - Ringkasan metrik JSON (`.json`)
-  - Laporan Excel multi-sheet (`.xlsx`) via OpenPyXL (termasuk sheet **Model Accuracy**)
+  - QGIS desktop project XML (`.qgs`) ready-to-open
+  - Vector boundary GeoJSON (`.geojson`)
+  - Metrics summary JSON (`.json`)
+  - Multi-sheet Excel report (`.xlsx`) via OpenPyXL (includes **Model Accuracy** sheet)
   - **Markdown report** (`.md`)
   - **CSV**: land transitions, time series
   - **SVG**: time series chart, transition bar chart, accuracy chart
-  - **PNG**: indeks berwarna per band (NDVI, NDWI, NDMI, BSI, dNBR)
-  - Vektor pratinjau SVG (`.svg`)
-- **Penyimpanan Riwayat SQLite**: Database lokal SQLite (`data/peatlands.db`) dengan kompresi raster array `.npz`.
+  - **PNG**: colorized spectral indices per band (NDVI, NDWI, NDMI, BSI, dNBR)
+  - Preview vector SVG (`.svg`)
+- **SQLite History Storage**: Local SQLite database (`data/peatlands.db`) with compressed raster arrays (`.npz`).
 
-## Arsitektur Sistem
+## System Architecture
 
 ```text
 FastAPI Backend (app/)
@@ -67,12 +67,12 @@ Frontend (static/ & templates/)
   └── Analysis: transitions, canal blocking, FIRMS, live NDVI
 ```
 
-## Konfigurasi Lingkungan (.env)
+## Environment Configuration (.env)
 
-Buat file `.env` di root repository:
+Create a `.env` file in the repository root:
 
 ```env
-# NASA FIRMS (untuk active fire hotspots)
+# NASA FIRMS (for active fire hotspots)
 FIRMS_MAP_KEY=your_firms_map_key_here
 
 # Data Source (planetary_computer | gee)
@@ -82,7 +82,7 @@ DATA_SOURCE=planetary_computer
 STAC_API_URL=https://planetarycomputer.microsoft.com/api/stac/v1
 COPERNICUS_STAC_URL=https://catalogue.dataspace.copernicus.eu/stac
 
-# Google Earth Engine (opsional - butuh project + service account)
+# Google Earth Engine (optional - requires project + service account)
 # GEE_PROJECT=your-gee-project-id
 # GEE_SERVICE_ACCOUNT=your-service-account@project.iam.gserviceaccount.com
 # GEE_PRIVATE_KEY_FILE=/path/to/key.json
@@ -93,7 +93,7 @@ AI_API_KEY=
 AI_BASE_URL=https://api.openai.com/v1
 AI_MODEL=gpt-4o-mini
 
-# Ollama Cloud / OpenRouter (alternatif AI provider)
+# Ollama Cloud / OpenRouter (alternative AI provider)
 # OLLAMA_API_KEY=
 # OLLAMA_URL=https://ollama.com/api/chat
 # OLLAMA_MODEL=beam:cloud
@@ -104,9 +104,9 @@ HOST=0.0.0.0
 PORT=8000
 ```
 
-## Menjalankan Aplikasi
+## Running the Application
 
-1. Siapkan virtual environment Python (3.11 atau 3.12):
+1. Set up Python virtual environment (3.11 or 3.12):
 
 ```bash
 uv venv --python 3.12 .venv
@@ -114,23 +114,23 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
-2. Jalankan server FastAPI:
+2. Start FastAPI server:
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-3. Akses antarmuka pemantauan di peramban: `http://localhost:8000`
+3. Access the monitoring interface at: `http://localhost:8000`
 
-## Menjalankan Pengujian
+## Running Tests
 
-Menjalankan pengujian kalkulasi indeks spektral dan end-to-end integrasi:
+Run spectral indices self-checks and end-to-end integration tests:
 
 ```bash
 .venv/bin/python -m tests.test_raster && .venv/bin/python -m tests.test_pipeline
 ```
 
-## Struktur Proyek (ringkas)
+## Project Structure (summary)
 
 ```
 peatlands-sentinel/
@@ -138,7 +138,7 @@ peatlands-sentinel/
 │   ├── config.py                 # Pydantic Settings (.env)
 │   ├── main.py                   # FastAPI entrypoint + lifespan
 │   ├── schemas/analysis.py       # DTOs: GeoJSON, pipeline request/response
-│   ├── services/                 # 20+ modul (cog, gee, raster, geospatial, classifier,
+│   ├── services/                 # 20+ modules (cog, gee, raster, geospatial, classifier,
 │   │                               hydrology, hazard, temporal, model_metrics, validation,
 │   │                               ai_analyst, storage, exporter, bundle, charts, gpkg, renderer, ...)
 │   ├── routes/api/               # REST endpoints: /analysis/run, /{id}/overlay, /export, /history
@@ -155,17 +155,17 @@ peatlands-sentinel/
 └── README.md                     # This file
 ```
 
-## Keterbatasan & Catatan
+## Limitations & Notes
 
 - **Python ≥ 3.11** (typing features: `Self`, `TypeAliasType`).
-- **GDAL/PROJ** via `rasterio` wheels; Linux binary wheels tersedia via PyPI.
-- **Frontend**: MapLibre GL JS 4.x, MapboxDraw 1.4, Turf.js 6.x via CDN — **tanpa npm/build**.
-- **Database**: SQLite (`data/peatlands.db`) — file tunggal, portable.
+- **GDAL/PROJ** via `rasterio` wheels; Linux binary wheels available via PyPI.
+- **Frontend**: MapLibre GL JS 4.x, MapboxDraw 1.4, Turf.js 6.x via CDN — **no npm/build required**.
+- **Database**: SQLite (`data/peatlands.db`) — single file, portable.
 - **Export GPKG**: Pure Python `sqlite3` (WKB geometry), OGC GeoPackage 1.3 compliant.
-- **AI Analyst**: Memerlukan `AI_API_KEY` + provider kompatibel OpenAI, atau `OLLAMA_API_KEY` untuk Ollama Cloud. Fallback deterministic heuristic aktif jika offline.
-- **GEE**: Opsional. Butuh Google Cloud project + Earth Engine API enabled + service account JSON.
-- **FIRMS**: Butuh `FIRMS_MAP_KEY` dari https://firms.modaps.eosdis.nasa.gov/api/.
+- **AI Analyst**: Requires `AI_API_KEY` + OpenAI-compatible provider, or `OLLAMA_API_KEY` for Ollama Cloud. Deterministic heuristic fallback active when offline.
+- **GEE**: Optional. Requires Google Cloud project + Earth Engine API enabled + service account JSON.
+- **FIRMS**: Requires `FIRMS_MAP_KEY` from https://firms.modaps.eosdis.nasa.gov/api/.
 
-## Lisensi
+## License
 
-MIT License — gunakan, modifikasi, distribusikan bebas.
+MIT License — free to use, modify, distribute.
