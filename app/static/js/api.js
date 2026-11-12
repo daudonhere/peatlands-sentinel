@@ -40,3 +40,32 @@ async function fetchRunDetails(runId) {
   }
   return response.json();
 }
+
+async function postJson(url, body) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || `HTTP ${response.status}`);
+  }
+  return data;
+}
+
+function fetchActiveFires(bbox, days) {
+  return postJson("/api/insights/fires", { bbox: bbox, days: days });
+}
+
+function fetchLiveNdvi(bbox, datetimeRange) {
+  return postJson("/api/insights/live-ndvi", { bbox: bbox, datetime_range: datetimeRange });
+}
+
+async function fetchIntervention(runId, damsPer100ha) {
+  const response = await fetch(`/api/insights/${runId}/intervention?dams_per_100ha=${damsPer100ha}`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
+}

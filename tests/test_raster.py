@@ -7,6 +7,7 @@ from app.services.raster import (
     classify_dnbr_severity,
 )
 from app.services.hydrology import evaluate_peat_hydrology_profile
+from app.services.intervention import simulate_canal_blocking
 from app.services.geotiff import generate_geotiff_raster
 
 
@@ -44,7 +45,15 @@ def test_hydrology_and_geotiff():
     assert len(tif) > 1000
 
 
+def test_canal_blocking():
+    r = simulate_canal_blocking(-0.8, 100.0, 4.0)
+    assert r["wtd_after_m"] > r["wtd_before_m"]
+    assert r["emission_reduction_tco2e_ha_year"] > 0
+    assert simulate_canal_blocking(-0.1, 100.0, 20.0)["wtd_after_m"] == 0.0
+
+
 if __name__ == "__main__":
     test_spectral_indices()
+    test_canal_blocking()
     test_hydrology_and_geotiff()
     print("All raster self-checks passed.")

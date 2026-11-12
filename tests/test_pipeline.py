@@ -78,6 +78,13 @@ async def test_end_to_end_pipeline():
         assert res_overlay.headers["content-type"] == "image/png"
         assert res_overlay.content.startswith(b"\x89PNG")
 
+        res_iv = await client.get(f"/api/insights/{run_id}/intervention?dams_per_100ha=4")
+        assert res_iv.status_code == 200
+        assert res_iv.json()["wtd_after_m"] >= res_iv.json()["wtd_before_m"]
+
+        res_fire = await client.post("/api/insights/fires", json={"bbox": [102.0, 0.2, 103.0, 0.8]})
+        assert res_fire.status_code in (200, 502, 503)
+
         res_history = await client.get("/api/analysis/history/list")
         assert res_history.status_code == 200
         history_list = res_history.json()

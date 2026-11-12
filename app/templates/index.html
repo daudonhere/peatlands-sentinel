@@ -175,6 +175,27 @@
       </div>
 
       <div class="analyst-block">
+        <h3 class="analyst-title">Land Conversion (Ha)</h3>
+        <div id="transition-chart" class="bar-chart"></div>
+      </div>
+
+      <div class="analyst-block">
+        <h3 class="analyst-title">Canal Blocking Simulation</h3>
+        <input type="range" id="dams-slider" min="0" max="20" value="2" style="width: 100%; accent-color: var(--status-emerald);">
+        <div id="dams-label" class="history-date">2 dams / 100 Ha</div>
+        <p id="intervention-result" class="analyst-text">Run analysis, then adjust slider.</p>
+      </div>
+
+      <div class="analyst-block">
+        <h3 class="analyst-title">Field Validation</h3>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+          <button id="btn-fires" type="button" class="btn btn-outline btn-sm">Active Fires (FIRMS)</button>
+          <button id="btn-live-ndvi" type="button" class="btn btn-outline btn-sm">Live NDVI (COG)</button>
+        </div>
+        <p id="insight-status" class="analyst-text" style="margin-top: 0.4rem;"></p>
+      </div>
+
+      <div class="analyst-block">
         <h3 class="analyst-title">AI Observation Narrative</h3>
         <p id="analyst-summary" class="analyst-text"></p>
       </div>
@@ -209,5 +230,6 @@
 <script src="/static/js/draw.js"></script>
 <script src="/static/js/overlay.js"></script>
 <script src="/static/js/history.js"></script>
+<script src="/static/js/insights.js"></script>
 <script src="/static/js/map.js"></script>
 {% endblock %}

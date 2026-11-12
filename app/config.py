@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     stac_api_url: str = "https://planetarycomputer.microsoft.com/api/stac/v1"
     copernicus_stac_url: str = "https://catalogue.dataspace.copernicus.eu/stac"
 
+    firms_map_key: str = ""
+
     ai_api_key: str = ""
     ai_base_url: str = "https://api.openai.com/v1"
     ai_model: str = "gpt-4o-mini"

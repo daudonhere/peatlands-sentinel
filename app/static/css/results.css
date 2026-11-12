@@ -209,6 +209,37 @@
   font-size: 0.725rem;
 }
 
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.15rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.bar-track {
+  background-color: var(--bg-subtle);
+  border-radius: 3px;
+  height: 8px;
+}
+
+.bar-fill {
+  background-color: var(--status-amber);
+  height: 100%;
+  border-radius: 3px;
+}
+
+.bar-value {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
 @media (max-width: 900px) {
   .floating-results {
     top: auto;

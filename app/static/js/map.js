@@ -114,6 +114,8 @@
       analystActions.appendChild(li);
     });
 
+    insightsCtrl.renderTransitions(runData.land_transitions || runData.transitions);
+    insightsCtrl.refreshIntervention();
     resultsContent.classList.remove("hidden");
   }
 
@@ -127,6 +129,17 @@
   });
 
   const overlayCtrl = createRasterOverlayController(map);
+
+  const insightsCtrl = createInsightsController(
+    map,
+    getBbox,
+    function () {
+      return currentRunId;
+    },
+    function () {
+      return `${document.getElementById("date-start").value || "2024-01-01"}/${document.getElementById("date-end").value || "2024-12-31"}`;
+    },
+  );
 
   const historyCtrl = createHistoryController(function (runDetails) {
     resultsCard.classList.remove("hidden");
