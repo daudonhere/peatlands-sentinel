@@ -253,18 +253,35 @@
           </div>
         </div>
         <div class="block">
-          <div class="block-title">Statistics</div>
-          <div class="stats">
-            <div class="stat"><div class="stat-label">NDVI Mean</div><div class="stat-value">0.62</div></div>
-            <div class="stat"><div class="stat-label">NDVI Min / Max</div><div class="stat-value">0.42 / 0.80</div></div>
-            <div class="stat"><div class="stat-label">NDWI Mean</div><div class="stat-value">0.28</div></div>
-            <div class="stat"><div class="stat-label">NDWI Min / Max</div><div class="stat-value">0.05 / 0.55</div></div>
-            <div class="stat"><div class="stat-label">NBR Mean</div><div class="stat-value">0.55</div></div>
-            <div class="stat"><div class="stat-label">NBR Min / Max</div><div class="stat-value">0.10 / 0.72</div></div>
-            <div class="stat"><div class="stat-label">BSI Mean</div><div class="stat-value">-0.22</div></div>
-            <div class="stat"><div class="stat-label">BSI Min / Max</div><div class="stat-value">-0.45 / 0.12</div></div>
-            <div class="stat"><div class="stat-label">Std Dev (NDVI)</div><div class="stat-value">0.12</div></div>
-            <div class="stat"><div class="stat-label">Sample Count (n)</div><div class="stat-value">128 x 128</div></div>
+          <div class="block-title">Statistics (Line Chart)</div>
+          <div class="scatter">
+            <svg viewBox="0 0 300 180" preserveAspectRatio="none">
+              <g stroke="#2a2a2a" stroke-width="0.5">
+                <line x1="20" y1="40" x2="280" y2="40" />
+                <line x1="20" y1="70" x2="280" y2="70" />
+                <line x1="20" y1="100" x2="280" y2="100" />
+                <line x1="20" y1="130" x2="280" y2="130" />
+                <line x1="20" y1="160" x2="280" y2="160" />
+                <line x1="60" y1="20" x2="60" y2="160" />
+                <line x1="100" y1="20" x2="100" y2="160" />
+                <line x1="140" y1="20" x2="140" y2="160" />
+                <line x1="180" y1="20" x2="180" y2="160" />
+                <line x1="220" y1="20" x2="220" y2="160" />
+                <line x1="260" y1="20" x2="260" y2="160" />
+              </g>
+              <line x1="20" y1="160" x2="280" y2="160" stroke="#555" stroke-width="1" />
+              <line x1="20" y1="20" x2="20" y2="160" stroke="#555" stroke-width="1" />
+              <polyline points="40,90 70,75 100,100 130,60 160,50 190,80 220,45 250,65 275,55" fill="none" stroke="#ffffff" stroke-width="1.5" />
+              <polyline points="40,110 70,95 100,120 130,85 160,70 190,100 220,60 250,85 275,75" fill="none" stroke="#b3b3b3" stroke-width="1.5" />
+              <polyline points="40,70 70,55 100,80 130,40 160,30 190,60 220,25 250,45 275,35" fill="none" stroke="#7a7a7a" stroke-width="1.5" />
+              <polyline points="40,130 70,115 100,140 130,105 160,95 190,125 220,85 250,110 275,100" fill="none" stroke="#404040" stroke-width="1.5" />
+            </svg>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.4rem; font-size: 0.7rem; color: var(--muted); flex-wrap: wrap;">
+            <span><span style="display:inline-block;width:12px;height:2px;background:#ffffff;margin-right:4px;vertical-align:middle;"></span>NDVI</span>
+            <span><span style="display:inline-block;width:12px;height:2px;background:#b3b3b3;margin-right:4px;vertical-align:middle;"></span>NDWI</span>
+            <span><span style="display:inline-block;width:12px;height:2px;background:#7a7a7a;margin-right:4px;vertical-align:middle;"></span>NBR</span>
+            <span><span style="display:inline-block;width:12px;height:2px;background:#404040;margin-right:4px;vertical-align:middle;"></span>BSI</span>
           </div>
         </div>
         <div class="block">
