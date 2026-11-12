@@ -127,7 +127,7 @@ input:focus-visible {
 }
 
 .btn-primary:hover {
-  background-color: #d4d4d4;
+  background-color: #b3b3b3;
 }
 
 .btn-outline {
@@ -137,7 +137,7 @@ input:focus-visible {
 }
 
 .btn-outline:hover {
-  background-color: #d4d4d4;
+  background-color: #b3b3b3;
 }
 
 .close-btn {

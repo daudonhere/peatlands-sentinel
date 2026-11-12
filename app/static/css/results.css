@@ -294,6 +294,10 @@
     color 0.15s ease;
 }
 
+.btn-sm:hover {
+  background-color: #b3b3b3;
+}
+
 .pass-status {
   font-size: 0.75rem;
   color: var(--text-secondary);
