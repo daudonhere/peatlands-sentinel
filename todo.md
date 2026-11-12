@@ -55,6 +55,18 @@ Tujuan: perluas peatlands-sentinel agar mencakup kemampuan sentinel-field-analyt
 - [ ] Tampilkan nilai akurasi (overall accuracy) & kappa di halaman web.
 - [ ] Sertakan akurasi & kappa di chart yang di-download (ZIP).
 
+## Future Phase: Maritime / Coastal Detection
+
+Tujuan: deteksi kondisi maritim dan pantai, termasuk fenomena "air laut naik ke daratan" akibat epirogenesa positif (daratan turun sehingga terlihat seperti air laut naik).
+
+- [ ] Deteksi garis pantai (shoreline) multi-temporal dari citra satelit (S2/S1).
+- [ ] Deteksi intrusi air laut ke daratan (coastal inundation) via MNDWI/NDWI + elevasi.
+- [ ] Deteksi epirogenesa positif: perubahan relatif air-darat akibat subsidence daratan (gabungkan WTD/subsidence peat + elevasi DEM).
+- [ ] Analisis perubahan badan air (MNDWI) dan dinamika pasang surut (jika data tersedia).
+- [ ] Visualisasi overlay pantai (before/after) + chart perubahan luas air/darat.
+- [ ] Tambah kelas lahan: coastal water, mudflat, mangrove (opsional).
+- [ ] Export peta pantai (PNG/SVG/GeoTIFF) dan laporan maritim di ZIP.
+
 ## High
 
 - [x] 1. **Inkonsistensi cloud mask SCL** (dead code removed)
