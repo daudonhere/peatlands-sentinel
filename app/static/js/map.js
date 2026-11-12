@@ -67,21 +67,21 @@
   }
 
   function applyThreatStyles(threatLevel) {
-    let boundaryColor = "#10b981";
+    let boundaryColor = "#7a7a7a";
     if (threatLevel === "Critical" || threatLevel === "High") {
-      boundaryColor = "#f43f5e";
-      statusBanner.style.backgroundColor = "rgba(244, 63, 94, 0.15)";
-      statusBanner.style.borderColor = "rgba(244, 63, 94, 0.4)";
-      statusHeadline.style.color = "#fca5a5";
+      boundaryColor = "#ffffff";
+      statusBanner.style.backgroundColor = "#1a1a1a";
+      statusBanner.style.borderColor = "#ffffff";
+      statusHeadline.style.color = "#ffffff";
     } else if (threatLevel === "Moderate") {
-      boundaryColor = "#f59e0b";
-      statusBanner.style.backgroundColor = "rgba(245, 158, 11, 0.15)";
-      statusBanner.style.borderColor = "rgba(245, 158, 11, 0.4)";
-      statusHeadline.style.color = "#fde68a";
+      boundaryColor = "#b3b3b3";
+      statusBanner.style.backgroundColor = "#1a1a1a";
+      statusBanner.style.borderColor = "#b3b3b3";
+      statusHeadline.style.color = "#b3b3b3";
     } else {
-      statusBanner.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
-      statusBanner.style.borderColor = "rgba(16, 185, 129, 0.4)";
-      statusHeadline.style.color = "#6ee7b7";
+      statusBanner.style.backgroundColor = "#141414";
+      statusBanner.style.borderColor = "#555555";
+      statusHeadline.style.color = "#a0a0a0";
     }
     return boundaryColor;
   }
@@ -187,12 +187,12 @@
   map.on("moveend", function () {
     updateCoords();
     if (!activeCustomGeometry && !currentRunId) {
-      renderAoiPolygon(map, getBbox(), "#10b981");
+      renderAoiPolygon(map, getBbox(), "#ffffff");
     }
   });
   map.on("load", function () {
     updateCoords();
-    renderAoiPolygon(map, getBbox(), "#10b981");
+    renderAoiPolygon(map, getBbox(), "#ffffff");
   });
 
   dockToggleBtn.addEventListener("click", function () {

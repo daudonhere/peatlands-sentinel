@@ -33,7 +33,7 @@
   background-color: var(--bg-panel);
   border: 1px solid var(--border-panel);
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 4px;
   pointer-events: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
@@ -41,8 +41,8 @@
 .brand-badge {
   width: 12px;
   height: 12px;
-  border-radius: 3px;
-  background-color: var(--status-emerald);
+  border-radius: 2px;
+  background-color: #ffffff;
 }
 
 .brand-title {
@@ -64,7 +64,7 @@
   background-color: var(--bg-panel);
   border: 1px solid var(--border-panel);
   padding: 0.5rem 0.875rem;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 0.775rem;
   color: var(--text-secondary);
   pointer-events: auto;
@@ -75,7 +75,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--status-emerald);
+  background-color: #ffffff;
 }
 
 .floating-dock {
@@ -88,7 +88,7 @@
   z-index: 20;
   background-color: var(--bg-panel);
   border: 1px solid var(--border-panel);
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -100,7 +100,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background-color: rgba(30, 41, 59, 0.7);
+  background-color: #1a1a1a;
   border-bottom: 1px solid var(--border-panel);
 }
 
@@ -154,7 +154,7 @@
   background-color: var(--bg-panel);
   border: 1px solid var(--border-panel);
   padding: 0.4rem 0.875rem;
-  border-radius: 20px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -166,7 +166,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--status-emerald);
+  color: #ffffff;
 }
 
 .coord-val {

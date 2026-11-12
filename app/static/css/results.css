@@ -8,7 +8,7 @@
   z-index: 20;
   background-color: var(--bg-panel);
   border: 1px solid var(--border-panel);
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -30,7 +30,7 @@
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: var(--status-emerald);
+  color: #ffffff;
 }
 
 .results-heading {
@@ -54,15 +54,15 @@
 
 .status-banner {
   padding: 0.75rem;
-  border-radius: 6px;
-  background-color: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 4px;
+  background-color: #1a1a1a;
+  border: 1px solid #555555;
 }
 
 .status-title {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #6ee7b7;
+  color: #ffffff;
 }
 
 .status-sub {
@@ -80,7 +80,7 @@
 .stat-cell {
   background-color: var(--bg-subtle);
   border: 1px solid var(--border-panel);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 0.6rem 0.75rem;
 }
 
@@ -100,7 +100,7 @@
 .analyst-block {
   background-color: var(--bg-canvas);
   border: 1px solid var(--border-panel);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 0.75rem;
 }
 
@@ -134,7 +134,7 @@
   width: 24px;
   height: 24px;
   border: 2px solid var(--border-panel);
-  border-top-color: var(--status-emerald);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0.5rem auto;
@@ -147,21 +147,21 @@
 }
 
 .error-box {
-  background-color: rgba(244, 63, 94, 0.15);
-  border: 1px solid rgba(244, 63, 94, 0.4);
+  background-color: #1a1a1a;
+  border: 1px solid #777777;
   padding: 0.75rem;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .error-text {
   font-size: 0.8rem;
-  color: #fecdd3;
+  color: #ffffff;
 }
 
 .history-card {
   background-color: var(--bg-subtle);
   border: 1px solid var(--border-panel);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 0.65rem 0.75rem;
   display: flex;
   flex-direction: column;
@@ -230,7 +230,7 @@
 }
 
 .bar-fill {
-  background-color: var(--status-amber);
+  background-color: #ffffff;
   height: 100%;
   border-radius: 3px;
 }

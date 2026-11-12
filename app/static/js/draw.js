@@ -38,7 +38,7 @@ function renderAoiPolygon(map, geometryOrBbox, colorHex) {
       type: "fill",
       source: "aoi-boundary",
       paint: {
-        "fill-color": colorHex || "#10b981",
+        "fill-color": colorHex || "#ffffff",
         "fill-opacity": 0.12,
       },
     });
@@ -47,7 +47,7 @@ function renderAoiPolygon(map, geometryOrBbox, colorHex) {
       type: "line",
       source: "aoi-boundary",
       paint: {
-        "line-color": colorHex || "#10b981",
+        "line-color": colorHex || "#ffffff",
         "line-width": 2,
         "line-dasharray": [2, 2],
       },
