@@ -209,7 +209,9 @@ async def get_run_details(run_id: str):
 
 
 @router.get("/{run_id}/overlay.png")
-async def get_run_overlay_image(run_id: str, period: str = "post", index: str = "ndvi"):
+async def get_run_overlay_image(
+    run_id: str, period: str = "post", index: str = "ndvi", target: str | None = None
+):
     run = get_analysis_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Analysis run not found.")
@@ -220,8 +222,9 @@ async def get_run_overlay_image(run_id: str, period: str = "post", index: str = 
     if values is not None and index != "ndvi":
         png_bytes = render_index_png(values, index)
     else:
+        objective = target or run.get("target", "peat_moisture")
         png_bytes = generate_spectral_overlay_png(
-            run.get("target", "peat_moisture"),
+            objective,
             run.get("metrics", {}),
             width=256,
             height=256,

@@ -33,31 +33,7 @@
           </select>
         </div>
 
-        <div class="card-section">
-          <label for="analysis-target" class="form-label">Analysis Objective</label>
-          <select id="analysis-target" class="form-select">
-            <option value="peat_moisture">1. Peatland Moisture and Extent (S1 + S2)</option>
-            <option value="topography_slope">2. Peat Topography and Slope (Copernicus DEM)</option>
-            <option value="forest_to_bare">3. Forest to Bare Land (Deforestation)</option>
-            <option value="forest_to_mining">4. Forest to Mining Excavation</option>
-            <option value="forest_to_palm">5. Forest to Oil Palm Plantation</option>
-            <option value="deforest_expansion">6. Deforestation Expansion Tracking</option>
-            <option value="reclamation">7. Deforestation Reclamation Monitoring</option>
-            <option value="bare_to_veg">8. Bare Land to Vegetation Succession</option>
-            <option value="wildfire_dnbr">9. Wildfire Susceptibility and Burn Severity (dNBR)</option>
-            <option value="water_dynamics">10. Water Dynamics and Peat Canals (MNDWI)</option>
-            <option value="peat_drainage_canal">11. Peatland Drainage &amp; Canal Density</option>
-            <option value="carbon_subsidence">12. Carbon Emission &amp; Subsidence Risk</option>
-            <option value="coastal_inundation">13. Coastal Inundation / Flood Risk</option>
-            <option value="landslide_susceptibility">14. Landslide Susceptibility</option>
-            <option value="ground_deformation">15. Ground Deformation (InSAR proxy)</option>
-            <option value="urban_expansion">16. Built-up / Urban Expansion</option>
-            <option value="cropland_expansion">17. Cropland Expansion</option>
-            <option value="peat_restoration">18. Peatland Restoration Success</option>
-            <option value="seasonal_flooding">19. Seasonal Flooding Dynamics</option>
-            <option value="biodiversity_habitat">20. Biodiversity / Habitat Degradation</option>
-          </select>
-        </div>
+
       </div>
 
       <div class="card">
@@ -265,6 +241,20 @@
         </div>
 
         <div class="pass-status">Found 4 Sentinel-2 and 4 Sentinel-1 passes</div>
+
+        <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem;">
+          Export GIS Bundle (ZIP, XLSX, QGIS)
+        </button>
+
+        <div class="card">
+          <h3 class="analyst-title">Layers (Analysis Objectives)</h3>
+          <div id="layer-list" style="display:flex;flex-direction:column;gap:0.35rem;"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="analyst-title">FIRMS Fire Hotspots</h3>
+          <div id="firms-panel" style="font-size:0.85rem;"></div>
+        </div>
 
         <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem;">
           Export GIS Bundle (ZIP, XLSX, QGIS)

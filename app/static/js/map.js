@@ -256,6 +256,7 @@
         aoiStatusText.textContent = "AOI: Viewport";
       }
     }
+    if (geom) loadFirmsForAoi();
   });
 
   function getActiveGeometry() {
@@ -358,9 +359,8 @@
           : "Querying STAC assets and computing spectral signatures...";
     }
 
-    const selectedTargetKey = analysisTargetSelect.value;
-    const selectedTargetText =
-      analysisTargetSelect.options[analysisTargetSelect.selectedIndex].text;
+    const selectedTargetKey = "peat_moisture";
+    const selectedTargetText = "Peatland Moisture and Extent (S1 + S2)";
     const dateStart =
       document.getElementById("date-start").value || "2024-01-01";
     const dateEnd = document.getElementById("date-end").value || "2024-12-31";
@@ -517,4 +517,220 @@
       btnInspectScenes.disabled = false;
     }
   });
+
+  const OBJECTIVE_LABELS = {
+    peat_moisture: "1. Peatland Moisture and Extent (S1 + S2)",
+    topography_slope: "2. Peat Topography and Slope (Copernicus DEM)",
+    forest_to_bare: "3. Forest to Bare Land (Deforestation)",
+    forest_to_mining: "4. Forest to Mining Excavation",
+    forest_to_palm: "5. Forest to Oil Palm Plantation",
+    deforest_expansion: "6. Deforestation Expansion Tracking",
+    reclamation: "7. Deforestation Reclamation Monitoring",
+    bare_to_veg: "8. Bare Land to Vegetation Succession",
+    wildfire_dnbr: "9. Wildfire Susceptibility and Burn Severity (dNBR)",
+    water_dynamics: "10. Water Dynamics and Peat Canals (MNDWI)",
+    peat_drainage_canal: "11. Peatland Drainage & Canal Density",
+    carbon_subsidence: "12. Carbon Emission & Subsidence Risk",
+    coastal_inundation: "13. Coastal Inundation / Flood Risk",
+    landslide_susceptibility: "14. Landslide Susceptibility",
+    ground_deformation: "15. Ground Deformation (InSAR proxy)",
+    urban_expansion: "16. Built-up / Urban Expansion",
+    cropland_expansion: "17. Cropland Expansion",
+    peat_restoration: "18. Peatland Restoration Success",
+    seasonal_flooding: "19. Seasonal Flooding Dynamics",
+    biodiversity_habitat: "20. Biodiversity / Habitat Degradation",
+  };
+
+  const layerState = {};
+
+  async function runObjectiveLayer(key) {
+    const geom = getActiveGeometry();
+    if (!geom) {
+      alert("Draw AOI first.");
+      return false;
+    }
+    const bbox = getBbox();
+    const dateStart =
+      document.getElementById("date-start").value || "2024-01-01";
+    const dateEnd = document.getElementById("date-end").value || "2024-12-31";
+    const dataSourceSelect = document.getElementById("data-source-select");
+    const granularitySelect = document.getElementById("granularity-select");
+    const payload = {
+      aoi: geom,
+      target: key,
+      pre_date_range: "2023-01-01/2023-12-31",
+      post_date_range: dateStart + "/" + dateEnd,
+      data_source: dataSourceSelect
+        ? dataSourceSelect.value
+        : "planetary_computer",
+      granularity: granularitySelect ? granularitySelect.value : "weekly",
+    };
+
+    const start = await startAsyncAnalysis(payload);
+    const jobId = start.job_id;
+    let data = null;
+    while (true) {
+      const status = await fetchJobStatus(jobId);
+      if (status.status === "done") {
+        data = status.result;
+        break;
+      }
+      if (status.status === "error") {
+        throw new Error(status.error || "Analysis failed");
+      }
+      await new Promise(function (resolve) {
+        setTimeout(resolve, 500);
+      });
+    }
+
+    const runBbox =
+      data.geojson && data.geojson.bbox ? data.geojson.bbox : bbox;
+    const sourceId = "layer-src-" + key;
+    const layerId = "layer-" + key;
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    map.addSource(sourceId, {
+      type: "image",
+      url: "/api/analysis/" + data.run_id + "/overlay.png?period=post",
+      coordinates: [
+        [runBbox[0], runBbox[3]],
+        [runBbox[2], runBbox[3]],
+        [runBbox[2], runBbox[1]],
+        [runBbox[0], runBbox[1]],
+      ],
+    });
+    map.addLayer({
+      id: layerId,
+      type: "raster",
+      source: sourceId,
+      paint: { "raster-opacity": 0.65 },
+    });
+
+    layerState[key] = {
+      checked: true,
+      runId: data.run_id,
+      sourceId: sourceId,
+      layerId: layerId,
+    };
+    return true;
+  }
+
+  function removeObjectiveLayer(key) {
+    const st = layerState[key];
+    if (!st) return;
+    if (map.getLayer(st.layerId)) map.removeLayer(st.layerId);
+    if (map.getSource(st.sourceId)) map.removeSource(st.sourceId);
+    st.checked = false;
+  }
+
+  function renderLayerList() {
+    const container = document.getElementById("layer-list");
+    if (!container) return;
+    container.innerHTML = "";
+    Object.keys(OBJECTIVE_LABELS).forEach(function (key) {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.gap = "0.4rem";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = key;
+      cb.checked = true;
+
+      const label = document.createElement("span");
+      label.textContent = OBJECTIVE_LABELS[key];
+      label.style.fontSize = "0.8rem";
+
+      const info = document.createElement("div");
+      info.style.fontSize = "0.7rem";
+      info.style.color = "#7a7a7a";
+      info.style.marginLeft = "1.6rem";
+      info.textContent = "Overlay layer (NDVI/BSI composite)";
+
+      cb.addEventListener("change", async function () {
+        cb.disabled = true;
+        try {
+          if (cb.checked) {
+            const ok = await runObjectiveLayer(key);
+            if (!ok) cb.checked = false;
+          } else {
+            removeObjectiveLayer(key);
+          }
+        } catch (err) {
+          cb.checked = false;
+          alert("Layer failed: " + err.message);
+        } finally {
+          cb.disabled = false;
+          if (layerState[key]) layerState[key].checked = cb.checked;
+        }
+      });
+
+      row.appendChild(cb);
+      row.appendChild(label);
+      container.appendChild(row);
+      container.appendChild(info);
+    });
+  }
+
+  function loadFirmsForAoi() {
+    const geom = getActiveGeometry();
+    if (!geom) return;
+    const bbox = getBbox();
+    const end = new Date().toISOString().substring(0, 10);
+    const start = new Date(Date.now() - 30 * 86400000)
+      .toISOString()
+      .substring(0, 10);
+    fetch("/api/insights/fires", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bbox: bbox, start_date: start, end_date: end }),
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        const panel = document.getElementById("firms-panel");
+        if (!panel) return;
+        if (data.count > 0) {
+          panel.innerHTML =
+            "<strong>FIRMS: " +
+            data.count +
+            " active fire hotspots in AOI (last 30 days)</strong>";
+          panel.style.color = "#e03e3e";
+        } else {
+          panel.innerHTML =
+            "FIRMS: No active fire hotspots in AOI (last 30 days)";
+          panel.style.color = "#4a4a4a";
+        }
+      })
+      .catch(function (err) {
+        const panel = document.getElementById("firms-panel");
+        if (panel) panel.textContent = "FIRMS: Error - " + err.message;
+      });
+  }
+
+  async function runAllObjectives() {
+    const keys = Object.keys(OBJECTIVE_LABELS);
+    for (const key of keys) {
+      const cb =
+        document.querySelector(
+          "#layer-list input[type=checkbox][value=" + key + "]",
+        ) || document.querySelector("#layer-list input[type=checkbox]");
+      if (cb) cb.checked = true;
+      await runObjectiveLayer(key);
+    }
+  }
+
+  const origAnalyze =
+    window.analyzeClick || document.getElementById("btn-run-analysis")?.onclick;
+  document
+    .getElementById("btn-run-analysis")
+    .addEventListener("click", async function () {
+      if (origAnalyze) origAnalyze.call(this);
+      await runAllObjectives();
+      loadFirmsForAoi();
+    });
+
+  renderLayerList();
 })();
