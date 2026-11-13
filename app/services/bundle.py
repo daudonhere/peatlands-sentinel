@@ -3,7 +3,13 @@ import json
 import zipfile
 from typing import Any
 
-from app.services.exporter import generate_excel_report, generate_svg_preview, generate_qgis_project_xml
+import numpy as np
+
+from app.services.exporter import (
+    generate_excel_report,
+    generate_svg_preview,
+    generate_qgis_project_xml,
+)
 from app.services.geotiff import generate_geotiff_raster
 
 

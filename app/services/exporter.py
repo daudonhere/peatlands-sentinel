@@ -1,12 +1,7 @@
 import io
-import json
-import zipfile
 from typing import Any
 import openpyxl
 from openpyxl.styles import Font, PatternFill
-
-
-from app.services.geotiff import generate_geotiff_raster
 
 
 def generate_qgis_project_xml(
@@ -229,5 +224,3 @@ def generate_excel_report(run_data: dict[str, Any]) -> io.BytesIO:
     wb.save(output)
     output.seek(0)
     return output
-
-

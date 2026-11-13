@@ -60,8 +60,14 @@ def _fallback_gradient(height: int, width: int, target: str, period: str) -> np.
     if target in (
         "wildfire_dnbr",
         "forest_to_bare",
-        "deforest_expansion",
         "forest_to_mining",
+        "deforest_expansion",
+        "peat_drainage_canal",
+        "landslide_susceptibility",
+        "ground_deformation",
+        "carbon_subsidence",
+        "urban_expansion",
+        "biodiversity_habitat",
     ):
         return 1.0 - val * 0.7
     if target in ("peat_moisture", "water_dynamics"):
@@ -105,11 +111,22 @@ def generate_spectral_overlay_png(
         if target in (
             "wildfire_dnbr",
             "forest_to_bare",
-            "deforest_expansion",
             "forest_to_mining",
+            "deforest_expansion",
+            "peat_drainage_canal",
+            "landslide_susceptibility",
+            "ground_deformation",
+            "carbon_subsidence",
+            "urban_expansion",
+            "biodiversity_habitat",
         ):
             r, g, b = _colormap_fire(norm)
-        elif target in ("peat_moisture", "water_dynamics"):
+        elif target in (
+            "peat_moisture",
+            "water_dynamics",
+            "coastal_inundation",
+            "seasonal_flooding",
+        ):
             r, g, b = _colormap_water(norm)
         else:
             r, g, b = _colormap_rdylgn(norm)
@@ -119,11 +136,22 @@ def generate_spectral_overlay_png(
         if target in (
             "wildfire_dnbr",
             "forest_to_bare",
-            "deforest_expansion",
             "forest_to_mining",
+            "deforest_expansion",
+            "peat_drainage_canal",
+            "landslide_susceptibility",
+            "ground_deformation",
+            "carbon_subsidence",
+            "urban_expansion",
+            "biodiversity_habitat",
         ):
             r, g, b = _colormap_fire(grad)
-        elif target in ("peat_moisture", "water_dynamics"):
+        elif target in (
+            "peat_moisture",
+            "water_dynamics",
+            "coastal_inundation",
+            "seasonal_flooding",
+        ):
             r, g, b = _colormap_water(grad)
         else:
             r, g, b = _colormap_rdylgn(grad)

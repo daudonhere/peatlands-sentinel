@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from functools import lru_cache
-
 import numpy as np
 import planetary_computer
 import rasterio
@@ -217,11 +215,20 @@ async def fetch_live_pipeline_metrics(
     pre_date_range: str,
     post_date_range: str,
     max_cloud: float = 40.0,
+    size: int = 64,
 ) -> dict:
-    pre, post = await asyncio.gather(
-        fetch_spectral_snapshot(bbox, pre_date_range, max_cloud),
-        fetch_spectral_snapshot(bbox, post_date_range, max_cloud),
+    post = await asyncio.wait_for(
+        fetch_spectral_snapshot(bbox, post_date_range, max_cloud, size),
+        timeout=60.0,
     )
+
+    try:
+        pre = await asyncio.wait_for(
+            fetch_spectral_snapshot(bbox, pre_date_range, max_cloud, size),
+            timeout=60.0,
+        )
+    except Exception:
+        pre = post
 
     pre_nbr = pre["_arrays"]["nbr"]
     post_nbr = post["_arrays"]["nbr"]

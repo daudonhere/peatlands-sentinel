@@ -35,6 +35,9 @@ function createHistoryController(onSelectRun) {
           <div class="history-actions">
             <button type="button" class="btn btn-primary btn-sm btn-load" data-id="${run.id}">Load Map</button>
             <a href="/api/analysis/${run.id}/export" class="btn btn-outline btn-sm">ZIP</a>
+            <button type="button" class="btn btn-outline btn-sm btn-delete" data-id="${run.id}" aria-label="Delete history" style="color:#ef4444;border-color:#ef4444;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+            </button>
           </div>
         `;
 
@@ -44,6 +47,18 @@ function createHistoryController(onSelectRun) {
             const runDetails = await fetchRunDetails(run.id);
             if (onSelectRun) onSelectRun(runDetails);
           });
+
+        const deleteBtn = item.querySelector(".btn-delete");
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", async function () {
+            try {
+              await deleteAnalysisRun(run.id);
+              loadHistory();
+            } catch (err) {
+              alert("Failed to delete history: " + err.message);
+            }
+          });
+        }
 
         listContainer.appendChild(item);
       });

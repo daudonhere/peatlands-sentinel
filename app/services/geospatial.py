@@ -131,3 +131,65 @@ def compute_dem_topography_summary(
         "mean_slope_deg": round(float(np.mean(slopes)), 2),
         "max_slope_deg": round(float(np.max(slopes)), 2),
     }
+
+
+def _geometry_from_input(geometry: Any) -> dict[str, Any] | None:
+    if isinstance(geometry, dict) and geometry.get("type") == "Feature":
+        geometry = geometry.get("geometry", {})
+    if isinstance(geometry, dict) and geometry.get("type") in (
+        "Polygon",
+        "MultiPolygon",
+    ):
+        return geometry
+    return None
+
+
+def _points_in_ring(xs: np.ndarray, ys: np.ndarray, ring: list[Any]) -> np.ndarray:
+    if len(ring) < 3:
+        return np.zeros(np.broadcast(xs, ys).shape, dtype=bool)
+    x = np.asarray(xs, dtype=float)
+    y = np.asarray(ys, dtype=float)
+    inside = np.zeros(x.shape, dtype=bool)
+    n = len(ring)
+    j = n - 1
+    for i in range(n):
+        xi = float(ring[i][0])
+        yi = float(ring[i][1])
+        xj = float(ring[j][0])
+        yj = float(ring[j][1])
+        with np.errstate(divide="ignore", invalid="ignore"):
+            xinters = (xj - xi) * (y - yi) / (yj - yi) + xi
+        cond = ((yi > y) != (yj > y)) & (x < xinters)
+        inside ^= cond
+        j = i
+    return inside
+
+
+def polygon_mask(
+    geometry: Any, bbox: list[float], shape: tuple[int, int]
+) -> np.ndarray:
+    geom = _geometry_from_input(geometry)
+    rows, cols = shape
+    if geom is None:
+        return np.ones((rows, cols), dtype=bool)
+    min_x, min_y, max_x, max_y = bbox
+    xs = np.linspace(min_x, max_x, cols)
+    ys = np.linspace(max_y, min_y, rows)
+    xx, yy = np.meshgrid(xs, ys)
+    polygons: list[list[Any]] = []
+    if geom["type"] == "Polygon":
+        polygons = [geom.get("coordinates", [])]
+    elif geom["type"] == "MultiPolygon":
+        polygons = geom.get("coordinates", [])
+
+    mask = np.zeros((rows, cols), dtype=bool)
+    for poly in polygons:
+        if not poly:
+            continue
+        inside = _points_in_ring(xx, yy, poly[0])
+        for hole in poly[1:]:
+            inside = inside & (~_points_in_ring(xx, yy, hole))
+        mask = mask | inside
+    if not mask.any():
+        return np.ones((rows, cols), dtype=bool)
+    return mask

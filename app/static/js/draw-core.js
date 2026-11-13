@@ -11,7 +11,26 @@ function getGeoJsonTextarea(id) {
 
 function setGeoJsonTextarea(id, geometry) {
   const ta = getGeoJsonTextarea(id);
-  if (ta) ta.value = JSON.stringify(geometry, null, 2);
+  if (!ta) return;
+  if (!geometry) {
+    ta.value = "";
+    return;
+  }
+  if (geometry.type === "FeatureCollection") {
+    ta.value = JSON.stringify(geometry, null, 2);
+    return;
+  }
+  const featureCollection = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {},
+        geometry: geometry,
+      },
+    ],
+  };
+  ta.value = JSON.stringify(featureCollection, null, 2);
 }
 
 function getGeometryFromTextarea(id) {
@@ -142,18 +161,14 @@ function updateDrawSources(map, prefix, points, closed) {
   map
     .getSource(vid)
     .setData({ type: "FeatureCollection", features: vertexFeatures });
-  map
-    .getSource(lid)
-    .setData({
-      type: "FeatureCollection",
-      features: lineFeature ? [lineFeature] : [],
-    });
-  map
-    .getSource(fid)
-    .setData({
-      type: "FeatureCollection",
-      features: fillFeature ? [fillFeature] : [],
-    });
+  map.getSource(lid).setData({
+    type: "FeatureCollection",
+    features: lineFeature ? [lineFeature] : [],
+  });
+  map.getSource(fid).setData({
+    type: "FeatureCollection",
+    features: fillFeature ? [fillFeature] : [],
+  });
 }
 
 function clearDrawSources(map, prefix) {
@@ -168,6 +183,21 @@ function pointsToPolygon(points) {
   const coords = points.map(pointToLngLat);
   coords.push(coords[0]);
   return { type: "Polygon", coordinates: [coords] };
+}
+
+function renderStaticLine(map, geometry, color, layerId) {
+  const geojson = { type: "Feature", geometry: geometry };
+  if (map.getSource(layerId)) {
+    map.getSource(layerId).setData(geojson);
+  } else {
+    map.addSource(layerId, { type: "geojson", data: geojson });
+    map.addLayer({
+      id: `${layerId}-stroke`,
+      type: "line",
+      source: layerId,
+      paint: { "line-color": color, "line-width": 2 },
+    });
+  }
 }
 
 function renderStaticPolygon(map, geometry, color, layerId) {

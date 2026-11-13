@@ -52,6 +52,16 @@ label {
   cursor: pointer;
 }
 
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
 button:focus-visible,
 select:focus-visible,
 input:focus-visible {

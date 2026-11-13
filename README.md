@@ -17,7 +17,7 @@ Multi-temporal peatland monitoring and land cover change detection system using 
 - **AI Analyst**: Multi-provider (OpenAI-compatible, Ollama Cloud, OpenRouter) via HTTPX + Pydantic, deterministic heuristic fallback.
 - **Interactive Map Without Build Tools**: Standalone frontend (zero node_modules) using MapLibre GL JS, custom point-based AOI drawing, Turf.js via CDN.
 - **Point-Based AOI Drawing**: Click vertices, live line preview, double-click/click near first point to close polygon. Boundaries restricted outside AOI, distinct colors (AOI: green, Boundaries: red).
-- **11 Free Basemaps**: ESRI World Imagery/Topo/Terrain, OSM Standard/HOT/Humanitarian, Stamen Terrain/Toner/Watercolor, CartoDB Voyager/Positron — **no API key required**.
+- **13 Free Basemaps**: ESRI World Imagery/Topo/Terrain/Street/Shaded Relief/Physical/NatGeo/Ocean/Light Gray/Dark Gray, OpenStreetMap Standard, OpenTopoMap, CyclOSM — **no API key required**.
 - **Dual Raster Overlay & Blend Slider**: Pre vs post spectral composite visualization with opacity control, per-index overlay (NDVI/NDWI/NDMI/BSI/dNBR).
 - **Inline Charts**: Time series line chart (NDVI/NDWI/NDMI), spectral scatter (NDVI vs BSI per class), model accuracy badge (OA, Kappa, samples).
 - **Complete GIS Export Bundle (ZIP)**:

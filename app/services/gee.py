@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -36,7 +35,10 @@ def _initialize() -> bool:
             str(settings.gee_private_key_file), project_id=settings.gee_project
         )
     try:
-        ee.Initialize(credentials, project=settings.gee_project)
+        if credentials is None:
+            ee.Initialize(project=settings.gee_project)
+        else:
+            ee.Initialize(credentials, project=settings.gee_project)
         return True
     except Exception:
         return False
@@ -100,7 +102,6 @@ def _worldcover_image() -> Any:
         .select("landcover", ["class"])
         .int16()
     )
-
 
 
 def collection_catalog() -> list[str]:

@@ -52,6 +52,7 @@ class PlanetaryComputerSource:
             pre_date_range=pre_date_range,
             post_date_range=post_date_range,
             max_cloud=max_cloud,
+            size=32,
         )
         meta = {
             k: v

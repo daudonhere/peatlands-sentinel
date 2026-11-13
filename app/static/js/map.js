@@ -10,10 +10,85 @@
 
   map.addControl(
     new maplibregl.NavigationControl({ showCompass: true }),
-    "top-right",
+    "bottom-right",
   );
 
+  (function () {
+    let orbiting = false;
+    let rafId = null;
+
+    function stopOrbit() {
+      orbiting = false;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      const btn = document.querySelector(".orbit-toggle-btn");
+      if (btn) btn.textContent = "3D";
+    }
+
+    function startOrbit() {
+      orbiting = true;
+      const btn = document.querySelector(".orbit-toggle-btn");
+      if (btn) btn.textContent = "2D";
+      map.easeTo({ pitch: 60, duration: 800 });
+      const tick = function () {
+        if (!orbiting) return;
+        map.setBearing(map.getBearing() + 0.3);
+        rafId = requestAnimationFrame(tick);
+      };
+      setTimeout(function () {
+        if (orbiting) tick();
+      }, 850);
+    }
+
+    const container = document.createElement("div");
+    container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "orbit-toggle-btn";
+    btn.textContent = "3D";
+    btn.title = "Toggle 3D orbit";
+    btn.addEventListener("click", function () {
+      if (orbiting) {
+        stopOrbit();
+      } else {
+        startOrbit();
+      }
+    });
+    container.appendChild(btn);
+
+    const ctrl = {
+      onAdd: function () {
+        return container;
+      },
+      onRemove: function () {
+        if (container.parentNode) {
+          container.parentNode.removeChild(container);
+        }
+      },
+    };
+    map.addControl(ctrl, "bottom-right");
+
+    map.on("mousedown", function () {
+      if (orbiting) stopOrbit();
+    });
+  })();
+
   const coordsText = document.getElementById("coords-text");
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const dateStartInput = document.getElementById("date-start");
+  const dateEndInput = document.getElementById("date-end");
+  if (dateStartInput) {
+    dateStartInput.max = todayIso;
+    if (dateStartInput.value > todayIso) dateStartInput.value = todayIso;
+  }
+  if (dateEndInput) {
+    dateEndInput.max = todayIso;
+    if (dateEndInput.value > todayIso) dateEndInput.value = todayIso;
+  }
   const aoiStatusText = document.getElementById("aoi-status-text");
   const analysisTargetSelect = document.getElementById("analysis-target");
   const dockToggleBtn = document.getElementById("dock-toggle-btn");
@@ -122,6 +197,16 @@
         : bbox;
     renderAoiPolygon(map, geometry, boundaryColor);
 
+    const resultsDrawer = document.getElementById("results-card");
+    if (resultsDrawer && resultsDrawer.classList.contains("collapsed")) {
+      resultsDrawer.classList.remove("collapsed");
+      const toggle = document.getElementById("drawer-toggle");
+      if (toggle) {
+        toggle.style.right = "400px";
+        toggle.textContent = "\u00bb";
+      }
+    }
+
     analystSummary.textContent = `${aiReport.fire_risk_summary || ""} ${aiReport.classification_reasoning || ""}`;
     analystActions.innerHTML = "";
     (aiReport.recommended_actions || []).forEach(function (action) {
@@ -142,10 +227,12 @@
 
   const drawCtrl = createDrawController(map, function (geom) {
     activeCustomGeometry = geom;
-    if (geom) {
-      aoiStatusText.textContent = "AOI: Drawn Custom Polygon";
-    } else {
-      aoiStatusText.textContent = "AOI: Viewport";
+    if (aoiStatusText) {
+      if (geom) {
+        aoiStatusText.textContent = "AOI: Drawn Custom Polygon";
+      } else {
+        aoiStatusText.textContent = "AOI: Viewport";
+      }
     }
   });
 
@@ -168,6 +255,12 @@
 
   const historyCtrl = createHistoryController(function (runDetails) {
     resultsCard.classList.remove("hidden");
+    resultsCard.classList.remove("collapsed");
+    const drawerToggle = document.getElementById("drawer-toggle");
+    if (drawerToggle) {
+      drawerToggle.style.right = "400px";
+      drawerToggle.textContent = "\u00bb";
+    }
     resultsEmpty.classList.add("hidden");
     resultsLoading.classList.add("hidden");
     resultsError.classList.add("hidden");
@@ -191,13 +284,9 @@
 
   map.on("moveend", function () {
     updateCoords();
-    if (!getActiveGeometry() && !currentRunId) {
-      renderAoiPolygon(map, getBbox(), "#ffffff");
-    }
   });
   map.on("load", function () {
     updateCoords();
-    renderAoiPolygon(map, getBbox(), "#ffffff");
   });
 
   if (btnExportZip) {
@@ -215,11 +304,33 @@
   }
 
   btnRunAnalysis.addEventListener("click", async function () {
+    const activeGeometry = getActiveGeometry();
+    if (!activeGeometry) {
+      resultsCard.classList.remove("hidden");
+      resultsEmpty.classList.add("hidden");
+      resultsContent.classList.add("hidden");
+      resultsError.classList.remove("hidden");
+      resultsErrorText.textContent =
+        "Gambar boundary AOI terlebih dahulu sebelum menjalankan analisis.";
+      return;
+    }
+
     resultsCard.classList.remove("hidden");
     resultsEmpty.classList.add("hidden");
     resultsContent.classList.add("hidden");
     resultsError.classList.add("hidden");
     resultsLoading.classList.remove("hidden");
+    const loadingDesc = document.querySelector(
+      "#results-loading .results-state-desc",
+    );
+    if (loadingDesc) {
+      const dsSelect = document.getElementById("data-source-select");
+      const ds = dsSelect ? dsSelect.value : "planetary_computer";
+      loadingDesc.textContent =
+        ds === "gee"
+          ? "Querying Google Earth Engine assets and computing spectral signatures..."
+          : "Querying STAC assets and computing spectral signatures...";
+    }
 
     const selectedTargetKey = analysisTargetSelect.value;
     const selectedTargetText =
@@ -237,22 +348,19 @@
     resultsHeading.textContent = "Telemetry & AI Diagnostic";
 
     const bbox = getBbox();
-    const [w, s, e, n] = bbox;
-    const payloadPolygon = getActiveGeometry() || {
-      type: "Polygon",
-      coordinates: [
-        [
-          [w, s],
-          [e, s],
-          [e, n],
-          [w, n],
-          [w, s],
-        ],
-      ],
-    };
+    const payloadPolygon = getActiveGeometry();
+
+    // Open right sidebar immediately
+    resultsCard.classList.remove("hidden");
+    resultsCard.classList.remove("collapsed");
+    const drawerToggle = document.getElementById("drawer-toggle");
+    if (drawerToggle) {
+      drawerToggle.style.right = "400px";
+      drawerToggle.textContent = "\u00bb";
+    }
 
     try {
-      const data = await fetchPipelineAnalysis({
+      const payload = {
         aoi: payloadPolygon,
         target: selectedTargetKey,
         pre_date_range: "2023-01-01/2023-12-31",
@@ -261,10 +369,37 @@
           ? dataSourceSelect.value
           : "planetary_computer",
         granularity: granularitySelect ? granularitySelect.value : "weekly",
-      });
+      };
 
-      displayAnalysisData(data, bbox);
-      overlayCtrl.setOverlay(data.run_id, bbox);
+      const start = await startAsyncAnalysis(payload);
+      const jobId = start.job_id;
+
+      let data = null;
+      while (true) {
+        const status = await fetchJobStatus(jobId);
+        const pct = typeof status.progress === "number" ? status.progress : 0;
+        const msg = status.message || "";
+        const fill = document.getElementById("analysis-progress-fill");
+        const text = document.getElementById("analysis-progress-text");
+        if (fill) fill.style.width = `${pct}%`;
+        if (text) text.textContent = `${pct}/100${msg ? " - " + msg : ""}`;
+        if (status.status === "done") {
+          data = status.result;
+          break;
+        }
+        if (status.status === "error") {
+          throw new Error(status.error || "Analysis failed");
+        }
+        await new Promise(function (resolve) {
+          setTimeout(resolve, 500);
+        });
+      }
+
+      resultsLoading.classList.add("hidden");
+      const runBbox =
+        data.geojson && data.geojson.bbox ? data.geojson.bbox : bbox;
+      displayAnalysisData(data, runBbox);
+      overlayCtrl.setOverlay(data.run_id, runBbox);
     } catch (err) {
       resultsErrorText.textContent =
         "Analysis execution failed: " + err.message;

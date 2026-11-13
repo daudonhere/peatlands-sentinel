@@ -30,18 +30,6 @@ const BASEMAP_PROVIDERS = {
     tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
     attribution: "&copy; OpenStreetMap contributors",
   },
-  osm_hot: {
-    tiles: ["https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"],
-    attribution: "&copy; OpenStreetMap contributors, Tiles style by HOT",
-  },
-  osm_humanitarian: {
-    tiles: [
-      "https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-      "https://b.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-      "https://c.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-    ],
-    attribution: "&copy; OpenStreetMap contributors, Humanitarian style",
-  },
   esri_topo: {
     tiles: [
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
@@ -54,45 +42,59 @@ const BASEMAP_PROVIDERS = {
     ],
     attribution: "&copy; Esri, USGS, NOAA",
   },
-  stamen_terrain: {
+  esri_street: {
     tiles: [
-      "https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg",
-      "https://stamen-tiles.b.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg",
-      "https://stamen-tiles.c.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
     ],
-    attribution: "&copy; Stamen Design, OpenStreetMap contributors",
+    attribution: "&copy; Esri, HERE, Garmin, USGS",
   },
-  stamen_toner: {
+  esri_shaded_relief: {
     tiles: [
-      "https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png",
-      "https://stamen-tiles.b.ssl.fastly.net/toner/{z}/{x}/{y}.png",
-      "https://stamen-tiles.c.ssl.fastly.net/toner/{z}/{x}/{y}.png",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
     ],
-    attribution: "&copy; Stamen Design, OpenStreetMap contributors",
+    attribution: "&copy; Esri, USGS",
   },
-  stamen_watercolor: {
+  esri_physical: {
     tiles: [
-      "https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg",
-      "https://stamen-tiles.b.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg",
-      "https://stamen-tiles.c.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}",
     ],
-    attribution: "&copy; Stamen Design, OpenStreetMap contributors",
+    attribution: "&copy; Esri, USGS, NOAA",
   },
-  cartodb_voyager: {
-    tiles: [
-      "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-      "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-      "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-    ],
-    attribution: "&copy; CARTO, OpenStreetMap contributors",
+  opentopomap: {
+    tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+    attribution: "&copy; OpenTopoMap, OpenStreetMap contributors",
   },
-  cartodb_positron: {
+  esri_natgeo: {
     tiles: [
-      "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}",
     ],
-    attribution: "&copy; CARTO, OpenStreetMap contributors",
+    attribution: "&copy; Esri, National Geographic, Garmin",
+  },
+  esri_ocean: {
+    tiles: [
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+    ],
+    attribution: "&copy; Esri, GEBCO, NOAA, Garmin",
+  },
+  esri_light_gray: {
+    tiles: [
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    ],
+    attribution: "&copy; Esri, HERE, Garmin",
+  },
+  esri_dark_gray: {
+    tiles: [
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    ],
+    attribution: "&copy; Esri, HERE, Garmin",
+  },
+  cyclosm: {
+    tiles: [
+      "https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+      "https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+      "https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+    ],
+    attribution: "&copy; CyclOSM, OpenStreetMap contributors",
   },
   thunderforest_landscape: {
     tiles: ["https://tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey="],
@@ -108,16 +110,18 @@ const BASEMAP_PROVIDERS = {
 
 const FREE_BASEMAPS = [
   "esri",
-  "osm",
-  "osm_hot",
-  "osm_humanitarian",
   "esri_topo",
   "esri_terrain",
-  "stamen_terrain",
-  "stamen_toner",
-  "stamen_watercolor",
-  "cartodb_voyager",
-  "cartodb_positron",
+  "esri_street",
+  "esri_shaded_relief",
+  "esri_physical",
+  "esri_natgeo",
+  "esri_ocean",
+  "esri_light_gray",
+  "esri_dark_gray",
+  "osm",
+  "opentopomap",
+  "cyclosm",
 ];
 
 const MAP_STYLE_SATELLITE = {

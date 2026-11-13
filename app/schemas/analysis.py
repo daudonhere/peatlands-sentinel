@@ -20,8 +20,34 @@ class GeoJSONFeature(BaseModel):
     properties: dict[str, Any] = Field(default_factory=dict)
 
 
+def _line_to_polygon(value: dict[str, Any]) -> dict[str, Any]:
+    if value.get("type") == "LineString":
+        coords = [list(point) for point in value.get("coordinates", [])]
+        if len(coords) >= 3:
+            if coords[0] != coords[-1]:
+                coords.append(list(coords[0]))
+            return {"type": "Polygon", "coordinates": [coords]}
+    return value
+
+
 class AnalysisPipelineRequest(BaseModel):
     aoi: GeoJSONFeature | GeoJSONGeometry
+
+    @field_validator("aoi", mode="before")
+    @classmethod
+    def normalize_aoi(cls, value: Any) -> Any:
+        if isinstance(value, dict):
+            if value.get("type") == "FeatureCollection":
+                for feature in value.get("features", []):
+                    if isinstance(feature, dict) and feature.get("geometry"):
+                        value = feature
+                        break
+            if isinstance(value, dict) and value.get("type") == "Feature":
+                value = value.get("geometry", value)
+            if isinstance(value, dict):
+                value = _line_to_polygon(value)
+        return value
+
     target: str = Field(
         default="peat_moisture",
         description="Target analysis type (e.g. peat_moisture, forest_to_bare, wildfire_dnbr)",
@@ -105,3 +131,4 @@ class AnalysisPipelineResponse(BaseModel):
     class_scatter: list[ClassScatterPoint] = Field(default_factory=list)
     data_source: str = "planetary_computer"
     export_available: bool = True
+    geojson: dict[str, Any] | None = None

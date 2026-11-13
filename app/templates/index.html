@@ -15,43 +15,21 @@
     <div class="sidebar-body">
       <div class="card">
         <div class="card-section">
-          <label for="aoi-geojson" class="form-label">Area of Interest</label>
-          <textarea id="aoi-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw AOI'></textarea>
-          <div class="btn-row">
-            <button id="btn-draw-polygon" type="button" class="btn-sm">Draw AOI</button>
-            <button id="btn-redraw-polygon" type="button" class="btn-sm">Redraw</button>
-            <button id="btn-clear-polygon" type="button" class="btn-sm hidden">Clear</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-section">
-          <label for="boundary-geojson" class="form-label">Boundaries</label>
-          <textarea id="boundary-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw boundaries'></textarea>
-          <div class="btn-row">
-            <button id="btn-draw-boundary" type="button" class="btn-sm">Draw Boundary</button>
-            <button id="btn-redraw-boundary" type="button" class="btn-sm">Redraw</button>
-            <button id="btn-clear-boundary" type="button" class="btn-sm hidden">Clear</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-section">
           <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
           <select id="basemap-select" class="form-select">
-            <option value="esri">ESRI World Imagery (Cloudless High-Res)</option>
+            <option value="esri">ESRI World Imagery (Satellite)</option>
             <option value="esri_topo">ESRI World Topo Map</option>
-            <option value="esri_terrain">ESRI World Terrain</option>
+            <option value="esri_terrain">ESRI World Terrain Base</option>
+            <option value="esri_street">ESRI World Street Map</option>
+            <option value="esri_shaded_relief">ESRI Shaded Relief</option>
+            <option value="esri_physical">ESRI Physical Map</option>
+            <option value="esri_natgeo">ESRI National Geographic</option>
+            <option value="esri_ocean">ESRI Ocean Base</option>
+            <option value="esri_light_gray">ESRI Light Gray Canvas</option>
+            <option value="esri_dark_gray">ESRI Dark Gray Canvas</option>
             <option value="osm">OpenStreetMap Standard</option>
-            <option value="osm_hot">OpenStreetMap HOT (Humanitarian)</option>
-            <option value="osm_humanitarian">OSM Humanitarian Style</option>
-            <option value="stamen_terrain">Stamen Terrain</option>
-            <option value="stamen_toner">Stamen Toner (B&W)</option>
-            <option value="stamen_watercolor">Stamen Watercolor</option>
-            <option value="cartodb_voyager">CartoDB Voyager</option>
-            <option value="cartodb_positron">CartoDB Positron (Light)</option>
+            <option value="opentopomap">OpenTopoMap</option>
+            <option value="cyclosm">CyclOSM (Cycling)</option>
           </select>
         </div>
 
@@ -68,7 +46,37 @@
             <option value="bare_to_veg">8. Bare Land to Vegetation Succession</option>
             <option value="wildfire_dnbr">9. Wildfire Susceptibility and Burn Severity (dNBR)</option>
             <option value="water_dynamics">10. Water Dynamics and Peat Canals (MNDWI)</option>
+            <option value="peat_drainage_canal">11. Peatland Drainage &amp; Canal Density</option>
+            <option value="carbon_subsidence">12. Carbon Emission &amp; Subsidence Risk</option>
+            <option value="coastal_inundation">13. Coastal Inundation / Flood Risk</option>
+            <option value="landslide_susceptibility">14. Landslide Susceptibility</option>
+            <option value="ground_deformation">15. Ground Deformation (InSAR proxy)</option>
+            <option value="urban_expansion">16. Built-up / Urban Expansion</option>
+            <option value="cropland_expansion">17. Cropland Expansion</option>
+            <option value="peat_restoration">18. Peatland Restoration Success</option>
+            <option value="seasonal_flooding">19. Seasonal Flooding Dynamics</option>
+            <option value="biodiversity_habitat">20. Biodiversity / Habitat Degradation</option>
           </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-section">
+          <label for="aoi-geojson" class="form-label">Area of Interest</label>
+          <textarea id="aoi-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw AOI'></textarea>
+          <div class="btn-row">
+            <button id="btn-draw-polygon" type="button" class="btn-sm">Draw</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-section">
+          <label for="boundary-geojson" class="form-label">Boundaries</label>
+          <textarea id="boundary-geojson" class="textarea" placeholder='{"type":"Polygon","coordinates":[...]} or draw boundaries'></textarea>
+          <div class="btn-row">
+            <button id="btn-draw-boundary" type="button" class="btn-sm">Draw</button>
+          </div>
         </div>
       </div>
 
@@ -78,11 +86,11 @@
           <div class="form-row">
             <div class="form-group flex-1">
               <label for="date-start" class="form-label">Start Date</label>
-              <input type="date" id="date-start" class="form-input" value="2024-01-01">
+              <input type="date" id="date-start" class="form-input" value="2024-01-01" max="2026-11-13" onclick="if (this.showPicker) this.showPicker();">
             </div>
             <div class="form-group flex-1">
               <label for="date-end" class="form-label">End Date</label>
-              <input type="date" id="date-end" class="form-input" value="2024-12-31">
+              <input type="date" id="date-end" class="form-input" value="2024-12-31" max="2026-11-13" onclick="if (this.showPicker) this.showPicker();">
             </div>
           </div>
           <div class="form-row" style="margin-top: 0.5rem;">
@@ -113,13 +121,13 @@
   </aside>
   <button id="sidebar-toggle" type="button" class="edge-toggle left" aria-label="Toggle sidebar">&laquo;</button>
 
-  <aside id="results-card" class="drawer" aria-label="Analysis Results Panel" aria-live="polite">
+  <aside id="results-card" class="drawer collapsed" aria-label="Analysis Results Panel" aria-live="polite">
     <div class="drawer-header">
       <div>
         <h2 id="results-heading" class="drawer-heading">Telemetry Overview</h2>
         <span id="results-target-label" class="drawer-tag">Peatland Moisture</span>
       </div>
-      <button id="btn-open-history-drawer" type="button" class="btn-sm">Run History</button>
+      <button id="btn-open-history-drawer" type="button" class="btn-sm">History</button>
     </div>
 
     <div class="drawer-body">
@@ -129,7 +137,11 @@
 
       <div id="results-loading" class="results-state hidden">
         <div class="sonar-spinner" aria-hidden="true"></div>
-        <p class="results-state-desc">Querying STAC assets and computing spectral signatures...</p>
+        <p class="results-state-desc">Querying satellite assets and computing spectral signatures...</p>
+        <div style="width:100%;height:8px;background:#1a1a1a;border:1px solid #333;border-radius:4px;overflow:hidden;margin-top:0.75rem;">
+          <div id="analysis-progress-fill" style="width:0%;height:100%;background:#ffffff;transition:width .2s;"></div>
+        </div>
+        <p id="analysis-progress-text" class="results-state-desc" style="margin-top:0.35rem;">0/100</p>
       </div>
 
       <div id="results-content" class="results-state hidden">
@@ -278,7 +290,7 @@
 <script src="/static/js/overlay.js"></script>
 <script src="/static/js/history.js"></script>
 <script src="/static/js/insights.js"></script>
-<script src="/static/js/map.js"></script>
+<script src="/static/js/map.js?v=2"></script>
 <script>
   (function () {
     var sb = document.getElementById("sidebar");

@@ -33,8 +33,36 @@ async function fetchHistoryList() {
   return response.json();
 }
 
+async function startAsyncAnalysis(payload) {
+  const response = await fetch("/api/analysis/run-async", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(`API returned HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function fetchJobStatus(jobId) {
+  const response = await fetch(`/api/analysis/${jobId}/status`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
 async function fetchRunDetails(runId) {
   const response = await fetch(`/api/analysis/${runId}`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function deleteAnalysisRun(runId) {
+  const response = await fetch(`/api/analysis/${runId}`, { method: "DELETE" });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
@@ -59,11 +87,16 @@ function fetchActiveFires(bbox, days) {
 }
 
 function fetchLiveNdvi(bbox, datetimeRange) {
-  return postJson("/api/insights/live-ndvi", { bbox: bbox, datetime_range: datetimeRange });
+  return postJson("/api/insights/live-ndvi", {
+    bbox: bbox,
+    datetime_range: datetimeRange,
+  });
 }
 
 async function fetchIntervention(runId, damsPer100ha) {
-  const response = await fetch(`/api/insights/${runId}/intervention?dams_per_100ha=${damsPer100ha}`);
+  const response = await fetch(
+    `/api/insights/${runId}/intervention?dams_per_100ha=${damsPer100ha}`,
+  );
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }

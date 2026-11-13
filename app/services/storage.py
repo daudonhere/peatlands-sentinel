@@ -94,6 +94,13 @@ def save_analysis_run(
         conn.commit()
 
 
+def delete_analysis_run(run_id: str) -> None:
+    init_db()
+    with get_db_connection() as conn:
+        conn.execute("DELETE FROM analysis_runs WHERE id = ?", (run_id,))
+        conn.commit()
+
+
 def get_analysis_run(run_id: str) -> dict[str, Any] | None:
     init_db()
     with get_db_connection() as conn:
