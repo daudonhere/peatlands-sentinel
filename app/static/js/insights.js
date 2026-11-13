@@ -141,8 +141,9 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
 
     const circles = scatter
       .map(function (pt) {
-        const x = padL + ((pt.bsi - bsiMin) / (bsiMax - bsiMin)) * pw;
-        const y = padT + (1 - (pt.ndvi - ndviMin) / (ndviMax - ndviMin)) * ph;
+        const x = padL + ((pt.post_bsi - bsiMin) / (bsiMax - bsiMin)) * pw;
+        const y =
+          padT + (1 - (pt.post_ndvi - ndviMin) / (ndviMax - ndviMin)) * ph;
         const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
         const cx = Math.max(padL, Math.min(w - padR, x)).toFixed(1);
         const cy = Math.max(padT, Math.min(padT + ph, y)).toFixed(1);

@@ -79,6 +79,7 @@ def class_scatter_from_arrays(
 
     pre_ndvi, post_ndvi = column(pre_arrays, "ndvi"), column(post_arrays, "ndvi")
     pre_ndmi, post_ndmi = column(pre_arrays, "ndmi"), column(post_arrays, "ndmi")
+    pre_bsi, post_bsi = column(pre_arrays, "bsi"), column(post_arrays, "bsi")
     if pre_ndvi is None or post_ndvi is None:
         return []
 
@@ -91,6 +92,7 @@ def class_scatter_from_arrays(
         points.append(
             ClassScatterPoint(
                 land_class=CLASS_NAMES[code],
+                class_code=code,
                 pre_ndvi=round(float(np.nanmean(pre_ndvi[pre_mask])), 4)
                 if pre_mask.any()
                 else 0.0,
@@ -102,6 +104,12 @@ def class_scatter_from_arrays(
                 else 0.0,
                 post_ndmi=round(float(np.nanmean(post_ndmi[post_mask])), 4)
                 if post_ndmi is not None and post_mask.any()
+                else 0.0,
+                pre_bsi=round(float(np.nanmean(pre_bsi[pre_mask])), 4)
+                if pre_bsi is not None and pre_mask.any()
+                else 0.0,
+                post_bsi=round(float(np.nanmean(post_bsi[post_mask])), 4)
+                if post_bsi is not None and post_mask.any()
                 else 0.0,
             )
         )

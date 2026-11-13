@@ -103,10 +103,13 @@ class TimeSeriesPoint(BaseModel):
 
 class ClassScatterPoint(BaseModel):
     land_class: str
+    class_code: int
     pre_ndvi: float
     post_ndvi: float
     pre_ndmi: float
     post_ndmi: float
+    pre_bsi: float
+    post_bsi: float
 
 
 class AIAnalystReport(BaseModel):
