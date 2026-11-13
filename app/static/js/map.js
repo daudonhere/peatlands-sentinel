@@ -87,7 +87,7 @@
   }
   if (dateEndInput) {
     dateEndInput.max = todayIso;
-    if (dateEndInput.value > todayIso) dateEndInput.value = todayIso;
+    dateEndInput.value = todayIso;
   }
   const aoiStatusText = document.getElementById("aoi-status-text");
   const analysisTargetSelect = document.getElementById("analysis-target");
@@ -95,6 +95,8 @@
   const dockBody = document.getElementById("dock-body");
 
   const resultsCard = document.getElementById("results-card");
+  const historyPanel = document.getElementById("history-panel");
+  const inspectPanel = document.getElementById("inspect-panel");
   const resultsCloseBtn = document.getElementById("results-close-btn");
   const resultsEmpty = document.getElementById("results-empty");
   const resultsLoading = document.getElementById("results-loading");
@@ -125,6 +127,26 @@
 
   let currentRunId = null;
   let activeCustomGeometry = null;
+
+  function showPanel(name) {
+    const panels = [
+      "results-empty",
+      "results-loading",
+      "results-error",
+      "results-content",
+      "history-panel",
+      "inspect-panel",
+    ];
+    panels.forEach(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === name) {
+        el.classList.remove("hidden");
+      } else {
+        el.classList.add("hidden");
+      }
+    });
+  }
 
   function getBbox() {
     const b = map.getBounds();
@@ -261,6 +283,7 @@
       drawerToggle.style.right = "400px";
       drawerToggle.textContent = "\u00bb";
     }
+    showPanel("results-content");
     resultsEmpty.classList.add("hidden");
     resultsLoading.classList.add("hidden");
     resultsError.classList.add("hidden");
@@ -316,10 +339,13 @@
     }
 
     resultsCard.classList.remove("hidden");
-    resultsEmpty.classList.add("hidden");
-    resultsContent.classList.add("hidden");
-    resultsError.classList.add("hidden");
-    resultsLoading.classList.remove("hidden");
+    resultsCard.classList.remove("collapsed");
+    const drawerToggle = document.getElementById("drawer-toggle");
+    if (drawerToggle) {
+      drawerToggle.style.right = "400px";
+      drawerToggle.textContent = "\u00bb";
+    }
+    showPanel("results-loading");
     const loadingDesc = document.querySelector(
       "#results-loading .results-state-desc",
     );
@@ -349,15 +375,6 @@
 
     const bbox = getBbox();
     const payloadPolygon = getActiveGeometry();
-
-    // Open right sidebar immediately
-    resultsCard.classList.remove("hidden");
-    resultsCard.classList.remove("collapsed");
-    const drawerToggle = document.getElementById("drawer-toggle");
-    if (drawerToggle) {
-      drawerToggle.style.right = "400px";
-      drawerToggle.textContent = "\u00bb";
-    }
 
     try {
       const payload = {
@@ -395,7 +412,7 @@
         });
       }
 
-      resultsLoading.classList.add("hidden");
+      showPanel("results-content");
       const runBbox =
         data.geojson && data.geojson.bbox ? data.geojson.bbox : bbox;
       displayAnalysisData(data, runBbox);
@@ -403,24 +420,98 @@
     } catch (err) {
       resultsErrorText.textContent =
         "Analysis execution failed: " + err.message;
-      resultsError.classList.remove("hidden");
+      showPanel("results-error");
     } finally {
-      resultsLoading.classList.add("hidden");
+      // keep current panel
     }
   });
+
+  function bboxFromGeometry(geom) {
+    if (!geom || !geom.coordinates) return getBbox();
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+    function walk(coords) {
+      if (Array.isArray(coords) && typeof coords[0] === "number") {
+        const lng = coords[0];
+        const lat = coords[1];
+        if (lng < minLng) minLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lng > maxLng) maxLng = lng;
+        if (lat > maxLat) maxLat = lat;
+      } else if (Array.isArray(coords)) {
+        coords.forEach(walk);
+      }
+    }
+    walk(geom.coordinates);
+    if (!isFinite(minLng)) return getBbox();
+    return [
+      Number(minLng.toFixed(4)),
+      Number(minLat.toFixed(4)),
+      Number(maxLng.toFixed(4)),
+      Number(maxLat.toFixed(4)),
+    ];
+  }
 
   btnInspectScenes.addEventListener("click", async function () {
     const originalText = btnInspectScenes.textContent;
     btnInspectScenes.textContent = "Scanning STAC...";
     btnInspectScenes.disabled = true;
 
+    const inspectBbox = bboxFromGeometry(getActiveGeometry());
+
     try {
-      const data = await fetchAoiScenes(getBbox());
-      const countS2 = (data.optical_scenes || []).length;
-      const countS1 = (data.sar_scenes || []).length;
-      aoiStatusText.textContent = `Found ${countS2} Sentinel-2 and ${countS1} Sentinel-1 passes`;
+      const data = await fetchAoiScenes(inspectBbox);
+      const s2 = data.optical_scenes || [];
+      const s1 = data.sar_scenes || [];
+      if (inspectPanel) {
+        inspectPanel.innerHTML = "";
+        const head = document.createElement("div");
+        head.textContent = `Found ${s2.length} Sentinel-2 and ${s1.length} Sentinel-1 passes`;
+        head.style.fontWeight = "600";
+        inspectPanel.appendChild(head);
+
+        if (s2.length) {
+          const sub = document.createElement("div");
+          sub.textContent = "Sentinel-2:";
+          sub.style.marginTop = "0.35rem";
+          inspectPanel.appendChild(sub);
+          s2.forEach(function (scene) {
+            const line = document.createElement("div");
+            line.style.fontSize = "0.75rem";
+            line.style.color = "#a0a0a0";
+            const dt = scene.datetime ? scene.datetime.substring(0, 10) : "-";
+            const cc =
+              typeof scene.cloud_cover === "number"
+                ? ` (cloud ${scene.cloud_cover.toFixed(1)}%)`
+                : "";
+            line.textContent = `${scene.id} - ${dt}${cc}`;
+            inspectPanel.appendChild(line);
+          });
+        }
+
+        if (s1.length) {
+          const sub = document.createElement("div");
+          sub.textContent = "Sentinel-1:";
+          sub.style.marginTop = "0.35rem";
+          inspectPanel.appendChild(sub);
+          s1.forEach(function (scene) {
+            const line = document.createElement("div");
+            line.style.fontSize = "0.75rem";
+            line.style.color = "#a0a0a0";
+            const dt = scene.datetime ? scene.datetime.substring(0, 10) : "-";
+            line.textContent = `${scene.id} - ${dt}`;
+            inspectPanel.appendChild(line);
+          });
+        }
+      }
+      showPanel("inspect-panel");
     } catch (err) {
-      aoiStatusText.textContent = "Pass inspection failed: " + err.message;
+      if (inspectPanel) {
+        inspectPanel.textContent = "Pass inspection failed: " + err.message;
+      }
+      showPanel("inspect-panel");
     } finally {
       btnInspectScenes.textContent = originalText;
       btnInspectScenes.disabled = false;

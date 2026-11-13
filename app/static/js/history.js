@@ -68,8 +68,35 @@ function createHistoryController(onSelectRun) {
   }
 
   function openHistory() {
+    const historyPanel = document.getElementById("history-panel");
+    const panels = [
+      "results-empty",
+      "results-loading",
+      "results-error",
+      "results-content",
+      "history-panel",
+      "inspect-panel",
+    ];
+    panels.forEach(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === "history-panel") {
+        el.classList.remove("hidden");
+      } else {
+        el.classList.add("hidden");
+      }
+    });
+    const resultsCard = document.getElementById("results-card");
+    if (resultsCard) {
+      resultsCard.classList.remove("hidden");
+      resultsCard.classList.remove("collapsed");
+    }
+    const drawerToggle = document.getElementById("drawer-toggle");
+    if (drawerToggle) {
+      drawerToggle.style.right = "400px";
+      drawerToggle.textContent = "\u00bb";
+    }
     loadHistory();
-    if (listContainer) listContainer.scrollIntoView({ behavior: "smooth" });
   }
 
   if (btnOpen) {

@@ -117,6 +117,8 @@
     <div class="sidebar-footer">
       <button id="btn-run-analysis" type="button" class="btn btn-primary">Run Satellite Analysis</button>
       <button id="btn-inspect-scenes" type="button" class="btn btn-outline">Inspect Available Passes</button>
+      <button id="btn-open-history" type="button" class="btn btn-outline">History</button>
+      <p id="aoi-status-text" class="results-state-desc" style="margin-top:0.4rem;"></p>
     </div>
   </aside>
   <button id="sidebar-toggle" type="button" class="edge-toggle left" aria-label="Toggle sidebar">&laquo;</button>
@@ -127,7 +129,7 @@
         <h2 id="results-heading" class="drawer-heading">Telemetry Overview</h2>
         <span id="results-target-label" class="drawer-tag">Peatland Moisture</span>
       </div>
-      <button id="btn-open-history-drawer" type="button" class="btn-sm">History</button>
+
     </div>
 
     <div class="drawer-body">
@@ -264,12 +266,16 @@
 
         <div class="pass-status">Found 4 Sentinel-2 and 4 Sentinel-1 passes</div>
 
-        <div id="history-list" class="results-state"></div>
-
         <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem;">
           Export GIS Bundle (ZIP, XLSX, QGIS)
         </button>
       </div>
+
+      <div id="history-panel" class="results-state hidden">
+        <div id="history-list"></div>
+      </div>
+
+      <div id="inspect-panel" class="results-state hidden"></div>
 
       <div id="results-error" class="results-state hidden" role="alert">
         <div class="error-box">
@@ -288,7 +294,7 @@
 <script src="/static/js/draw-core.js"></script>
 <script src="/static/js/draw-controller.js"></script>
 <script src="/static/js/overlay.js"></script>
-<script src="/static/js/history.js"></script>
+<script src="/static/js/history.js?v=2"></script>
 <script src="/static/js/insights.js"></script>
 <script src="/static/js/map.js?v=2"></script>
 <script>
