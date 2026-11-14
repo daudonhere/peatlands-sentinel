@@ -201,9 +201,22 @@ async def landsat_pipeline_metrics(
 
     def _sample_all(img, bands_list, n=size):
         try:
-            samples = img.select(bands_list).sampleRectangle(
-                region=geom, defaultValue=0
-            )
+            # Calculate scale to keep pixel count under 262k limit
+            bounds_geojson = geom.bounds().getInfo()
+            coords = bounds_geojson["coordinates"][0]
+            lons = [c[0] for c in coords]
+            lats = [c[1] for c in coords]
+            width_deg = max(lons) - min(lons)
+            height_deg = max(lats) - min(lats)
+            meters_per_deg = 111320
+            width_m = width_deg * meters_per_deg
+            height_m = height_deg * meters_per_deg
+            target_pixels = 100
+            scale = max(width_m / target_pixels, height_m / target_pixels, 100.0)
+            scale = min(scale, 5000.0)
+
+            img_reproj = img.select(bands_list).reproject(crs="EPSG:4326", scale=scale)
+            samples = img_reproj.sampleRectangle(region=geom, defaultValue=0)
             result = {}
             for band in bands_list:
                 arr = np.array(samples.get(band).getInfo(), dtype=np.float32)
@@ -414,7 +427,22 @@ async def pipeline_metrics(
     # Sample arrays (post only, pre reuses post shape)
     def _sample_all(img, bands, n=size):
         try:
-            samples = img.select(bands).sampleRectangle(region=geom, defaultValue=0)
+            # Calculate scale to keep pixel count under 262k limit
+            bounds_geojson = geom.bounds().getInfo()
+            coords = bounds_geojson["coordinates"][0]
+            lons = [c[0] for c in coords]
+            lats = [c[1] for c in coords]
+            width_deg = max(lons) - min(lons)
+            height_deg = max(lats) - min(lats)
+            meters_per_deg = 111320
+            width_m = width_deg * meters_per_deg
+            height_m = height_deg * meters_per_deg
+            target_pixels = 100
+            scale = max(width_m / target_pixels, height_m / target_pixels, 100.0)
+            scale = min(scale, 5000.0)
+
+            img_reproj = img.select(bands).reproject(crs="EPSG:4326", scale=scale)
+            samples = img_reproj.sampleRectangle(region=geom, defaultValue=0)
             result = {}
             for band in bands:
                 arr = np.array(samples.get(band).getInfo(), dtype=np.float32)
@@ -435,6 +463,7 @@ async def pipeline_metrics(
             return {band: np.full((n, n), 0.0, dtype=np.float32) for band in bands}
 
     post_sampled = _sample_all(post_img, ["ndvi", "ndwi", "ndmi", "nbr", "bsi"])
+    pre_sampled = _sample_all(pre_img, ["ndvi", "ndwi", "ndmi", "nbr", "bsi"])
 
     ndvi_arr = post_sampled["ndvi"]
     ndwi_arr = post_sampled["ndwi"]
@@ -442,8 +471,11 @@ async def pipeline_metrics(
     nbr_arr = post_sampled["nbr"]
     bsi_arr = post_sampled["bsi"]
 
-    pre_ndvi_arr = ndvi_arr.copy()
-    pre_nbr_arr = nbr_arr.copy()
+    pre_ndvi_arr = pre_sampled["ndvi"]
+    pre_ndwi_arr = pre_sampled["ndwi"]
+    pre_ndmi_arr = pre_sampled["ndmi"]
+    pre_nbr_arr = pre_sampled["nbr"]
+    pre_bsi_arr = pre_sampled["bsi"]
     dnbr_arr = nbr_arr - pre_nbr_arr
 
     sar_arr = np.full((size, size), sar_cr, dtype=np.float32)
@@ -456,10 +488,10 @@ async def pipeline_metrics(
 
     pre_arrays = {
         "ndvi": pre_ndvi_arr,
-        "ndwi": ndwi_arr.copy(),
-        "ndmi": ndmi_arr.copy(),
+        "ndwi": pre_ndwi_arr,
+        "ndmi": pre_ndmi_arr,
         "nbr": pre_nbr_arr,
-        "bsi": bsi_arr.copy(),
+        "bsi": pre_bsi_arr,
         "cross_ratio": sar_arr.copy(),
     }
 
