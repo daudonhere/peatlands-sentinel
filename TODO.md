@@ -43,10 +43,10 @@
 
 ## UI/UX
 
-- [ ] Default data source: GEE (sudah) — pastikan konsisten
-- [ ] Date format dd/mm/yy (sudah) — pastikan semua tampilan konsisten
-- [ ] 20 layer checkbox auto-check (sudah) — pastikan toggle works
-- [ ] Map default view Indonesia (sudah)
+- [x] Default data source: GEE (sudah) — pastikan konsisten
+- [x] Date format dd/mm/yy (sudah) — pastikan semua tampilan konsisten
+- [x] 20 layer checkbox auto-check (sudah) — pastikan toggle works
+- [x] Map default view Indonesia (sudah)
 
 ## Testing
 
