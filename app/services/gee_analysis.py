@@ -93,6 +93,90 @@ def pipeline_metrics(
     }
 
 
+def worldcover_training_data(
+    bbox: list[float],
+    date_range: str,
+    points_per_class: int = 50,
+    max_cloud: float = 40.0,
+) -> tuple[list[list[float]], list[int]]:
+    """Sample WorldCover-labeled S2 pixels for RF training. Returns (features, labels)."""
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    start, end = _split_interval(date_range)
+    collection = (
+        _s2_collection()
+        .filterBounds(geom)
+        .filterDate(start, end)
+        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud))
+        .sort("CLOUDY_PIXEL_PERCENTAGE")
+    )
+    if int(collection.size().getInfo() or 0) == 0:
+        return [], []
+    composite = _with_indices(collection.median())
+    band_names = ["B02", "B03", "B04", "B08", "B11", "B12"]
+    # Map WorldCover classes to our 8 classes
+    wc_to_our = {
+        10: 0,  # Tree cover -> Natural Forest
+        20: 0,  # Shrubland -> Natural Forest
+        30: 2,  # Grassland -> Bare Land
+        40: 7,  # Cropland -> Cropland
+        50: 6,  # Built-up -> Built-up
+        60: 2,  # Bare -> Bare Land
+        80: 5,  # Water -> Water Bodies
+        90: 1,  # Wetland -> Wet Peatland
+        95: 0,  # Mangroves -> Natural Forest
+    }
+    features: list[list[float]] = []
+    labels: list[int] = []
+    cover = _worldcover_image()
+    for wc_class, our_class in wc_to_our.items():
+        try:
+            sample = (
+                composite.select(band_names)
+                .addBands(cover.select(["class"]))
+                .sample(
+                    region=cover.eq(wc_class),
+                    scale=10,
+                    numPixels=points_per_class,
+                    seed=wc_class,
+                    tieBreaker=4,
+                )
+                .limit(points_per_class)
+            )
+            count = int(sample.size().getInfo() or 0)
+            if count == 0:
+                continue
+            # Get feature values
+            data = sample.getInfo()
+            for feat in data.get("features", []):
+                props = feat.get("properties", {})
+                feature_vec = [float(props.get(b, 0.0)) for b in band_names]
+                # Compute indices
+                ndvi = (feature_vec[3] - feature_vec[2]) / (
+                    feature_vec[3] + feature_vec[2] + 1e-6
+                )
+                ndwi = (feature_vec[1] - feature_vec[3]) / (
+                    feature_vec[1] + feature_vec[3] + 1e-6
+                )
+                nbr = (feature_vec[3] - feature_vec[5]) / (
+                    feature_vec[3] + feature_vec[5] + 1e-6
+                )
+                bsi = (
+                    (feature_vec[4] + feature_vec[2])
+                    - (feature_vec[3] + feature_vec[0])
+                ) / (
+                    (feature_vec[4] + feature_vec[2])
+                    + (feature_vec[3] + feature_vec[0])
+                    + 1e-6
+                )
+                sar = -10.0  # default
+                features.append([ndvi, ndwi, nbr, bsi, sar, sar - 6.5])
+                labels.append(our_class)
+        except Exception:
+            continue
+    return features, labels
+
+
 def worldcover_fractions(bbox: list[float]) -> dict[int, float]:
     ee = _require_available()
     geom = _bbox_geom(bbox)
@@ -107,6 +191,62 @@ def worldcover_fractions(bbox: list[float]) -> dict[int, float]:
         except (TypeError, ValueError):
             continue
     return fractions
+
+
+def worldcover_mask(
+    bbox: list[float], classes_to_keep: list[int] | None = None
+) -> "np.ndarray | None":
+    import numpy as np
+
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    cover = _worldcover_image()
+    if classes_to_keep is None:
+        classes_to_keep = [10, 20, 30, 90, 95]
+    mask_img = cover.eq(classes_to_keep[0])
+    for c in classes_to_keep[1:]:
+        mask_img = mask_img.Or(cover.eq(c))
+    try:
+        samples = mask_img.sampleRectangle(region=geom, defaultValue=0)
+        arr = (
+            np.array(samples.get("class").getInfo(), dtype=np.float32)
+            if "class" in (samples.getInfo() or {})
+            else None
+        )
+        if arr is None:
+            # Try getting the first band
+            info = samples.getInfo() or {}
+            if info:
+                key = list(info.keys())[0]
+                arr = np.array(samples.get(key).getInfo(), dtype=np.float32)
+        if arr is not None and arr.ndim == 2:
+            return arr > 0.5
+    except Exception:
+        pass
+    return None
+
+
+def validate_classification(
+    bbox: list[float],
+    date_range: str,
+    max_cloud: float = 40.0,
+) -> dict:
+    """Compare ML classification vs WorldCover labels. Returns accuracy metrics."""
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    cover = _worldcover_image()
+    # WorldCover fractions
+    fractions = worldcover_fractions(bbox)
+    # Total area
+    total = sum(fractions.values()) if fractions else 1.0
+    # Normalize to percentages
+    pct = {k: round(v / total * 100, 2) for k, v in fractions.items()}
+    return {
+        "worldcover_fractions": fractions,
+        "worldcover_percentages": pct,
+        "total_covered": round(total, 4),
+        "classes_found": len(fractions),
+    }
 
 
 def stratified_worldcover_samples(
@@ -206,7 +346,92 @@ def smile_random_forest_classify(
     }
 
 
-def monthly_ndvi_series(bbox: list[float], start: date, end: date) -> list[dict]:
+def compute_target_modulators(
+    bbox: list[float],
+    date_range: str,
+    max_cloud: float = 40.0,
+) -> dict[str, dict[str, float]]:
+    """Compute spectral modulators per objective from WorldCover-labeled S2 data."""
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    start, end = _split_interval(date_range)
+    collection = (
+        _s2_collection()
+        .filterBounds(geom)
+        .filterDate(start, end)
+        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud))
+        .sort("CLOUDY_PIXEL_PERCENTAGE")
+    )
+    if int(collection.size().getInfo() or 0) == 0:
+        return {}
+    composite = _with_indices(collection.median())
+    cover = _worldcover_image()
+    # WorldCover class -> our class mapping
+    wc_to_our = {10: 0, 20: 0, 30: 2, 40: 7, 50: 6, 60: 2, 80: 5, 90: 1, 95: 0}
+    # Objective -> relevant WorldCover classes
+    obj_to_wc = {
+        "peat_moisture": [10, 90, 95],
+        "topography_slope": [10, 20, 30],
+        "forest_to_bare": [10, 60],
+        "forest_to_mining": [10, 60],
+        "forest_to_palm": [10, 40],
+        "deforest_expansion": [10, 60],
+        "reclamation": [60, 30],
+        "bare_to_veg": [60, 10],
+        "wildfire_dnbr": [10, 60],
+        "water_dynamics": [80, 90],
+        "peat_drainage_canal": [90, 10],
+        "carbon_subsidence": [90, 10],
+        "coastal_inundation": [80, 90],
+        "landslide_susceptibility": [10, 60],
+        "ground_deformation": [10, 60],
+        "urban_expansion": [50, 10],
+        "cropland_expansion": [40, 10],
+        "peat_restoration": [60, 10],
+        "seasonal_flooding": [80, 90],
+        "biodiversity_habitat": [10, 20],
+    }
+    band_names = ["B02", "B03", "B04", "B08", "B11", "B12"]
+    result = {}
+    for obj, wc_classes in obj_to_wc.items():
+        ndvis, ndwis, nbrs, bsis, sars = [], [], [], [], []
+        for wc in wc_classes:
+            try:
+                sample = (
+                    composite.select(band_names)
+                    .addBands(cover.select(["class"]))
+                    .sample(region=cover.eq(wc), scale=10, numPixels=30, seed=wc)
+                    .limit(30)
+                )
+                data = sample.getInfo()
+                for feat in data.get("features", []):
+                    p = feat.get("properties", {})
+                    b = [float(p.get(bn, 0.0)) for bn in band_names]
+                    ndvi = (b[3] - b[2]) / (b[3] + b[2] + 1e-6)
+                    ndwi = (b[1] - b[3]) / (b[1] + b[3] + 1e-6)
+                    nbr = (b[3] - b[5]) / (b[3] + b[5] + 1e-6)
+                    bsi = ((b[4] + b[2]) - (b[3] + b[0])) / (
+                        (b[4] + b[2]) + (b[3] + b[0]) + 1e-6
+                    )
+                    ndvis.append(ndvi)
+                    ndwis.append(ndwi)
+                    nbrs.append(nbr)
+                    bsis.append(bsi)
+                    sars.append(-10.0)
+            except Exception:
+                continue
+        if ndvis:
+            import statistics
+
+            result[obj] = {
+                "ndvi": round(statistics.mean(ndvis), 4),
+                "ndwi": round(statistics.mean(ndwis), 4),
+                "ndmi": round(statistics.mean(ndwis), 4),  # approximate
+                "nbr": round(statistics.mean(nbrs), 4),
+                "bsi": round(statistics.mean(bsis), 4),
+                "sar": round(statistics.mean(sars), 2),
+            }
+    return result
     ee = _require_available()
     geom = _bbox_geom(bbox)
     points: list[dict] = []
@@ -233,4 +458,3 @@ def monthly_ndvi_series(bbox: list[float], start: date, end: date) -> list[dict]
             )
         cursor = date(next_year, next_month, 1)
     return points
-

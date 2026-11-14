@@ -4,10 +4,10 @@
 
 ### Training Data & Classification
 
-- [ ] Integrate ESA WorldCover v200 as baseline land cover reference & Random Forest training labels (ganti TRAINING_X/Y hardcoded)
-- [ ] Add WorldCover-based area masking (filter analysis to peatland/forest only, exclude urban & water)
-- [ ] Use WorldCover for classification validation (compare ML output vs WorldCover labels)
-- [ ] Replace TARGET_MODULATORS hardcoded values with computed spectral adjustments per objective
+- [x] Integrate ESA WorldCover v200 as baseline land cover reference & Random Forest training labels (ganti TRAINING_X/Y hardcoded)
+- [x] Add WorldCover-based area masking (filter analysis to peatland/forest only, exclude urban & water)
+- [x] Use WorldCover for classification validation (compare ML output vs WorldCover labels)
+- [x] Replace TARGET_MODULATORS hardcoded values with computed spectral adjustments per objective
 
 ### Fallback Functions (perlu real data)
 

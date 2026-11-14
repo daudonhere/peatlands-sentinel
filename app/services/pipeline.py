@@ -106,6 +106,27 @@ async def resolve_spectral(
     area_ha: float,
 ) -> tuple[SpectralSummary, list, dict, dict, list[ClassScatterPoint]]:
     geometry = _extract_geometry(payload)
+    # Try to get WorldCover training data and target modulators when GEE is available
+    if payload.data_source == "gee":
+        try:
+            from app.services import gee_analysis as _gee_analysis
+            from app.services import reference_data as _ref_data
+
+            features, labels = _gee_analysis.worldcover_training_data(
+                bbox, payload.post_date_range, points_per_class=30
+            )
+            if features and labels:
+                from app.services import classifier as _clf
+
+                _clf.set_worldcover_training(features, labels)
+
+            modulators = _gee_analysis.compute_target_modulators(
+                bbox, payload.post_date_range
+            )
+            if modulators:
+                _ref_data.update_target_modulators(modulators)
+        except Exception:
+            pass
     result = await asyncio.wait_for(
         resolve_pipeline_metrics(
             payload.data_source,

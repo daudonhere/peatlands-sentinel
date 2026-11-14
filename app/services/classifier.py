@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import lru_cache
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -14,8 +16,27 @@ from app.services.reference_data import (
 _TRAINING_MATRIX = np.array(TRAINING_X, dtype=np.float32)
 _TRAINING_LABELS = np.array(TRAINING_Y, dtype=np.int32)
 
+_WORLD_COVER_FEATURES: list[list[float]] | None = None
+_WORLD_COVER_LABELS: list[int] | None = None
+
 
 @lru_cache(maxsize=1)
+def set_worldcover_training(features: list[list[float]], labels: list[int]) -> None:
+    global _WORLD_COVER_FEATURES, _WORLD_COVER_LABELS
+    if features and labels and len(features) == len(labels):
+        _WORLD_COVER_FEATURES = features
+        _WORLD_COVER_LABELS = labels
+
+
+def get_training_data() -> tuple[np.ndarray, np.ndarray]:
+    if _WORLD_COVER_FEATURES and _WORLD_COVER_LABELS:
+        return (
+            np.array(_WORLD_COVER_FEATURES, dtype=np.float32),
+            np.array(_WORLD_COVER_LABELS, dtype=np.int32),
+        )
+    return _TRAINING_MATRIX.copy(), _TRAINING_LABELS.copy()
+
+
 def get_trained_classifier() -> RandomForestClassifier:
     rf = RandomForestClassifier(
         n_estimators=200,
@@ -24,12 +45,13 @@ def get_trained_classifier() -> RandomForestClassifier:
         random_state=42,
         n_jobs=-1,
     )
-    rf.fit(_TRAINING_MATRIX, _TRAINING_LABELS)
+    features, labels = get_training_data()
+    rf.fit(features, labels)
     return rf
 
 
 def training_dataset() -> tuple[np.ndarray, np.ndarray]:
-    return _TRAINING_MATRIX.copy(), _TRAINING_LABELS.copy()
+    return get_training_data()
 
 
 def feature_names() -> list[str]:

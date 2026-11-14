@@ -85,6 +85,14 @@ TRAINING_Y = [
     7,
 ]
 
+
+def update_target_modulators(modulators: dict[str, dict[str, float]]) -> None:
+    """Update TARGET_MODULATORS with computed values from real data."""
+    global TARGET_MODULATORS
+    if modulators:
+        TARGET_MODULATORS.update(modulators)
+
+
 TARGET_MODULATORS = {
     "peat_moisture": {
         "ndvi": 0.62,
