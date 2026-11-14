@@ -159,11 +159,28 @@
 
   const valNdvi = document.getElementById("val-ndvi");
   const valNdwi = document.getElementById("val-ndwi");
+  const valNdmi = document.getElementById("val-ndmi");
+  const valMndwi = document.getElementById("val-mndwi");
+  const valNbr = document.getElementById("val-nbr");
   const valDnbr = document.getElementById("val-dnbr");
+  const valBsi = document.getElementById("val-bsi");
   const valSar = document.getElementById("val-sar");
   const valWtd = document.getElementById("val-wtd");
   const valSubsidence = document.getElementById("val-subsidence");
   const valCo2 = document.getElementById("val-co2");
+  const valWrc = document.getElementById("val-wrc");
+  const valDrain = document.getElementById("val-drain");
+  const valCanal = document.getElementById("val-canal");
+  const valPressure = document.getElementById("val-pressure");
+  const valCompliance = document.getElementById("val-compliance");
+  const valHydroRisk = document.getElementById("val-hydrorisk");
+  const valBlock = document.getElementById("val-block");
+  const valElev = document.getElementById("val-elev");
+  const valRelief = document.getElementById("val-relief");
+  const valSlope = document.getElementById("val-slope");
+  const valLandslide = document.getElementById("val-landslide");
+  const valDeform = document.getElementById("val-deform");
+  const valSeismic = document.getElementById("val-seismic");
   const valSource = document.getElementById("val-source");
   const analystSummary = document.getElementById("analyst-summary");
   const analystActions = document.getElementById("analyst-actions");
@@ -245,6 +262,68 @@
     }
     if (valCo2) {
       valCo2.textContent = `${Number(metrics.co2_emission_tco2e_ha_year || 0).toFixed(1)} tCO2e/ha`;
+    }
+    if (valNdmi) {
+      valNdmi.textContent = Number(metrics.mean_ndmi || 0).toFixed(2);
+    }
+    if (valMndwi) {
+      valMndwi.textContent = Number(metrics.mean_mndwi || 0).toFixed(2);
+    }
+    if (valNbr) {
+      valNbr.textContent = Number(metrics.mean_nbr || 0).toFixed(2);
+    }
+    if (valBsi) {
+      valBsi.textContent = Number(metrics.mean_bsi || 0).toFixed(2);
+    }
+    if (valWrc) {
+      const wrc = metrics.water_retention_capacity_pct || 0;
+      valWrc.textContent = `${Math.round(wrc)}%`;
+    }
+    if (valDrain) {
+      const drain = metrics.drainage_intensity_pct || 0;
+      valDrain.textContent = `${Math.round(drain)}%`;
+    }
+    if (valCanal) {
+      const canal = metrics.canal_density_km_km2 || 0;
+      valCanal.textContent = `${Number(canal).toFixed(1)} km/km²`;
+    }
+    if (valPressure) {
+      const pressure = metrics.drainage_pressure_index || 0;
+      valPressure.textContent = Number(pressure).toFixed(2);
+    }
+    if (valCompliance) {
+      valCompliance.textContent = metrics.hydrology_compliance || "-";
+    }
+    if (valHydroRisk) {
+      valHydroRisk.textContent = metrics.hydrology_risk || "-";
+    }
+    if (valBlock) {
+      valBlock.textContent = metrics.block_priority || "-";
+    }
+    if (valElev) {
+      const elev = metrics.mean_elevation_m || 0;
+      valElev.textContent = `${Math.round(elev)} m`;
+    }
+    if (valRelief) {
+      const relief = metrics.elevation_relief_m || 0;
+      valRelief.textContent = `${Math.round(relief)} m`;
+    }
+    if (valSlope) {
+      const slope = metrics.max_slope_deg || 0;
+      valSlope.textContent = `${Number(slope).toFixed(1)}°`;
+    }
+    if (valLandslide) {
+      valLandslide.textContent = Number(
+        metrics.landslide_susceptibility || 0,
+      ).toFixed(2);
+    }
+    if (valDeform) {
+      valDeform.textContent = Number(
+        metrics.ground_deformation_index || 0,
+      ).toFixed(2);
+    }
+    if (valSeismic) {
+      valSeismic.textContent = metrics.seismic_sensitivity || "-";
     }
     if (valSource) {
       const srcVal =

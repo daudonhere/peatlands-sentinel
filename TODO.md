@@ -4,31 +4,31 @@
 
 ### Spectral Indices (saat ini hanya 4 dari 7)
 
-- [ ] Tampilkan NDMI (Normalized Difference Moisture Index)
-- [ ] Tampilkan NBR (Normalized Burn Ratio)
-- [ ] Tampilkan BSI (Bare Soil Index)
-- [ ] Tampilkan MNDWI (Modified NDWI)
+- [x] Tampilkan NDMI (Normalized Difference Moisture Index)
+- [x] Tampilkan NBR (Normalized Burn Ratio)
+- [x] Tampilkan BSI (Bare Soil Index)
+- [x] Tampilkan MNDWI (Modified NDWI)
 
 ### Topography (belum ditampilkan)
 
-- [ ] Tampilkan Elevasi (mean/max/min/relief)
-- [ ] Tampilkan Slope/Kelerengan (mean/max)
+- [x] Tampilkan Elevasi (mean/max/min/relief)
+- [x] Tampilkan Slope/Kelerengan (mean/max)
 
 ### Hydrology (saat ini hanya 3 dari 10+)
 
-- [ ] Tampilkan Water Retention Capacity
-- [ ] Tampilkan Drainage Intensity
-- [ ] Tampilkan Canal Density
-- [ ] Tampilkan Drainage Pressure Index
-- [ ] Tampilkan Hydrology Compliance (PP 71/2014)
-- [ ] Tampilkan Hydrology Risk Level
-- [ ] Tampilkan Block Priority
+- [x] Tampilkan Water Retention Capacity
+- [x] Tampilkan Drainage Intensity
+- [x] Tampilkan Canal Density
+- [x] Tampilkan Drainage Pressure Index
+- [x] Tampilkan Hydrology Compliance (PP 71/2014)
+- [x] Tampilkan Hydrology Risk Level
+- [x] Tampilkan Block Priority
 
 ### Multi-Hazard (belum ditampilkan)
 
-- [ ] Tampilkan Landslide Susceptibility
-- [ ] Tampilkan Ground Deformation Index
-- [ ] Tampilkan Seismic Sensitivity
+- [x] Tampilkan Landslide Susceptibility
+- [x] Tampilkan Ground Deformation Index
+- [x] Tampilkan Seismic Sensitivity
 
 ### AI Analyst
 
