@@ -11,7 +11,7 @@ Multi-temporal peatland monitoring and land cover change detection system using 
 - **Peat Hydrology & Carbon Emissions Model**: WTD based on PP 71/2014 & PP 57/2016 (safe threshold -40 cm), subsidence rate, carbon emissions (0.91 tCO2e/ha/yr per cm drainage; Hooijer et al., 2012), drainage intensity, canal density, water retention capacity.
 - **Multi-Hazard Assessment**: Landslide (slope + SAR anomaly + NDVI drop), ground deformation (InSAR proxy via S1 coherence), coastal inundation (MNDWI + DEM < 2m).
 - **Canal Blocking Intervention Simulation**: Water table rise, hydrological recovery area, potential carbon emission reduction (tCO2e/yr).
-- **Active Fire Hotspot Detection**: NASA FIRMS VIIRS (SNPP / NOAA-20/21) real-time integration.
+- **Active Fire Hotspot Detection**: NASA FIRMS multi-sensor (VIIRS SNPP / NOAA-20 + MODIS) real-time integration with deduplication.
 - **8-Class Land Cover Classification**: Natural Forest, Wet Peatland, Bare Land, Oil Palm Plantation, Open Mining, Water Bodies, **Built-up Area, Cropland/Agriculture**.
 - **Model Validation**: Stratified cross-validation, confusion matrix, overall accuracy, Cohen's kappa, per-class spectral scatter (NDVI vs BSI).
 - **AI Analyst**: Multi-provider (OpenAI-compatible, Ollama Cloud, OpenRouter) via HTTPX + Pydantic, deterministic heuristic fallback.

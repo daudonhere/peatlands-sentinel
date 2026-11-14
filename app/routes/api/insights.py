@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/insights", tags=["Insights"])
 
 class BBoxRequest(BaseModel):
     bbox: list[float] = Field(min_length=4, max_length=4)
-    days: int = Field(default=3, ge=1, le=10)
+    days: int = Field(default=5, ge=1, le=5)
     datetime_range: str = "2024-01-01/2024-12-31"
 
 

@@ -75,6 +75,10 @@ async def test_end_to_end_pipeline():
                 new=AsyncMock(return_value=_MOCK_LIVE),
             ),
             patch(
+                "app.services.gee.pipeline_metrics",
+                new=AsyncMock(return_value=_MOCK_LIVE),
+            ),
+            patch(
                 "app.services.cog.fetch_live_dem",
                 new=AsyncMock(return_value=mock_dem),
             ),
@@ -101,7 +105,7 @@ async def test_end_to_end_pipeline():
         assert res_get.status_code == 200
         saved_data = res_get.json()
         assert saved_data["id"] == run_id
-        assert saved_data["metrics"]["source"] == "live_cog"
+        assert saved_data["metrics"]["source"] in ("live_cog", "gee")
         assert saved_data["metrics"]["valid_pixel_ratio"] == 0.88
         assert saved_data["metrics"]["max_elevation_m"] == 35.0
         assert saved_data["metrics"]["min_elevation_m"] == 5.0

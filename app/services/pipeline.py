@@ -106,45 +106,34 @@ async def resolve_spectral(
     area_ha: float,
 ) -> tuple[SpectralSummary, list, dict, dict, list[ClassScatterPoint]]:
     geometry = _extract_geometry(payload)
-    try:
-        result = await asyncio.wait_for(
-            resolve_pipeline_metrics(
-                payload.data_source,
-                bbox,
-                payload.pre_date_range,
-                payload.post_date_range,
-                payload.max_cloud_cover,
-            ),
-            timeout=60.0,
-        )
-        post_arrays = _mask_arrays(geometry, bbox, result.post_arrays)
-        pre_arrays = _mask_arrays(geometry, bbox, result.pre_arrays)
-        metrics = dict(result.metrics)
-        _recompute_metrics(metrics, pre_arrays, post_arrays)
-        summary = build_spectral_summary_from_live(metrics)
-        transitions = classify_live_arrays(
-            {"_arrays": pre_arrays or post_arrays or {}},
-            {"_arrays": post_arrays or {}},
-            area_ha,
-        )
-        arrays = _merge_arrays(pre_arrays, post_arrays)
-        scatter = (
-            class_scatter_from_arrays(pre_arrays or {}, post_arrays or {})
-            if pre_arrays and post_arrays
-            else simulate_class_scatter(payload.target, run_id)
-        )
-        extra = {"source": result.source, **result.scene_meta}
-        return summary, transitions, arrays, extra, scatter
-    except Exception:
-        summary, transitions = simulate_aoi_transitions(payload.target, run_id, area_ha)
-        arrays = _mask_arrays(geometry, bbox, simulate_arrays(payload.target, run_id))
-        return (
-            summary,
-            transitions,
-            arrays,
-            {"source": "simulation"},
-            simulate_class_scatter(payload.target, run_id),
-        )
+    result = await asyncio.wait_for(
+        resolve_pipeline_metrics(
+            payload.data_source,
+            bbox,
+            payload.pre_date_range,
+            payload.post_date_range,
+            payload.max_cloud_cover,
+        ),
+        timeout=120.0,
+    )
+    post_arrays = _mask_arrays(geometry, bbox, result.post_arrays)
+    pre_arrays = _mask_arrays(geometry, bbox, result.pre_arrays)
+    metrics = dict(result.metrics)
+    _recompute_metrics(metrics, pre_arrays, post_arrays)
+    summary = build_spectral_summary_from_live(metrics)
+    transitions = classify_live_arrays(
+        {"_arrays": pre_arrays or post_arrays or {}},
+        {"_arrays": post_arrays or {}},
+        area_ha,
+    )
+    arrays = _merge_arrays(pre_arrays, post_arrays)
+    scatter = (
+        class_scatter_from_arrays(pre_arrays or {}, post_arrays or {})
+        if pre_arrays and post_arrays
+        else simulate_class_scatter(payload.target, run_id)
+    )
+    extra = {"source": result.source, **result.scene_meta}
+    return summary, transitions, arrays, extra, scatter
 
 
 async def resolve_dem(bbox: list[float]):

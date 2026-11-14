@@ -4,8 +4,8 @@
   const map = new maplibregl.Map({
     container: "map",
     style: MAP_STYLE_SATELLITE,
-    center: [102.5, 0.5],
-    zoom: 9,
+    center: [112.0, -2.0],
+    zoom: 3.5,
   });
 
   map.addControl(
@@ -95,17 +95,46 @@
     return `${year}-${mm}-${dd}`;
   }
 
+  function formatDateInput(el) {
+    let v = el.value.replace(/[^0-9]/g, "");
+    if (v.length >= 6) {
+      v = v.slice(0, 2) + "/" + v.slice(2, 4) + "/" + v.slice(4, 6);
+    } else if (v.length >= 4) {
+      v = v.slice(0, 2) + "/" + v.slice(2, 4) + "/" + v.slice(4);
+    } else if (v.length >= 2) {
+      v = v.slice(0, 2) + "/" + v.slice(2);
+    }
+    el.value = v.slice(0, 8);
+  }
   const todayIso = new Date().toISOString().slice(0, 10);
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
   const oneMonthAgoIso = oneMonthAgo.toISOString().slice(0, 10);
   const dateStartInput = document.getElementById("date-start");
   const dateEndInput = document.getElementById("date-end");
+  const dateStartPicker = document.getElementById("date-start-picker");
+  const dateEndPicker = document.getElementById("date-end-picker");
   if (dateStartInput) {
     dateStartInput.value = fmtDdMmYy(oneMonthAgoIso);
   }
+  if (dateStartPicker) {
+    dateStartPicker.value = oneMonthAgoIso;
+    dateStartPicker.addEventListener("change", function () {
+      if (dateStartPicker.value && dateStartInput) {
+        dateStartInput.value = fmtDdMmYy(dateStartPicker.value);
+      }
+    });
+  }
   if (dateEndInput) {
     dateEndInput.value = fmtDdMmYy(todayIso);
+  }
+  if (dateEndPicker) {
+    dateEndPicker.value = todayIso;
+    dateEndPicker.addEventListener("change", function () {
+      if (dateEndPicker.value && dateEndInput) {
+        dateEndInput.value = fmtDdMmYy(dateEndPicker.value);
+      }
+    });
   }
   const aoiStatusText = document.getElementById("aoi-status-text");
   const analysisTargetSelect = document.getElementById("analysis-target");
@@ -218,11 +247,25 @@
       valCo2.textContent = `${Number(metrics.co2_emission_tco2e_ha_year || 0).toFixed(1)} tCO2e/ha`;
     }
     if (valSource) {
-      const src = metrics.source === "live_cog" ? "Live COG" : "Simulation";
+      const srcVal =
+        (runData.telemetry && runData.telemetry.source) ||
+        runData.data_source ||
+        metrics.source ||
+        "";
+      const src =
+        srcVal === "live_cog"
+          ? "Live COG (Planetary Computer)"
+          : srcVal === "gee"
+            ? "Google Earth Engine"
+            : srcVal === "planetary_computer"
+              ? "Planetary Computer"
+              : "Simulation";
       const dt = metrics.post_datetime ? ` (${metrics.post_datetime})` : "";
       valSource.textContent = `${src}${dt}`;
       valSource.style.color =
-        metrics.source === "live_cog"
+        srcVal === "live_cog" ||
+        srcVal === "gee" ||
+        srcVal === "planetary_computer"
           ? "var(--status-emerald)"
           : "var(--status-amber)";
     }
@@ -436,6 +479,14 @@
         data.geojson && data.geojson.bbox ? data.geojson.bbox : bbox;
       displayAnalysisData(data, runBbox);
       overlayCtrl.setOverlay(data.run_id, runBbox);
+
+      // Store for layer toggling
+      currentAnalysisRunId = data.run_id;
+      currentAnalysisBbox = runBbox;
+      // Add all 20 objective layers
+      removeAllObjectiveLayers();
+      await addAllObjectiveLayers(data.run_id, runBbox);
+      loadFirmsForAoi();
     } catch (err) {
       resultsErrorText.textContent =
         "Analysis execution failed: " + err.message;
@@ -656,7 +707,7 @@
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.value = key;
-      cb.checked = true;
+      cb.checked = false;
 
       const label = document.createElement("span");
       label.textContent = OBJECTIVE_LABELS[key];
@@ -672,17 +723,51 @@
         cb.disabled = true;
         try {
           if (cb.checked) {
-            const ok = await runObjectiveLayer(key);
-            if (!ok) cb.checked = false;
+            if (currentAnalysisRunId && currentAnalysisBbox) {
+              const key = cb.value;
+              const sourceId = "layer-src-" + key;
+              const layerId = "layer-" + key;
+              if (map.getSource(sourceId)) map.removeSource(sourceId);
+              if (map.getLayer(layerId)) map.removeLayer(layerId);
+              map.addSource(sourceId, {
+                type: "image",
+                url:
+                  "/api/analysis/" +
+                  currentAnalysisRunId +
+                  "/overlay.png?period=post&target=" +
+                  key,
+                coordinates: [
+                  [currentAnalysisBbox[0], currentAnalysisBbox[3]],
+                  [currentAnalysisBbox[2], currentAnalysisBbox[3]],
+                  [currentAnalysisBbox[2], currentAnalysisBbox[1]],
+                  [currentAnalysisBbox[0], currentAnalysisBbox[1]],
+                ],
+              });
+              map.addLayer({
+                id: layerId,
+                type: "raster",
+                source: sourceId,
+                paint: { "raster-opacity": 0.65 },
+              });
+              layerState[key] = {
+                checked: true,
+                runId: currentAnalysisRunId,
+                sourceId: sourceId,
+                layerId: layerId,
+              };
+            } else {
+              alert("Run analysis first.");
+              cb.checked = false;
+            }
           } else {
-            removeObjectiveLayer(key);
+            removeObjectiveLayer(cb.value);
           }
         } catch (err) {
           cb.checked = false;
           alert("Layer failed: " + err.message);
         } finally {
           cb.disabled = false;
-          if (layerState[key]) layerState[key].checked = cb.checked;
+          if (layerState[cb.value]) layerState[cb.value].checked = cb.checked;
         }
       });
 
@@ -704,7 +789,7 @@
     fetch("/api/insights/fires", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bbox: bbox, start_date: start, end_date: end }),
+      body: JSON.stringify({ bbox: bbox, days: 5 }),
     })
       .then(function (r) {
         return r.json();
@@ -716,11 +801,11 @@
           panel.innerHTML =
             "<strong>FIRMS: " +
             data.count +
-            " active fire hotspots in AOI (last 30 days)</strong>";
+            " active fire hotspots in AOI (last 5 days)</strong>";
           panel.style.color = "#e03e3e";
         } else {
           panel.innerHTML =
-            "FIRMS: No active fire hotspots in AOI (last 30 days)";
+            "FIRMS: No active fire hotspots in AOI (last 5 days)";
           panel.style.color = "#4a4a4a";
         }
       })
@@ -730,27 +815,71 @@
       });
   }
 
-  async function runAllObjectives() {
+  let currentAnalysisRunId = null;
+  let currentAnalysisBbox = null;
+
+  // Run all 20 objective layers using a single analysis result
+  async function addAllObjectiveLayers(runId, runBbox) {
     const keys = Object.keys(OBJECTIVE_LABELS);
     for (const key of keys) {
-      const cb =
-        document.querySelector(
-          "#layer-list input[type=checkbox][value=" + key + "]",
-        ) || document.querySelector("#layer-list input[type=checkbox]");
-      if (cb) cb.checked = true;
-      await runObjectiveLayer(key);
+      const sourceId = "layer-src-" + key;
+      const layerId = "layer-" + key;
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      map.addSource(sourceId, {
+        type: "image",
+        url:
+          "/api/analysis/" + runId + "/overlay.png?period=post&target=" + key,
+        coordinates: [
+          [runBbox[0], runBbox[3]],
+          [runBbox[2], runBbox[3]],
+          [runBbox[2], runBbox[1]],
+          [runBbox[0], runBbox[1]],
+        ],
+      });
+      map.addLayer({
+        id: layerId,
+        type: "raster",
+        source: sourceId,
+        paint: { "raster-opacity": 0.65 },
+      });
+      layerState[key] = {
+        checked: true,
+        runId: runId,
+        sourceId: sourceId,
+        layerId: layerId,
+      };
     }
+    // Check all checkboxes
+    const checkboxes = document.querySelectorAll(
+      "#layer-list input[type=checkbox]",
+    );
+    checkboxes.forEach(function (cb) {
+      cb.checked = true;
+    });
   }
 
-  const origAnalyze =
-    window.analyzeClick || document.getElementById("btn-run-analysis")?.onclick;
-  document
-    .getElementById("btn-run-analysis")
-    .addEventListener("click", async function () {
-      if (origAnalyze) origAnalyze.call(this);
-      await runAllObjectives();
-      loadFirmsForAoi();
+  function removeAllObjectiveLayers() {
+    Object.keys(OBJECTIVE_LABELS).forEach(function (key) {
+      const st = layerState[key];
+      if (st) {
+        if (map.getLayer(st.layerId)) map.removeLayer(st.layerId);
+        if (map.getSource(st.sourceId)) map.removeSource(st.sourceId);
+        st.checked = false;
+      }
     });
+    const checkboxes = document.querySelectorAll(
+      "#layer-list input[type=checkbox]",
+    );
+    checkboxes.forEach(function (cb) {
+      cb.checked = false;
+    });
+  }
+
+  // Layer toggling is now handled in the main analysis handler above
+
+  window.fmtDdMmYy = fmtDdMmYy;
+  window.formatDateInput = formatDateInput;
 
   renderLayerList();
 })();

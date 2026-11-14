@@ -62,19 +62,27 @@
           <div class="form-row">
             <div class="form-group flex-1">
               <label for="date-start" class="form-label">Start Date</label>
-              <input type="text" id="date-start" class="form-input" value="14/10/26" placeholder="dd/mm/yy" maxlength="8" oninput="this.value = this.value.replace(/[^0-9\/]/g, '')">
+              <div style="display:flex;gap:0.3rem;align-items:center;">
+                <input type="text" id="date-start" class="form-input" value="14/10/26" placeholder="dd/mm/yy" maxlength="8" oninput="formatDateInput(this)" style="flex:1;">
+                <button type="button" onclick="document.getElementById('date-start-picker').showPicker && document.getElementById('date-start-picker').showPicker()" style="width:2rem;height:2rem;cursor:pointer;border:1px solid #333;border-radius:4px;background:#1a1a1a;color:#888;font-size:1rem;padding:0;">&#128197;</button>
+                <input type="date" id="date-start-picker" style="position:absolute;opacity:0;width:0;height:0;" onchange="if(this.value && document.getElementById('date-start')) document.getElementById('date-start').value = fmtDdMmYy(this.value)">
+              </div>
             </div>
             <div class="form-group flex-1">
               <label for="date-end" class="form-label">End Date</label>
-              <input type="text" id="date-end" class="form-input" value="13/11/26" placeholder="dd/mm/yy" maxlength="8" oninput="this.value = this.value.replace(/[^0-9\/]/g, '')">
+              <div style="display:flex;gap:0.3rem;align-items:center;">
+                <input type="text" id="date-end" class="form-input" value="13/11/26" placeholder="dd/mm/yy" maxlength="8" oninput="formatDateInput(this)" style="flex:1;">
+                <button type="button" onclick="document.getElementById('date-end-picker').showPicker && document.getElementById('date-end-picker').showPicker()" style="width:2rem;height:2rem;cursor:pointer;border:1px solid #333;border-radius:4px;background:#1a1a1a;color:#888;font-size:1rem;padding:0;">&#128197;</button>
+                <input type="date" id="date-end-picker" style="position:absolute;opacity:0;width:0;height:0;" onchange="if(this.value && document.getElementById('date-end')) document.getElementById('date-end').value = fmtDdMmYy(this.value)">
+              </div>
             </div>
           </div>
           <div class="form-row" style="margin-top: 0.5rem;">
             <div class="form-group flex-1">
               <label for="data-source-select" class="form-label">Engine</label>
               <select id="data-source-select" class="form-select">
-                <option value="planetary_computer">Planetary Computer (STAC)</option>
                 <option value="gee">Google Earth Engine</option>
+                <option value="planetary_computer">Planetary Computer (STAC)</option>
               </select>
             </div>
             <div class="form-group flex-1">

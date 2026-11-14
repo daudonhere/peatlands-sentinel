@@ -60,7 +60,7 @@ class AnalysisPipelineRequest(BaseModel):
         default="2024-01-01/2024-12-31",
         description="Monitoring acquisition window (ISO 8601 interval)",
     )
-    max_cloud_cover: float = Field(default=25.0, ge=0.0, le=100.0)
+    max_cloud_cover: float = Field(default=40.0, ge=0.0, le=100.0)
     data_source: Literal["planetary_computer", "gee"] | None = None
     granularity: Literal["weekly", "monthly", "yearly"] = "monthly"
     composite_season: str | None = Field(

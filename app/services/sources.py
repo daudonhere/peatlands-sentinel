@@ -106,9 +106,8 @@ class EarthEngineSource:
     ) -> SourceResult:
         if not gee.is_available():
             raise LookupError("GEE is not configured or authorized.")
-        loop = asyncio.get_running_loop()
-        metrics = await loop.run_in_executor(
-            None, gee.pipeline_metrics, bbox, pre_date_range, post_date_range, max_cloud
+        metrics = await gee.pipeline_metrics(
+            bbox, pre_date_range, post_date_range, max_cloud
         )
         meta = {
             k: v
@@ -122,7 +121,13 @@ class EarthEngineSource:
                 "valid_pixel_ratio",
             )
         }
-        return SourceResult(source=self.name, metrics=metrics, scene_meta=meta)
+        return SourceResult(
+            source=self.name,
+            metrics=metrics,
+            pre_arrays=metrics.get("_pre_arrays"),
+            post_arrays=metrics.get("_arrays"),
+            scene_meta=meta,
+        )
 
     async def scene_observations(
         self,
@@ -163,16 +168,6 @@ async def resolve_pipeline_metrics(
     max_cloud: float,
 ) -> SourceResult:
     source = get_data_source(name)
-    if source.name == "gee" and not gee.is_available():
-        source = PlanetaryComputerSource()
-    try:
-        return await source.pipeline_metrics(
-            bbox, pre_date_range, post_date_range, max_cloud
-        )
-    except Exception:
-        if source.name != "planetary_computer":
-            fallback = PlanetaryComputerSource()
-            return await fallback.pipeline_metrics(
-                bbox, pre_date_range, post_date_range, max_cloud
-            )
-        raise
+    return await source.pipeline_metrics(
+        bbox, pre_date_range, post_date_range, max_cloud
+    )
