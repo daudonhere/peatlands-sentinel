@@ -252,6 +252,8 @@
         runData.data_source ||
         metrics.source ||
         "";
+      const fallbackFrom =
+        (runData.telemetry && runData.telemetry.fallback_from) || "";
       const src =
         srcVal === "live_cog"
           ? "Live COG (Planetary Computer)"
@@ -262,14 +264,19 @@
               : srcVal === "planetary_computer"
                 ? "Planetary Computer"
                 : "Simulation";
+      const fallbackNote = fallbackFrom
+        ? ` (fallback from ${fallbackFrom})`
+        : "";
       const dt = metrics.post_datetime ? ` (${metrics.post_datetime})` : "";
-      valSource.textContent = `${src}${dt}`;
+      valSource.textContent = `${src}${fallbackNote}${dt}`;
       valSource.style.color =
         srcVal === "live_cog" ||
         srcVal === "gee" ||
         srcVal === "landsat" ||
         srcVal === "planetary_computer"
-          ? "var(--status-emerald)"
+          ? fallbackFrom
+            ? "var(--status-amber)"
+            : "var(--status-emerald)"
           : "var(--status-amber)";
     }
 

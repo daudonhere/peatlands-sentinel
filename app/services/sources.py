@@ -215,6 +215,33 @@ async def resolve_pipeline_metrics(
     max_cloud: float,
 ) -> SourceResult:
     source = get_data_source(name)
-    return await source.pipeline_metrics(
-        bbox, pre_date_range, post_date_range, max_cloud
-    )
+    try:
+        return await source.pipeline_metrics(
+            bbox, pre_date_range, post_date_range, max_cloud
+        )
+    except Exception as primary_err:
+        # Gap-filling: if primary source fails, try landsat as fallback
+        if source.name != "landsat":
+            try:
+                fallback = LandsatSource()
+                result = await fallback.pipeline_metrics(
+                    bbox, pre_date_range, post_date_range, max_cloud
+                )
+                result.scene_meta["fallback_from"] = source.name
+                result.scene_meta["fallback_reason"] = str(primary_err)
+                return result
+            except Exception:
+                pass
+        # Then try planetary computer
+        if source.name != "planetary_computer":
+            try:
+                fallback = PlanetaryComputerSource()
+                result = await fallback.pipeline_metrics(
+                    bbox, pre_date_range, post_date_range, max_cloud
+                )
+                result.scene_meta["fallback_from"] = source.name
+                result.scene_meta["fallback_reason"] = str(primary_err)
+                return result
+            except Exception:
+                pass
+        raise primary_err

@@ -20,7 +20,6 @@ _WORLD_COVER_FEATURES: list[list[float]] | None = None
 _WORLD_COVER_LABELS: list[int] | None = None
 
 
-@lru_cache(maxsize=1)
 def set_worldcover_training(features: list[list[float]], labels: list[int]) -> None:
     global _WORLD_COVER_FEATURES, _WORLD_COVER_LABELS
     if features and labels and len(features) == len(labels):

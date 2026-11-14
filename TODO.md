@@ -24,7 +24,7 @@
 
 - [x] Integrate Landsat 8/9 OLI/TIRS for historical time series (pre-2015 baseline)
 - [x] Add Landsat thermal band (LST) for peatland surface temperature & dryness detection
-- [ ] Implement Landsat gap-filling when Sentinel-2 unavailable (cloud cover)
+- [x] Implement Landsat gap-filling when Sentinel-2 unavailable (cloud cover)
 - [x] Add cross-sensor validation (compare Sentinel-2 vs Landsat NDVI/NDWI consistency)
 - [x] Add Landsat & WorldCover as selectable data sources in UI dropdown
 - [x] Implement Landsat pipeline_metrics in gee.py (saat ini hanya collection terdaftar)
@@ -33,7 +33,7 @@
 
 - [x] Improve Planetary Computer (STAC) reliability (retry logic, timeout handling)
 - [x] Add GEE pipeline_metrics optimization (reduce getInfo round-trips)
-- [ ] Add multi-source fallback with user notification (jangan silent fallback)
+- [x] Add multi-source fallback with user notification (jangan silent fallback)
 
 ## FIRMS
 
@@ -50,7 +50,7 @@
 
 ## Testing
 
-- [ ] Add unit tests for gee.pipeline_metrics
-- [ ] Add unit tests for firms multi-sensor
-- [ ] Add integration test for GEE data source
-- [ ] Add test for 20-layer auto-run flow
+- [x] Add unit tests for gee.pipeline_metrics
+- [x] Add unit tests for firms multi-sensor
+- [x] Add integration test for GEE data source
+- [x] Add test for 20-layer auto-run flow
