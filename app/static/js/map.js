@@ -79,11 +79,14 @@
   const coordsText = document.getElementById("coords-text");
 
   const todayIso = new Date().toISOString().slice(0, 10);
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const oneMonthAgoIso = oneMonthAgo.toISOString().slice(0, 10);
   const dateStartInput = document.getElementById("date-start");
   const dateEndInput = document.getElementById("date-end");
   if (dateStartInput) {
     dateStartInput.max = todayIso;
-    if (dateStartInput.value > todayIso) dateStartInput.value = todayIso;
+    dateStartInput.value = oneMonthAgoIso;
   }
   if (dateEndInput) {
     dateEndInput.max = todayIso;
