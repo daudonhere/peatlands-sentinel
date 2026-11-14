@@ -17,8 +17,8 @@
 
 ### Heuristic/Estimation (opsional, bisa tetap)
 
-- [ ] AI Analyst: improve heuristic_report to use more real metrics (saat ini rule-based)
-- [ ] Canal blocking: kalibrasi rumus dengan data lapangan (pengukuran WTD sebelum/sesudah sekat)
+- [x] AI Analyst: improve heuristic_report to use more real metrics (saat ini rule-based)
+- [x] Canal blocking: kalibrasi rumus dengan data lapangan (pengukuran WTD sebelum/sesudah sekat)
 
 ## Landsat & WorldCover Integration
 
