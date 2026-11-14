@@ -78,6 +78,23 @@
 
   const coordsText = document.getElementById("coords-text");
 
+  function fmtDdMmYy(iso) {
+    const d = new Date(iso);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  }
+  function parseDdMmYy(str) {
+    const parts = str.split("/");
+    if (parts.length !== 3) return null;
+    const dd = parts[0];
+    const mm = parts[1];
+    const yy = parts[2];
+    const year = yy.length === 2 ? "20" + yy : yy;
+    return `${year}-${mm}-${dd}`;
+  }
+
   const todayIso = new Date().toISOString().slice(0, 10);
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -85,12 +102,10 @@
   const dateStartInput = document.getElementById("date-start");
   const dateEndInput = document.getElementById("date-end");
   if (dateStartInput) {
-    dateStartInput.max = todayIso;
-    dateStartInput.value = oneMonthAgoIso;
+    dateStartInput.value = fmtDdMmYy(oneMonthAgoIso);
   }
   if (dateEndInput) {
-    dateEndInput.max = todayIso;
-    dateEndInput.value = todayIso;
+    dateEndInput.value = fmtDdMmYy(todayIso);
   }
   const aoiStatusText = document.getElementById("aoi-status-text");
   const analysisTargetSelect = document.getElementById("analysis-target");
@@ -275,7 +290,7 @@
       return currentRunId;
     },
     function () {
-      return `${document.getElementById("date-start").value || "2024-01-01"}/${document.getElementById("date-end").value || "2024-12-31"}`;
+      return `${parseDdMmYy(document.getElementById("date-start").value) || "2024-01-01"}/${parseDdMmYy(document.getElementById("date-end").value) || "2024-12-31"}`;
     },
   );
 
@@ -365,8 +380,9 @@
     const selectedTargetKey = "peat_moisture";
     const selectedTargetText = "Peatland Moisture and Extent (S1 + S2)";
     const dateStart =
-      document.getElementById("date-start").value || "2024-01-01";
-    const dateEnd = document.getElementById("date-end").value || "2024-12-31";
+      parseDdMmYy(document.getElementById("date-start").value) || "2024-01-01";
+    const dateEnd =
+      parseDdMmYy(document.getElementById("date-end").value) || "2024-12-31";
     const dataSourceSelect = document.getElementById("data-source-select");
     const granularitySelect = document.getElementById("granularity-select");
 
@@ -554,8 +570,9 @@
     }
     const bbox = getBbox();
     const dateStart =
-      document.getElementById("date-start").value || "2024-01-01";
-    const dateEnd = document.getElementById("date-end").value || "2024-12-31";
+      parseDdMmYy(document.getElementById("date-start").value) || "2024-01-01";
+    const dateEnd =
+      parseDdMmYy(document.getElementById("date-end").value) || "2024-12-31";
     const dataSourceSelect = document.getElementById("data-source-select");
     const granularitySelect = document.getElementById("granularity-select");
     const payload = {
