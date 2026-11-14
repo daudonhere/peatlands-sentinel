@@ -458,3 +458,53 @@ def compute_target_modulators(
             )
         cursor = date(next_year, next_month, 1)
     return points
+
+
+def cross_sensor_validation(
+    bbox: list[float],
+    date_range: str,
+    max_cloud: float = 40.0,
+) -> dict:
+    """Compare Sentinel-2 vs Landsat NDVI/NDWI for the same area and time period."""
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    start, end = _split_interval(date_range)
+
+    s2_coll = (
+        _s2_collection()
+        .filterBounds(geom)
+        .filterDate(start, end)
+        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud))
+    )
+    s2_ndvi = 0.0
+    s2_ndwi = 0.0
+    if s2_coll.size().getInfo() > 0:
+        s2_img = _with_indices(s2_coll.median())
+        s2_stats = s2_img.reduceRegion(ee.Reducer.mean(), geom, 100, maxPixels=1e9).getInfo() or {}
+        s2_ndvi = round(float(s2_stats.get("NDVI", 0.0) or 0.0), 4)
+        s2_ndwi = round(float(s2_stats.get("NDWI", 0.0) or 0.0), 4)
+
+    l8_coll = (
+        _landsat_collection()
+        .filterBounds(geom)
+        .filterDate(start, end)
+        .filter(ee.Filter.lt("CLOUD_COVER", max_cloud))
+    )
+    l8_ndvi = 0.0
+    l8_ndwi = 0.0
+    if l8_coll.size().getInfo() > 0:
+        l8_img = l8_coll.median()
+        l8_ndvi_img = l8_img.normalizedDifference(["SR_B5", "SR_B4"]).rename("ndvi")
+        l8_ndwi_img = l8_img.normalizedDifference(["SR_B3", "SR_B5"]).rename("ndwi")
+        l8_stats = l8_ndvi_img.addBands(l8_ndwi_img).reduceRegion(
+            ee.Reducer.mean(), geom, 100, maxPixels=1e9
+        ).getInfo() or {}
+        l8_ndvi = round(float(l8_stats.get("ndvi", 0.0) or 0.0), 4)
+        l8_ndwi = round(float(l8_stats.get("ndwi", 0.0) or 0.0), 4)
+
+    return {
+        "sentinel2": {"ndvi": s2_ndvi, "ndwi": s2_ndwi, "scenes": int(s2_coll.size().getInfo())},
+        "landsat": {"ndvi": l8_ndvi, "ndwi": l8_ndwi, "scenes": int(l8_coll.size().getInfo())},
+        "ndvi_diff": round(s2_ndvi - l8_ndvi, 4),
+        "ndwi_diff": round(s2_ndwi - l8_ndwi, 4),
+    }

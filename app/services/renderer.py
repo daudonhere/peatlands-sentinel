@@ -132,30 +132,11 @@ def generate_spectral_overlay_png(
             r, g, b = _colormap_rdylgn(norm)
         a = np.where(nan_mask, 0, 185).astype(np.uint8)
     else:
-        grad = _fallback_gradient(height, width, target, period)
-        if target in (
-            "wildfire_dnbr",
-            "forest_to_bare",
-            "forest_to_mining",
-            "deforest_expansion",
-            "peat_drainage_canal",
-            "landslide_susceptibility",
-            "ground_deformation",
-            "carbon_subsidence",
-            "urban_expansion",
-            "biodiversity_habitat",
-        ):
-            r, g, b = _colormap_fire(grad)
-        elif target in (
-            "peat_moisture",
-            "water_dynamics",
-            "coastal_inundation",
-            "seasonal_flooding",
-        ):
-            r, g, b = _colormap_water(grad)
-        else:
-            r, g, b = _colormap_rdylgn(grad)
-        a = np.full((height, width), 185, dtype=np.uint8)
+        # No arrays available - return transparent placeholder
+        r = np.zeros((height, width), dtype=np.uint8)
+        g = np.zeros((height, width), dtype=np.uint8)
+        b = np.zeros((height, width), dtype=np.uint8)
+        a = np.zeros((height, width), dtype=np.uint8)
 
     rgba = np.dstack([r, g, b, a]).tobytes()
     return _encode_png(width, height, rgba)

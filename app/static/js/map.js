@@ -257,14 +257,17 @@
           ? "Live COG (Planetary Computer)"
           : srcVal === "gee"
             ? "Google Earth Engine"
-            : srcVal === "planetary_computer"
-              ? "Planetary Computer"
-              : "Simulation";
+            : srcVal === "landsat"
+              ? "Landsat 8/9 (GEE)"
+              : srcVal === "planetary_computer"
+                ? "Planetary Computer"
+                : "Simulation";
       const dt = metrics.post_datetime ? ` (${metrics.post_datetime})` : "";
       valSource.textContent = `${src}${dt}`;
       valSource.style.color =
         srcVal === "live_cog" ||
         srcVal === "gee" ||
+        srcVal === "landsat" ||
         srcVal === "planetary_computer"
           ? "var(--status-emerald)"
           : "var(--status-amber)";

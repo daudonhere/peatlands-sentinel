@@ -139,9 +139,56 @@ class EarthEngineSource:
         raise LookupError("GEE scene observations are not supported yet.")
 
 
+class LandsatSource:
+    name = "landsat"
+
+    async def pipeline_metrics(
+        self,
+        bbox: list[float],
+        pre_date_range: str,
+        post_date_range: str,
+        max_cloud: float,
+    ) -> SourceResult:
+        if not gee.is_available():
+            raise LookupError("GEE is not configured or authorized.")
+        metrics = await gee.landsat_pipeline_metrics(
+            bbox, pre_date_range, post_date_range, max_cloud
+        )
+        meta = {
+            k: v
+            for k, v in metrics.items()
+            if k
+            in (
+                "pre_scene_id",
+                "post_scene_id",
+                "pre_datetime",
+                "post_datetime",
+                "valid_pixel_ratio",
+                "mean_lst",
+            )
+        }
+        return SourceResult(
+            source=self.name,
+            metrics=metrics,
+            pre_arrays=metrics.get("_pre_arrays"),
+            post_arrays=metrics.get("_arrays"),
+            scene_meta=meta,
+        )
+
+    async def scene_observations(
+        self,
+        bbox: list[float],
+        date_range: str,
+        max_cloud: float,
+        max_items: int = 8,
+    ) -> list[dict]:
+        raise LookupError("Landsat scene observations are not supported yet.")
+
+
 _SOURCES = {
     "planetary_computer": PlanetaryComputerSource,
     "gee": EarthEngineSource,
+    "landsat": LandsatSource,
 }
 
 

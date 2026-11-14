@@ -16,15 +16,12 @@ from app.services.geospatial import polygon_mask
 from app.services.classifier import (
     build_spectral_summary_from_live,
     classify_live_arrays,
-    simulate_aoi_transitions,
-    simulate_arrays,
 )
 from app.services.hazard import multi_hazard_profile
 from app.services.hydrology import evaluate_peat_hydrology_profile
 from app.services.model_metrics import (
     class_scatter_from_arrays,
     evaluate_local_model,
-    simulate_class_scatter,
 )
 from app.services.sources import resolve_pipeline_metrics
 from app.services.temporal import parse_iso_interval, series_from_live
@@ -148,11 +145,7 @@ async def resolve_spectral(
         area_ha,
     )
     arrays = _merge_arrays(pre_arrays, post_arrays)
-    scatter = (
-        class_scatter_from_arrays(pre_arrays or {}, post_arrays or {})
-        if pre_arrays and post_arrays
-        else simulate_class_scatter(payload.target, run_id)
-    )
+    scatter = class_scatter_from_arrays(pre_arrays or {}, post_arrays or {})
     extra = {"source": result.source, **result.scene_meta}
     return summary, transitions, arrays, extra, scatter
 

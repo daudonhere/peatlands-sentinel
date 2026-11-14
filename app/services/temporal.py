@@ -168,8 +168,4 @@ def series_from_live(
     seed: str = "peatlands",
 ) -> list[dict]:
     observed = aggregate_observations(observations, granularity)
-    if len(observed) >= 3:
-        return observed
-    return modelled_series(
-        start, end, pre_anchor, post_anchor, granularity=granularity, seed=seed
-    )
+    return observed

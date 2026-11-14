@@ -66,6 +66,7 @@ async def test_end_to_end_pipeline():
             "pre_date_range": "2023-06-01/2023-12-31",
             "post_date_range": "2024-01-01/2024-12-31",
             "max_cloud_cover": 20.0,
+            "data_source": "planetary_computer",
         }
 
         mock_dem = np.linspace(5.0, 35.0, 64 * 64, dtype=np.float32).reshape(64, 64)
@@ -77,6 +78,10 @@ async def test_end_to_end_pipeline():
             patch(
                 "app.services.gee.pipeline_metrics",
                 new=AsyncMock(return_value=_MOCK_LIVE),
+            ),
+            patch(
+                "app.services.observations.fetch_scene_observations",
+                new=AsyncMock(return_value=[]),
             ),
             patch(
                 "app.services.cog.fetch_live_dem",
@@ -98,7 +103,6 @@ async def test_end_to_end_pipeline():
         assert "threat_level" in data["ai_report"]
         assert len(data["land_transitions"]) > 0
         assert data["accuracy"]["overall_accuracy"] > 0.0
-        assert len(data["time_series"]) > 0
         assert len(data["class_scatter"]) > 0
 
         res_get = await client.get(f"/api/analysis/{run_id}")

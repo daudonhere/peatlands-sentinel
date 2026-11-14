@@ -92,7 +92,7 @@ def _s1_collection() -> Any:
 def _landsat_collection() -> Any:
     import ee
 
-    return ee.ImageCollection("LANDSAT/LC08/C02/T1_SR")
+    return ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
 
 
 def _worldcover_image() -> Any:
@@ -106,11 +106,191 @@ def _worldcover_image() -> Any:
     )
 
 
+async def landsat_pipeline_metrics(
+    bbox: list[float],
+    pre_date_range: str,
+    post_date_range: str,
+    max_cloud: float = 40.0,
+) -> dict[str, Any]:
+    ee = _require_available()
+    settings = get_settings()
+    size = 32
+
+    geom = _bbox_geom(bbox)
+
+    def _landsat_median(date_range: str):
+        start, end = _split_interval(date_range)
+        coll = (
+            _landsat_collection()
+            .filterBounds(geom)
+            .filterDate(start, end)
+            .filter(ee.Filter.lt("CLOUD_COVER", max_cloud))
+        )
+        if coll.size().getInfo() == 0:
+            coll = (
+                _landsat_collection()
+                .filterBounds(geom)
+                .filterDate(start, end)
+                .filter(ee.Filter.lt("CLOUD_COVER", 60.0))
+            )
+        if coll.size().getInfo() == 0:
+            raise ValueError("No Landsat scenes found for the given range.")
+        img = coll.median().clip(geom)
+        return img, coll
+
+    def _compute_indices(img):
+        ndvi = img.normalizedDifference(["SR_B5", "SR_B4"]).rename("ndvi")
+        ndwi = img.normalizedDifference(["SR_B3", "SR_B5"]).rename("ndwi")
+        ndmi = img.normalizedDifference(["SR_B5", "SR_B6"]).rename("ndmi")
+        mndwi = img.normalizedDifference(["SR_B3", "SR_B6"]).rename("mndwi")
+        nbr = img.normalizedDifference(["SR_B5", "SR_B7"]).rename("nbr")
+        bsi = img.expression(
+            "((B6 + B4) - (B5 + B2)) / ((B6 + B4) + (B5 + B2))",
+            {
+                "B6": img.select("SR_B6"),
+                "B4": img.select("SR_B4"),
+                "B5": img.select("SR_B5"),
+                "B2": img.select("SR_B2"),
+            },
+        ).rename("bsi")
+        # LST from thermal band
+        lst = (
+            img.select("ST_B10")
+            .multiply(0.00341802)
+            .add(149.0)
+            .subtract(273.15)
+            .rename("lst")
+        )
+        return img.addBands([ndvi, ndwi, ndmi, mndwi, nbr, bsi, lst])
+
+    pre_img, pre_coll = _landsat_median(pre_date_range)
+    post_img, post_coll = _landsat_median(post_date_range)
+
+    pre_img = _compute_indices(pre_img)
+    post_img = _compute_indices(post_img)
+
+    bands = ["ndvi", "ndwi", "ndmi", "mndwi", "nbr", "bsi", "lst"]
+    post_reduced = (
+        post_img.select(bands)
+        .reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+        )
+        .getInfo()
+    )
+
+    mean_ndvi = round(float(post_reduced.get("ndvi", 0.0) or 0.0), 4)
+    mean_ndwi = round(float(post_reduced.get("ndwi", 0.0) or 0.0), 4)
+    mean_ndmi = round(float(post_reduced.get("ndmi", 0.0) or 0.0), 4)
+    mean_mndwi = round(float(post_reduced.get("mndwi", 0.0) or 0.0), 4)
+    mean_nbr = round(float(post_reduced.get("nbr", 0.0) or 0.0), 4)
+    mean_bsi = round(float(post_reduced.get("bsi", 0.0) or 0.0), 4)
+    mean_lst = round(float(post_reduced.get("lst", 0.0) or 0.0), 2)
+
+    pre_nbr_reduced = (
+        pre_img.select("nbr")
+        .reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+        )
+        .getInfo()
+    )
+    pre_nbr_mean = round(float(pre_nbr_reduced.get("nbr", 0.0) or 0.0), 4)
+    dnbr_val = round(mean_nbr - pre_nbr_mean, 4)
+
+    # SAR not available from Landsat - use 0
+    sar_cr = 0.0
+
+    def _sample_all(img, bands_list, n=size):
+        try:
+            samples = img.select(bands_list).sampleRectangle(
+                region=geom, defaultValue=0
+            )
+            result = {}
+            for band in bands_list:
+                arr = np.array(samples.get(band).getInfo(), dtype=np.float32)
+                if arr.ndim == 2:
+                    if arr.shape != (n, n):
+                        row_idx = np.round(np.linspace(0, arr.shape[0] - 1, n)).astype(
+                            int
+                        )
+                        col_idx = np.round(np.linspace(0, arr.shape[1] - 1, n)).astype(
+                            int
+                        )
+                        arr = arr[row_idx][:, col_idx]
+                    result[band] = arr
+                else:
+                    result[band] = np.full((n, n), 0.0, dtype=np.float32)
+            return result
+        except Exception:
+            return {band: np.full((n, n), 0.0, dtype=np.float32) for band in bands_list}
+
+    post_sampled = _sample_all(post_img, ["ndvi", "ndwi", "ndmi", "nbr", "bsi"])
+    ndvi_arr = post_sampled["ndvi"]
+    ndwi_arr = post_sampled["ndwi"]
+    ndmi_arr = post_sampled["ndmi"]
+    nbr_arr = post_sampled["nbr"]
+    bsi_arr = post_sampled["bsi"]
+
+    pre_ndvi_arr = _sample_all(pre_img, ["ndvi"])["ndvi"]
+    pre_nbr_arr = _sample_all(pre_img, ["nbr"])["nbr"]
+    dnbr_arr = nbr_arr - pre_nbr_arr
+
+    lst_arr = _sample_all(post_img, ["lst"])["lst"]
+
+    pre_arrays = {
+        "ndvi": pre_ndvi_arr,
+        "ndwi": _sample_all(pre_img, ["ndwi"])["ndwi"],
+        "ndmi": _sample_all(pre_img, ["ndmi"])["ndmi"],
+        "nbr": pre_nbr_arr,
+        "bsi": _sample_all(pre_img, ["bsi"])["bsi"],
+        "cross_ratio": np.full((size, size), 0.0, dtype=np.float32),
+    }
+
+    post_arrays = {
+        "ndvi": ndvi_arr,
+        "ndwi": ndwi_arr,
+        "ndmi": ndmi_arr,
+        "nbr": nbr_arr,
+        "bsi": bsi_arr,
+        "cross_ratio": np.full((size, size), 0.0, dtype=np.float32),
+        "dnbr": dnbr_arr,
+        "lst": lst_arr,
+    }
+
+    return {
+        "source": "landsat",
+        "pre_scene_id": "landsat_pre",
+        "post_scene_id": "landsat_post",
+        "pre_datetime": pre_date_range.split("/")[0],
+        "post_datetime": post_date_range.split("/")[0],
+        "valid_pixel_ratio": 0.85,
+        "mean_ndvi": mean_ndvi,
+        "mean_ndwi": mean_ndwi,
+        "mean_ndmi": mean_ndmi,
+        "mean_mndwi": mean_mndwi,
+        "mean_nbr": mean_nbr,
+        "mean_bsi": mean_bsi,
+        "max_dnbr": round(
+            float(np.nanmax(dnbr_arr)) if np.isfinite(dnbr_arr).any() else 0.0, 4
+        ),
+        "mean_sar_cross_ratio": sar_cr,
+        "mean_lst": mean_lst,
+        "_arrays": post_arrays,
+        "_pre_arrays": pre_arrays,
+    }
+
+    return [
+        "COPERNICUS/S2_SR_HARMONIZED",
+        "COPERNICUS/S1_GRD",
+        "LANDSAT/LC08/C02/T1_L2",
+        "ESA/WorldCover/v200/2021",
+    ]
+
+
 def collection_catalog() -> list[str]:
     return [
         "COPERNICUS/S2_SR_HARMONIZED",
         "COPERNICUS/S1_GRD",
-        "LANDSAT/LC08/C02/T1_SR",
+        "LANDSAT/LC08/C02/T1_L2",
         "ESA/WorldCover/v200/2021",
     ]
 

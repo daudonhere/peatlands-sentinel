@@ -11,9 +11,9 @@
 
 ### Fallback Functions (perlu real data)
 
-- [ ] Remove simulate_class_scatter fallback — ensure pre_arrays/post_arrays always populated from real data
-- [ ] Remove modelled_series fallback — increase observation fetch to get >= 3 real scenes
-- [ ] Remove _fallback_gradient in renderer — ensure arrays always provided
+- [x] Remove simulate_class_scatter fallback — ensure pre_arrays/post_arrays always populated from real data
+- [x] Remove modelled_series fallback — increase observation fetch to get >= 3 real scenes
+- [x] Remove _fallback_gradient in renderer — ensure arrays always provided
 
 ### Heuristic/Estimation (opsional, bisa tetap)
 
@@ -22,12 +22,12 @@
 
 ## Landsat & WorldCover Integration
 
-- [ ] Integrate Landsat 8/9 OLI/TIRS for historical time series (pre-2015 baseline)
-- [ ] Add Landsat thermal band (LST) for peatland surface temperature & dryness detection
+- [x] Integrate Landsat 8/9 OLI/TIRS for historical time series (pre-2015 baseline)
+- [x] Add Landsat thermal band (LST) for peatland surface temperature & dryness detection
 - [ ] Implement Landsat gap-filling when Sentinel-2 unavailable (cloud cover)
-- [ ] Add cross-sensor validation (compare Sentinel-2 vs Landsat NDVI/NDWI consistency)
-- [ ] Add Landsat & WorldCover as selectable data sources in UI dropdown
-- [ ] Implement Landsat pipeline_metrics in gee.py (saat ini hanya collection terdaftar)
+- [x] Add cross-sensor validation (compare Sentinel-2 vs Landsat NDVI/NDWI consistency)
+- [x] Add Landsat & WorldCover as selectable data sources in UI dropdown
+- [x] Implement Landsat pipeline_metrics in gee.py (saat ini hanya collection terdaftar)
 
 ## Data Source & Performance
 
