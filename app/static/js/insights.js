@@ -218,11 +218,19 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
 
   $("btn-fires").addEventListener("click", function () {
     const status = $("insight-status");
+    const confFilter = $("firms-confidence");
+    const conf = confFilter ? confFilter.value : "all";
     withBusy($("btn-fires"), "Querying FIRMS...", async function () {
       try {
-        const data = await fetchActiveFires(getBbox(), 3);
-        showFires(data.fires);
-        status.textContent = `${data.count} VIIRS hotspots in last 3 days`;
+        const data = await fetchActiveFires(getBbox(), 5);
+        let fires = data.fires || [];
+        if (conf !== "all") {
+          fires = fires.filter(function (f) {
+            return f.confidence === conf || f.confidence === "h";
+          });
+        }
+        showFires(fires);
+        status.textContent = `${fires.length} VIIRS hotspots (conf: ${conf})`;
       } catch (err) {
         status.textContent = err.message;
       }
@@ -271,5 +279,6 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     renderClassScatter: renderClassScatter,
     renderModelAccuracy: renderModelAccuracy,
     refreshIntervention: updateIntervention,
+    showFires: showFires,
   };
 }

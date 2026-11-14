@@ -232,8 +232,16 @@
 
         <div class="card">
           <h3 class="analyst-title">Field Validation</h3>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; align-items: center;">
+            <select id="firms-confidence" class="form-select" style="flex: 1;">
+              <option value="all">All Confidence</option>
+              <option value="h">High only</option>
+              <option value="n">Nominal+</option>
+              <option value="l">Low+</option>
+            </select>
+            <button id="btn-fires" type="button" class="btn btn-outline btn-sm">Active Fires</button>
+          </div>
           <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
-            <button id="btn-fires" type="button" class="btn btn-outline btn-sm">Active Fires (FIRMS)</button>
             <button id="btn-live-ndvi" type="button" class="btn btn-outline btn-sm">Live NDVI (COG)</button>
           </div>
           <p id="insight-status" class="analyst-text" style="margin-top: 0.4rem;"></p>

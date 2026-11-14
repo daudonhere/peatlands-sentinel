@@ -44,9 +44,20 @@ def _read_band_sync(href: str, bbox: list[float], size: int) -> np.ndarray:
             return vrt.read(1, masked=False).astype(np.float32)
 
 
-async def _read_band(href: str, bbox: list[float], size: int) -> np.ndarray:
+async def _read_band(
+    href: str, bbox: list[float], size: int, max_retries: int = 3
+) -> np.ndarray:
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(_executor, _read_band_sync, href, bbox, size)
+    for attempt in range(max_retries):
+        try:
+            return await loop.run_in_executor(
+                _executor, _read_band_sync, href, bbox, size
+            )
+        except Exception:
+            if attempt == max_retries - 1:
+                raise
+            await asyncio.sleep(0.5 * (attempt + 1))
+    raise RuntimeError("Failed to read band after retries")
 
 
 async def _fetch_s2_bands(
@@ -219,7 +230,7 @@ async def fetch_live_pipeline_metrics(
 ) -> dict:
     post = await asyncio.wait_for(
         fetch_spectral_snapshot(bbox, post_date_range, max_cloud, size),
-        timeout=60.0,
+        timeout=90.0,
     )
 
     try:

@@ -15,12 +15,13 @@ class BBoxRequest(BaseModel):
     bbox: list[float] = Field(min_length=4, max_length=4)
     days: int = Field(default=5, ge=1, le=5)
     datetime_range: str = "2024-01-01/2024-12-31"
+    archive: bool = False
 
 
 @router.post("/fires")
 async def active_fires(payload: BBoxRequest):
     try:
-        fires = await fetch_active_fires(payload.bbox, payload.days)
+        fires = await fetch_active_fires(payload.bbox, payload.days, payload.archive)
     except PermissionError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:

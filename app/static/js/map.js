@@ -806,6 +806,10 @@
             data.count +
             " active fire hotspots in AOI (last 5 days)</strong>";
           panel.style.color = "#e03e3e";
+          // Show markers on map
+          if (insightsCtrl && insightsCtrl.showFires) {
+            insightsCtrl.showFires(data.fires);
+          }
         } else {
           panel.innerHTML =
             "FIRMS: No active fire hotspots in AOI (last 5 days)";

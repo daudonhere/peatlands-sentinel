@@ -13,11 +13,12 @@ def _safe_float(value: object) -> float:
 
 
 FIRMS_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
-FIRMS_SENSORS = ["VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "MODIS_NRT"]
+FIRMS_SENSORS_NRT = ["VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "MODIS_NRT"]
+FIRMS_SENSORS_ARCHIVE = ["VIIRS_SNPP_SP", "MODIS_SP"]
 
 
 async def fetch_active_fires(
-    bbox: list[float], days: int = 3
+    bbox: list[float], days: int = 5, archive: bool = False
 ) -> list[dict[str, float | str]]:
     key = get_settings().firms_map_key
     if not key:
@@ -25,11 +26,12 @@ async def fetch_active_fires(
 
     days = max(1, min(days, 5))
     area = ",".join(str(v) for v in bbox)
+    sensors = FIRMS_SENSORS_ARCHIVE if archive else FIRMS_SENSORS_NRT
     all_fires: list[dict[str, float | str]] = []
     seen: set[tuple[str, str]] = set()
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        for sensor in FIRMS_SENSORS:
+        for sensor in sensors:
             url = f"{FIRMS_URL}/{key}/{sensor}/{area}/{days}"
             try:
                 resp = await client.get(url)

@@ -31,15 +31,15 @@
 
 ## Data Source & Performance
 
-- [ ] Improve Planetary Computer (STAC) reliability (retry logic, timeout handling)
-- [ ] Add GEE pipeline_metrics optimization (reduce getInfo round-trips)
+- [x] Improve Planetary Computer (STAC) reliability (retry logic, timeout handling)
+- [x] Add GEE pipeline_metrics optimization (reduce getInfo round-trips)
 - [ ] Add multi-source fallback with user notification (jangan silent fallback)
 
 ## FIRMS
 
-- [ ] Add confidence filter (n/l/h) di frontend
-- [ ] Tampilkan fire hotspot markers di peta (saat ini hanya count di panel)
-- [ ] Support arsip FIRMS (bukan hanya NRT)
+- [x] Add confidence filter (n/l/h) di frontend
+- [x] Tampilkan fire hotspot markers di peta (saat ini hanya count di panel)
+- [x] Support arsip FIRMS (bukan hanya NRT)
 
 ## UI/UX
 
