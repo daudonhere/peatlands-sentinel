@@ -4,7 +4,7 @@
 
 - [x] Loading text: "landsat" engine shows "Querying STAC assets" instead of "Querying Google Earth Engine assets" (map.js line 504-512)
 - [x] Sidebar metrics: frontend reads `spectral_metrics` (7 fields) instead of `telemetry` (all fields) → many zeros (map.js line 250)
-- [ ] Spectral Feature Clusters chart: only shows NDVI vs BSI, should include all metrics (NDVI, NDWI, NDMI, MNDWI, NBR, dNBR, BSI, SAR, WTD, etc.)
+- [x] Spectral Feature Clusters chart: now shows all metrics (NDVI, NDWI, NDMI, BSI, NBR pre/post) per class
 - [x] Multi-Temporal Index Trend chart (line): now shows NDVI, NDWI, NDMI, NBR, BSI (5 metrics)
 - [x] Inspect Available Passes display: improve UI to be more informative (show scene details, cloud cover, dates clearly)
 - [x] Map layer ordering: boundaries → AOI → 20 analysis layers → fire (on top, not overlapping) (z-index/layer order)
@@ -13,7 +13,7 @@
 ## Classifier Issues
 
 - [x] Land Conversion panel empty: classifier predicts only class 6 (Built-up Area) for all pixels, no class transitions detected — FIXED (WorldCover + merged training data, now predicts 4 classes)
-- [ ] Spectral Feature Clusters: verify scatter renders correctly with real GEE data
+- [x] Spectral Feature Clusters: verify scatter renders correctly with real GEE data — FIXED (now shows table with all metrics)
 
 ## Time Series
 
