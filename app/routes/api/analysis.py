@@ -108,25 +108,26 @@ async def execute_analysis_pipeline(
     }
 
     update(92, "Saving run")
-    save_analysis_run(
-        run_id=run_id,
-        created_at=created_at,
-        target=payload.target,
-        area_hectares=area_ha,
-        geojson_data=geojson_envelope,
-        metrics_data=metrics_payload,
-        transitions_data=[t.model_dump() for t in transitions],
-        ai_report_data=ai_report.model_dump(),
-        arrays=arrays or None,
-        extra_data={
-            "accuracy": accuracy.model_dump(),
-            "time_series": [point.model_dump() for point in time_series],
-            "class_scatter": [point.model_dump() for point in scatter],
-            "data_source": source_meta.get(
-                "source", payload.data_source or "planetary_computer"
-            ),
-        },
-    )
+    if getattr(payload, "save_to_history", True):
+        save_analysis_run(
+            run_id=run_id,
+            created_at=created_at,
+            target=payload.target,
+            area_hectares=area_ha,
+            geojson_data=geojson_envelope,
+            metrics_data=metrics_payload,
+            transitions_data=[t.model_dump() for t in transitions],
+            ai_report_data=ai_report.model_dump(),
+            arrays=arrays or None,
+            extra_data={
+                "accuracy": accuracy.model_dump(),
+                "time_series": [point.model_dump() for point in time_series],
+                "class_scatter": [point.model_dump() for point in scatter],
+                "data_source": source_meta.get(
+                    "source", payload.data_source or "planetary_computer"
+                ),
+            },
+        )
 
     update(100, "Complete")
     return AnalysisPipelineResponse(

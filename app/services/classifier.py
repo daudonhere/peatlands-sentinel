@@ -23,8 +23,13 @@ _WORLD_COVER_LABELS: list[int] | None = None
 def set_worldcover_training(features: list[list[float]], labels: list[int]) -> None:
     global _WORLD_COVER_FEATURES, _WORLD_COVER_LABELS
     if features and labels and len(features) == len(labels):
-        _WORLD_COVER_FEATURES = features
-        _WORLD_COVER_LABELS = labels
+        # Merge with hardcoded training data for diversity
+        from app.services.reference_data import TRAINING_X, TRAINING_Y
+
+        merged_features = list(TRAINING_X) + list(features)
+        merged_labels = list(TRAINING_Y) + list(labels)
+        _WORLD_COVER_FEATURES = merged_features
+        _WORLD_COVER_LABELS = merged_labels
 
 
 def get_training_data() -> tuple[np.ndarray, np.ndarray]:

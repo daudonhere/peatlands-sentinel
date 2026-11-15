@@ -63,6 +63,9 @@ class AnalysisPipelineRequest(BaseModel):
     max_cloud_cover: float = Field(default=40.0, ge=0.0, le=100.0)
     data_source: Literal["planetary_computer", "gee", "landsat"] | None = None
     granularity: Literal["weekly", "monthly", "yearly"] = "monthly"
+    save_to_history: bool = Field(
+        default=True, description="Whether to save this run to history"
+    )
     composite_season: str | None = Field(
         default=None,
         description="Optional seasonal window in MM-DD/MM-DD form",

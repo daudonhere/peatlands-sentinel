@@ -133,43 +133,38 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         '<p class="results-state-desc" style="font-size:0.75rem;">No feature cluster samples available.</p>';
       return;
     }
-    const w = 340;
-    const h = 120;
-    const padL = 26;
-    const padR = 10;
-    const padT = 10;
-    const padB = 20;
-    const pw = w - padL - padR;
-    const ph = h - padT - padB;
-
-    const bsiMin = -0.5;
-    const bsiMax = 0.4;
-    const ndviMin = -0.2;
-    const ndviMax = 1.0;
-
-    const circles = scatter
+    // Build a comprehensive table showing all metrics per class
+    const rows = scatter
       .map(function (pt) {
-        const x = padL + ((pt.post_bsi - bsiMin) / (bsiMax - bsiMin)) * pw;
-        const y =
-          padT + (1 - (pt.post_ndvi - ndviMin) / (ndviMax - ndviMin)) * ph;
         const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
-        const cx = Math.max(padL, Math.min(w - padR, x)).toFixed(1);
-        const cy = Math.max(padT, Math.min(padT + ph, y)).toFixed(1);
-        return `<circle cx="${cx}" cy="${cy}" r="3" fill="${clr}" opacity="0.8" />`;
+        return `
+        <tr>
+          <td style="padding:2px 4px;font-size:0.65rem;"><span style="display:inline-block;width:8px;height:8px;background:${clr};border-radius:50%;margin-right:4px;"></span>${pt.land_class}</td>
+          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.pre_ndvi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.post_ndvi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.pre_ndmi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.post_ndmi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.pre_bsi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.post_bsi || 0).toFixed(2)}</td>
+        </tr>`;
       })
       .join("");
 
     box.innerHTML = `
-      <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
-        <rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />
-        <line x1="${padL}" y1="${padT + ph}" x2="${w - padR}" y2="${padT + ph}" stroke="#333" stroke-width="1" />
-        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + ph}" stroke="#333" stroke-width="1" />
-        ${circles}
-        <text x="${padL}" y="${h - 6}" fill="#777" font-size="9">BSI: -0.5</text>
-        <text x="${w - padR}" y="${h - 6}" fill="#777" font-size="9" text-anchor="end">BSI: +0.4</text>
-        <text x="4" y="${padT + 10}" fill="#777" font-size="9">1.0</text>
-        <text x="4" y="${padT + ph}" fill="#777" font-size="9">0.0</text>
-      </svg>
+      <table style="width:100%;border-collapse:collapse;font-size:0.65rem;">
+        <thead>
+          <tr style="border-bottom:1px solid #333;">
+            <th style="padding:2px 4px;text-align:left;">Class</th>
+            <th style="padding:2px 4px;text-align:right;">Pre NDVI</th>
+            <th style="padding:2px 4px;text-align:right;">Post NDVI</th>
+            <th style="padding:2px 4px;text-align:right;">Pre NDMI</th>
+            <th style="padding:2px 4px;text-align:right;">Post NDMI</th>
+            <th style="padding:2px 4px;text-align:right;">Pre BSI</th>
+            <th style="padding:2px 4px;text-align:right;">Post BSI</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     `;
   }
 

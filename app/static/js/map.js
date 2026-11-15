@@ -735,6 +735,7 @@
         ? dataSourceSelect.value
         : "planetary_computer",
       granularity: granularitySelect ? granularitySelect.value : "weekly",
+      save_to_history: false,
     };
 
     const start = await startAsyncAnalysis(payload);
