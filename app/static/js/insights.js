@@ -133,49 +133,78 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         '<p class="results-state-desc" style="font-size:0.75rem;">No feature cluster samples available.</p>';
       return;
     }
-    // Build a comprehensive table showing all metrics per class
-    const rows = scatter
-      .map(function (pt) {
-        const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
-        return `
-        <tr>
-          <td style="padding:2px 4px;font-size:0.6rem;"><span style="display:inline-block;width:8px;height:8px;background:${clr};border-radius:50%;margin-right:4px;"></span>${pt.land_class}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_ndvi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_ndvi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_ndwi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_ndwi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_ndmi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_ndmi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_bsi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_bsi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_nbr || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_nbr || 0).toFixed(2)}</td>
-        </tr>`;
-      })
-      .join("");
+    // Grouped bar chart showing all metrics (NDVI, NDWI, NDMI, BSI, NBR) pre/post per class
+    const w = 340;
+    const metrics = ["ndvi", "ndwi", "ndmi", "bsi", "nbr"];
+    const metricColors = {
+      ndvi: "#7fb069",
+      ndwi: "#4aa3df",
+      ndmi: "#e0c341",
+      bsi: "#8fd19e",
+      nbr: "#dc3545",
+    };
+    const metricLabels = {
+      ndvi: "NDVI",
+      ndwi: "NDWI",
+      ndmi: "NDMI",
+      bsi: "BSI",
+      nbr: "NBR",
+    };
+    const nClasses = scatter.length;
+    const nMetrics = metrics.length;
+    const groupW = w / nClasses;
+    const barW = groupW / (nMetrics * 2 + 1);
+    const h = 160;
+    const padT = 20;
+    const padB = 30;
+    const ph = h - padT - padB;
+    const vmin = -0.6;
+    const vmax = 1.0;
 
-    box.innerHTML = `
-      <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:0.6rem;">
-        <thead>
-          <tr style="border-bottom:1px solid #333;">
-            <th style="padding:2px 4px;text-align:left;">Class</th>
-            <th style="padding:2px 4px;text-align:right;">Pre NDVI</th>
-            <th style="padding:2px 4px;text-align:right;">Post NDVI</th>
-            <th style="padding:2px 4px;text-align:right;">Pre NDWI</th>
-            <th style="padding:2px 4px;text-align:right;">Post NDWI</th>
-            <th style="padding:2px 4px;text-align:right;">Pre NDMI</th>
-            <th style="padding:2px 4px;text-align:right;">Post NDMI</th>
-            <th style="padding:2px 4px;text-align:right;">Pre BSI</th>
-            <th style="padding:2px 4px;text-align:right;">Post BSI</th>
-            <th style="padding:2px 4px;text-align:right;">Pre NBR</th>
-            <th style="padding:2px 4px;text-align:right;">Post NBR</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-      </div>
-    `;
+    function toY(val) {
+      return padT + (1 - (val - vmin) / (vmax - vmin)) * ph;
+    }
+
+    let svg = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">`;
+    svg += `<rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />`;
+    // Zero line
+    const zeroY = toY(0);
+    svg += `<line x1="0" y1="${zeroY}" x2="${w}" y2="${zeroY}" stroke="#444" stroke-width="1" />`;
+
+    scatter.forEach(function (pt, ci) {
+      const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
+      const gx = ci * groupW;
+      // Class label
+      svg += `<text x="${gx + groupW / 2}" y="${h - 4}" fill="#999" font-size="7" text-anchor="middle">${pt.land_class.substring(0, 8)}</text>`;
+      // Class color dot
+      svg += `<circle cx="${gx + groupW / 2}" cy="8" r="3" fill="${clr}" />`;
+
+      metrics.forEach(function (m, mi) {
+        const preVal = pt["pre_" + m] || 0;
+        const postVal = pt["post_" + m] || 0;
+        const xPre = gx + mi * barW * 2 + barW * 0.5;
+        const xPost = xPre + barW;
+        const yPre = toY(preVal);
+        const yPost = toY(postVal);
+        const zeroYp = toY(0);
+        // Pre bar (lighter)
+        svg += `<rect x="${xPre.toFixed(1)}" y="${Math.min(yPre, zeroYp).toFixed(1)}" width="${(barW - 1).toFixed(1)}" height="${Math.abs(yPre - zeroYp).toFixed(1)}" fill="${metricColors[m]}" opacity="0.4" />`;
+        // Post bar (darker)
+        svg += `<rect x="${xPost.toFixed(1)}" y="${Math.min(yPost, zeroYp).toFixed(1)}" width="${(barW - 1).toFixed(1)}" height="${Math.abs(yPost - zeroYp).toFixed(1)}" fill="${metricColors[m]}" opacity="0.9" />`;
+      });
+    });
+
+    // Legend
+    let lx = 4;
+    metrics.forEach(function (m) {
+      svg += `<rect x="${lx}" y="${padT - 12}" width="6" height="6" fill="${metricColors[m]}" opacity="0.4" />`;
+      svg += `<rect x="${lx + 7}" y="${padT - 12}" width="6" height="6" fill="${metricColors[m]}" opacity="0.9" />`;
+      svg += `<text x="${lx + 16}" y="${padT - 6}" fill="#999" font-size="7">${metricLabels[m]}</text>`;
+      lx += 42;
+    });
+
+    svg += `</svg>`;
+    box.innerHTML = svg;
   }
 
   function renderModelAccuracy(accuracy) {
