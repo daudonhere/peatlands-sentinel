@@ -82,8 +82,12 @@ async function postJson(url, body) {
   return data;
 }
 
-function fetchActiveFires(bbox, days) {
-  return postJson("/api/insights/fires", { bbox: bbox, days: days });
+function fetchActiveFires(bbox, days, archive) {
+  return postJson("/api/insights/fires", {
+    bbox: bbox,
+    days: days,
+    archive: !!archive,
+  });
 }
 
 function fetchLiveNdvi(bbox, datetimeRange) {

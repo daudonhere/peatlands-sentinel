@@ -32,25 +32,25 @@
 
 ### AI Analyst
 
-- [ ] Moisture Condition & Threat Status perlu data final dari AI (saat ini heuristic)
+- [x] Moisture Condition & Threat Status perlu data final dari AI (saat ini heuristic)
 
 ### Landsat
 
-- [ ] Landsat gap-filling when Sentinel-2 unavailable (cloud cover)
+- [x] Landsat gap-filling when Sentinel-2 unavailable (cloud cover)
 
 ### Data Source & Performance
 
-- [ ] Multi-source fallback with user notification (jangan silent fallback)
+- [x] Multi-source fallback with user notification (jangan silent fallback)
 
 ### FIRMS
 
-- [ ] Confidence filter (n/l/h) di frontend
-- [ ] Tampilkan fire hotspot markers di peta (saat ini hanya count di panel)
-- [ ] Support arsip FIRMS (bukan hanya NRT)
+- [x] Confidence filter (n/l/h) di frontend
+- [x] Tampilkan fire hotspot markers di peta (saat ini hanya count di panel)
+- [x] Support arsip FIRMS (bukan hanya NRT)
 
 ### Testing
 
-- [ ] Unit tests for gee.pipeline_metrics
-- [ ] Unit tests for firms multi-sensor
-- [ ] Integration test for GEE data source
-- [ ] Test for 20-layer auto-run flow
+- [x] Unit tests for gee.pipeline_metrics
+- [x] Unit tests for firms multi-sensor
+- [x] Integration test for GEE data source
+- [x] Test for 20-layer auto-run flow

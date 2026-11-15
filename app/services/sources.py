@@ -216,9 +216,25 @@ async def resolve_pipeline_metrics(
 ) -> SourceResult:
     source = get_data_source(name)
     try:
-        return await source.pipeline_metrics(
+        result = await source.pipeline_metrics(
             bbox, pre_date_range, post_date_range, max_cloud
         )
+        # Landsat gap-filling: if valid pixel ratio too low, try Landsat
+        valid_ratio = result.metrics.get("valid_pixel_ratio", 1.0)
+        if valid_ratio < 0.3 and source.name != "landsat":
+            try:
+                fallback = LandsatSource()
+                fb_result = await fallback.pipeline_metrics(
+                    bbox, pre_date_range, post_date_range, max_cloud
+                )
+                fb_result.scene_meta["fallback_from"] = source.name
+                fb_result.scene_meta["fallback_reason"] = (
+                    f"low valid pixel ratio ({valid_ratio:.2f})"
+                )
+                return fb_result
+            except Exception:
+                pass
+        return result
     except Exception as primary_err:
         # Gap-filling: if primary source fails, try landsat as fallback
         if source.name != "landsat":

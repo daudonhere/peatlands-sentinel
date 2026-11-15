@@ -220,9 +220,11 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     const status = $("insight-status");
     const confFilter = $("firms-confidence");
     const conf = confFilter ? confFilter.value : "all";
+    const archiveEl = $("firms-archive");
+    const archive = archiveEl ? archiveEl.checked : false;
     withBusy($("btn-fires"), "Querying FIRMS...", async function () {
       try {
-        const data = await fetchActiveFires(getBbox(), 5);
+        const data = await fetchActiveFires(getBbox(), 5, archive);
         let fires = data.fires || [];
         if (conf !== "all") {
           fires = fires.filter(function (f) {
@@ -230,7 +232,7 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
           });
         }
         showFires(fires);
-        status.textContent = `${fires.length} VIIRS hotspots (conf: ${conf})`;
+        status.textContent = `${fires.length} hotspots (conf: ${conf}, ${archive ? "archive" : "NRT"})`;
       } catch (err) {
         status.textContent = err.message;
       }
