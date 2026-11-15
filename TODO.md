@@ -34,7 +34,7 @@
 
 ## History Management
 
-- [ ] Bundle all objective layer runs into 1 history entry per "Run Analysis" (currently each layer toggle creates separate run)
+- [x] Bundle all objective layer runs into 1 history entry per "Run Analysis" (currently each layer toggle creates separate run) — FIXED (save_to_history flag, layer toggles skip history)
 
 ## UI / UX
 
