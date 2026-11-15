@@ -133,74 +133,79 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         '<p class="results-state-desc" style="font-size:0.75rem;">No feature cluster samples available.</p>';
       return;
     }
-    // Grouped bar chart showing all metrics (NDVI, NDWI, NDMI, BSI, NBR) pre/post per class
-    const w = 340;
-    const metrics = ["ndvi", "ndwi", "ndmi", "bsi", "nbr"];
-    const metricColors = {
-      ndvi: "#7fb069",
-      ndwi: "#4aa3df",
-      ndmi: "#e0c341",
-      bsi: "#8fd19e",
-      nbr: "#dc3545",
-    };
-    const metricLabels = {
-      ndvi: "NDVI",
-      ndwi: "NDWI",
-      ndmi: "NDMI",
-      bsi: "BSI",
-      nbr: "NBR",
-    };
-    const nClasses = scatter.length;
-    const nMetrics = metrics.length;
-    const groupW = w / nClasses;
-    const barW = groupW / (nMetrics * 2 + 1);
-    const h = 160;
-    const padT = 20;
-    const padB = 30;
-    const ph = h - padT - padB;
-    const vmin = -0.6;
-    const vmax = 1.0;
+    // Multi-scatter: NDVI vs BSI, NDWI vs NBR, NDMI vs SAR (pre + post per class)
+    const pairs = [
+      { xKey: "bsi", yKey: "ndvi", xLabel: "BSI", yLabel: "NDVI" },
+      { xKey: "nbr", yKey: "ndwi", xLabel: "NBR", yLabel: "NDWI" },
+      { xKey: "bsi", yKey: "ndmi", xLabel: "BSI", yLabel: "NDMI" },
+    ];
+    const pw = 100;
+    const ph = 90;
+    const pad = 18;
+    const cw = pw + pad * 2;
+    const ch = ph + pad * 2;
+    const cols = 3;
+    const totalW = cw * cols;
+    const totalH = ch;
 
-    function toY(val) {
-      return padT + (1 - (val - vmin) / (vmax - vmin)) * ph;
+    function toX(val, min, max) {
+      return pad + ((val - min) / (max - min)) * pw;
+    }
+    function toY(val, min, max) {
+      return pad + (1 - (val - min) / (max - min)) * ph;
     }
 
-    let svg = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">`;
-    svg += `<rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />`;
-    // Zero line
-    const zeroY = toY(0);
-    svg += `<line x1="0" y1="${zeroY}" x2="${w}" y2="${zeroY}" stroke="#444" stroke-width="1" />`;
+    const ranges = {
+      ndvi: [-0.3, 1.0],
+      ndwi: [-0.8, 0.5],
+      ndmi: [-0.2, 0.6],
+      bsi: [-0.6, 0.5],
+      nbr: [-0.3, 0.8],
+      sar: [-25, -5],
+    };
 
-    scatter.forEach(function (pt, ci) {
-      const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
-      const gx = ci * groupW;
-      // Class label
-      svg += `<text x="${gx + groupW / 2}" y="${h - 4}" fill="#999" font-size="7" text-anchor="middle">${pt.land_class.substring(0, 8)}</text>`;
-      // Class color dot
-      svg += `<circle cx="${gx + groupW / 2}" cy="8" r="3" fill="${clr}" />`;
+    let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" style="width:100%;height:auto;display:block;">`;
+    svg += `<rect width="${totalW}" height="${totalH}" fill="#0d0d0d" rx="2" />`;
 
-      metrics.forEach(function (m, mi) {
-        const preVal = pt["pre_" + m] || 0;
-        const postVal = pt["post_" + m] || 0;
-        const xPre = gx + mi * barW * 2 + barW * 0.5;
-        const xPost = xPre + barW;
-        const yPre = toY(preVal);
-        const yPost = toY(postVal);
-        const zeroYp = toY(0);
-        // Pre bar (lighter)
-        svg += `<rect x="${xPre.toFixed(1)}" y="${Math.min(yPre, zeroYp).toFixed(1)}" width="${(barW - 1).toFixed(1)}" height="${Math.abs(yPre - zeroYp).toFixed(1)}" fill="${metricColors[m]}" opacity="0.4" />`;
-        // Post bar (darker)
-        svg += `<rect x="${xPost.toFixed(1)}" y="${Math.min(yPost, zeroYp).toFixed(1)}" width="${(barW - 1).toFixed(1)}" height="${Math.abs(yPost - zeroYp).toFixed(1)}" fill="${metricColors[m]}" opacity="0.9" />`;
+    pairs.forEach(function (pair, pi) {
+      const ox = pi * cw;
+      const xRange = ranges[pair.xKey];
+      const yRange = ranges[pair.yKey];
+
+      // Axes
+      svg += `<line x1="${ox + pad}" y1="${pad + ph}" x2="${ox + pad + pw}" y2="${pad + ph}" stroke="#333" stroke-width="1" />`;
+      svg += `<line x1="${ox + pad}" y1="${pad}" x2="${ox + pad}" y2="${pad + ph}" stroke="#333" stroke-width="1" />`;
+      svg += `<text x="${ox + pad + pw / 2}" y="${pad + ph + 12}" fill="#777" font-size="7" text-anchor="middle">${pair.xLabel}</text>`;
+      svg += `<text x="${ox + 4}" y="${pad + ph / 2}" fill="#777" font-size="7" text-anchor="middle" transform="rotate(-90, ${ox + 4}, ${pad + ph / 2})">${pair.yLabel}</text>`;
+
+      scatter.forEach(function (pt) {
+        const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
+        // Pre point (hollow)
+        const preX = toX(pt["pre_" + pair.xKey] || 0, xRange[0], xRange[1]);
+        const preY = toY(pt["pre_" + pair.yKey] || 0, yRange[0], yRange[1]);
+        svg += `<circle cx="${(ox + preX).toFixed(1)}" cy="${preY.toFixed(1)}" r="3" fill="none" stroke="${clr}" stroke-width="1.5" opacity="0.6" />`;
+        // Post point (filled)
+        const postX = toX(pt["post_" + pair.xKey] || 0, xRange[0], xRange[1]);
+        const postY = toY(pt["post_" + pair.yKey] || 0, yRange[0], yRange[1]);
+        svg += `<circle cx="${(ox + postX).toFixed(1)}" cy="${postY.toFixed(1)}" r="3" fill="${clr}" opacity="0.9" />`;
+        // Arrow from pre to post
+        svg += `<line x1="${(ox + preX).toFixed(1)}" y1="${preY.toFixed(1)}" x2="${(ox + postX).toFixed(1)}" y2="${postY.toFixed(1)}" stroke="${clr}" stroke-width="0.5" opacity="0.4" />`;
       });
     });
 
     // Legend
+    let ly = totalH - 4;
+    scatter.forEach(function (pt) {
+      const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
+      // handled below
+    });
+    // Class legend
     let lx = 4;
-    metrics.forEach(function (m) {
-      svg += `<rect x="${lx}" y="${padT - 12}" width="6" height="6" fill="${metricColors[m]}" opacity="0.4" />`;
-      svg += `<rect x="${lx + 7}" y="${padT - 12}" width="6" height="6" fill="${metricColors[m]}" opacity="0.9" />`;
-      svg += `<text x="${lx + 16}" y="${padT - 6}" fill="#999" font-size="7">${metricLabels[m]}</text>`;
-      lx += 42;
+    scatter.forEach(function (pt) {
+      const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
+      svg += `<circle cx="${lx + 3}" cy="${totalH - 6}" r="3" fill="${clr}" />`;
+      svg += `<text x="${lx + 8}" y="${totalH - 3}" fill="#999" font-size="6">${pt.land_class.substring(0, 6)}</text>`;
+      lx += 55;
     });
 
     svg += `</svg>`;
