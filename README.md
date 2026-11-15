@@ -90,12 +90,62 @@ HOST=0.0.0.0
 PORT=8000
 ```
 
+## Software Requirements (Laptop/Server)
+
+### Required
+
+| Software   | Version                     | Keterangan                                        |
+| ---------- | --------------------------- | ------------------------------------------------- |
+| **Python** | 3.11 or 3.12 (≥3.11, <3.13) | Runtime utama. `requires-python = ">=3.11,<3.13"` |
+| **pip**    | ≥23.0                       | Package installer (bundled with Python)           |
+| **uv**     | ≥0.4.0 (optional)           | Fast package manager (recommended, pengganti pip) |
+
+### Optional (for development)
+
+| Software    | Version        | Keterangan                                                       |
+| ----------- | -------------- | ---------------------------------------------------------------- |
+| **Node.js** | ≥18 (optional) | Hanya untuk development frontend; tidak wajib (frontend via CDN) |
+| **npm**     | ≥9 (optional)  | Package manager untuk Node.js                                    |
+| **Git**     | ≥2.30          | Version control                                                  |
+
+### System Libraries (Linux)
+
+| Library       | Keterangan                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| **GDAL/PROJ** | Via `rasterio` binary wheels (PyPI). Tidak perlu install manual di Linux (wheels tersedia). |
+| **SQLite**    | Bundled dengan Python (stdlib).                                                             |
+| **curl**      | Untuk testing API endpoints (opsional).                                                     |
+
+### Python Dependencies (auto-installed via pyproject.toml)
+
+```
+fastapi, uvicorn, jinja2, pydantic, pydantic-settings, httpx,
+numpy, rasterio, shapely, pystac-client, planetary-computer,
+scipy, scikit-image, scikit-learn, openpyxl
+```
+
+### Dev Dependencies (optional)
+
+```
+pytest, ruff
+```
+
 ## Running the Application
 
 ```bash
+# 1. Buat virtual environment
 uv venv --python 3.12 .venv
-source .venv/bin/activate
+# atau: python3 -m venv .venv
+
+# 2. Aktifkan
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+
+# 3. Install dependencies
 uv pip install -e .
+# atau: pip install -e .
+
+# 4. Jalankan server
 uvicorn app.main:app --reload --port 8000
 ```
 
