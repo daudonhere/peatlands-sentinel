@@ -111,10 +111,16 @@ class ClassScatterPoint(BaseModel):
     class_code: int
     pre_ndvi: float
     post_ndvi: float
+    pre_ndwi: float = 0.0
+    post_ndwi: float = 0.0
     pre_ndmi: float
     post_ndmi: float
     pre_bsi: float
     post_bsi: float
+    pre_nbr: float = 0.0
+    post_nbr: float = 0.0
+    pre_sar: float = 0.0
+    post_sar: float = 0.0
 
 
 class AIAnalystReport(BaseModel):

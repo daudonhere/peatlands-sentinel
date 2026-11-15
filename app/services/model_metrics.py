@@ -78,8 +78,14 @@ def class_scatter_from_arrays(
         return values.ravel() if isinstance(values, np.ndarray) else None
 
     pre_ndvi, post_ndvi = column(pre_arrays, "ndvi"), column(post_arrays, "ndvi")
+    pre_ndwi, post_ndwi = column(pre_arrays, "ndwi"), column(post_arrays, "ndwi")
     pre_ndmi, post_ndmi = column(pre_arrays, "ndmi"), column(post_arrays, "ndmi")
     pre_bsi, post_bsi = column(pre_arrays, "bsi"), column(post_arrays, "bsi")
+    pre_nbr, post_nbr = column(pre_arrays, "nbr"), column(post_arrays, "nbr")
+    pre_sar, post_sar = (
+        column(pre_arrays, "cross_ratio"),
+        column(post_arrays, "cross_ratio"),
+    )
     if pre_ndvi is None or post_ndvi is None:
         return []
 
@@ -99,6 +105,12 @@ def class_scatter_from_arrays(
                 post_ndvi=round(float(np.nanmean(post_ndvi[post_mask])), 4)
                 if post_mask.any()
                 else 0.0,
+                pre_ndwi=round(float(np.nanmean(pre_ndwi[pre_mask])), 4)
+                if pre_ndwi is not None and pre_mask.any()
+                else 0.0,
+                post_ndwi=round(float(np.nanmean(post_ndwi[post_mask])), 4)
+                if post_ndwi is not None and post_mask.any()
+                else 0.0,
                 pre_ndmi=round(float(np.nanmean(pre_ndmi[pre_mask])), 4)
                 if pre_ndmi is not None and pre_mask.any()
                 else 0.0,
@@ -110,6 +122,18 @@ def class_scatter_from_arrays(
                 else 0.0,
                 post_bsi=round(float(np.nanmean(post_bsi[post_mask])), 4)
                 if post_bsi is not None and post_mask.any()
+                else 0.0,
+                pre_nbr=round(float(np.nanmean(pre_nbr[pre_mask])), 4)
+                if pre_nbr is not None and pre_mask.any()
+                else 0.0,
+                post_nbr=round(float(np.nanmean(post_nbr[post_mask])), 4)
+                if post_nbr is not None and post_mask.any()
+                else 0.0,
+                pre_sar=round(float(np.nanmean(pre_sar[pre_mask])), 4)
+                if pre_sar is not None and pre_mask.any()
+                else 0.0,
+                post_sar=round(float(np.nanmean(post_sar[post_mask])), 4)
+                if post_sar is not None and post_mask.any()
                 else 0.0,
             )
         )

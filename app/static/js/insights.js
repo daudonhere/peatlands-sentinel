@@ -139,32 +139,42 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
         return `
         <tr>
-          <td style="padding:2px 4px;font-size:0.65rem;"><span style="display:inline-block;width:8px;height:8px;background:${clr};border-radius:50%;margin-right:4px;"></span>${pt.land_class}</td>
-          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.pre_ndvi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.post_ndvi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.pre_ndmi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.post_ndmi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.pre_bsi || 0).toFixed(2)}</td>
-          <td style="padding:2px 4px;font-size:0.65rem;text-align:right;">${Number(pt.post_bsi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;"><span style="display:inline-block;width:8px;height:8px;background:${clr};border-radius:50%;margin-right:4px;"></span>${pt.land_class}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_ndvi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_ndvi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_ndwi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_ndwi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_ndmi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_ndmi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_bsi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_bsi || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.pre_nbr || 0).toFixed(2)}</td>
+          <td style="padding:2px 4px;font-size:0.6rem;text-align:right;">${Number(pt.post_nbr || 0).toFixed(2)}</td>
         </tr>`;
       })
       .join("");
 
     box.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:0.65rem;">
+      <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.6rem;">
         <thead>
           <tr style="border-bottom:1px solid #333;">
             <th style="padding:2px 4px;text-align:left;">Class</th>
             <th style="padding:2px 4px;text-align:right;">Pre NDVI</th>
             <th style="padding:2px 4px;text-align:right;">Post NDVI</th>
+            <th style="padding:2px 4px;text-align:right;">Pre NDWI</th>
+            <th style="padding:2px 4px;text-align:right;">Post NDWI</th>
             <th style="padding:2px 4px;text-align:right;">Pre NDMI</th>
             <th style="padding:2px 4px;text-align:right;">Post NDMI</th>
             <th style="padding:2px 4px;text-align:right;">Pre BSI</th>
             <th style="padding:2px 4px;text-align:right;">Post BSI</th>
+            <th style="padding:2px 4px;text-align:right;">Pre NBR</th>
+            <th style="padding:2px 4px;text-align:right;">Post NBR</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
+      </div>
     `;
   }
 
