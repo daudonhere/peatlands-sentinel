@@ -99,31 +99,28 @@ def _recompute_metrics(
 async def resolve_spectral(
     bbox: list[float],
     payload: AnalysisPipelineRequest,
-    run_id: str,
     area_ha: float,
 ) -> tuple[SpectralSummary, list, dict, dict, list[ClassScatterPoint]]:
     geometry = _extract_geometry(payload)
-    # Try to get WorldCover training data and target modulators when GEE is available
-    if payload.data_source == "gee":
-        try:
-            from app.services import gee_analysis as _gee_analysis
-            from app.services import reference_data as _ref_data
+    # Fetch real ESA WorldCover training labels when GEE is available
+    try:
+        from app.services import gee_analysis as _gee_analysis
 
-            features, labels = _gee_analysis.worldcover_training_data(
-                bbox, payload.post_date_range, points_per_class=30
-            )
-            if features and labels:
-                from app.services import classifier as _clf
+        features, labels = await asyncio.wait_for(
+            asyncio.to_thread(
+                _gee_analysis.worldcover_training_data,
+                bbox,
+                payload.post_date_range,
+                30,
+            ),
+            timeout=60.0,
+        )
+        if features and labels:
+            from app.services import classifier as _clf
 
-                _clf.set_worldcover_training(features, labels)
-
-            modulators = _gee_analysis.compute_target_modulators(
-                bbox, payload.post_date_range
-            )
-            if modulators:
-                _ref_data.update_target_modulators(modulators)
-        except Exception:
-            pass
+            _clf.set_worldcover_training(features, labels)
+    except Exception:
+        pass
     result = await asyncio.wait_for(
         resolve_pipeline_metrics(
             payload.data_source,
@@ -155,22 +152,26 @@ async def resolve_dem(bbox: list[float]):
 
     try:
         result = await asyncio.wait_for(_cog_module.fetch_live_dem(bbox), timeout=8.0)
-        if result is None or (
-            hasattr(result, "size") and result.size > 0 and np.all(result == 0)
+        if result is not None and (
+            not hasattr(result, "size") or (result.size > 0 and not np.all(result == 0))
         ):
-            return None
-        return result
+            return result
+    except Exception:
+        pass
+
+    try:
+        from app.services import gee as _gee_module
+
+        return await asyncio.wait_for(
+            asyncio.to_thread(_gee_module.gee_dem_grid, bbox), timeout=45.0
+        )
     except Exception:
         return None
 
 
 async def resolve_time_series(
-    bbox: list[float],
-    payload: AnalysisPipelineRequest,
-    run_id: str,
-    summary: SpectralSummary,
+    bbox: list[float], payload: AnalysisPipelineRequest
 ) -> list[TimeSeriesPoint]:
-    start, end = parse_iso_interval(payload.post_date_range)
     observations: list[dict[str, Any]] = []
     if payload.data_source == "gee":
         try:
@@ -180,7 +181,7 @@ async def resolve_time_series(
                 _gee.gee_monthly_time_series(
                     bbox, payload.post_date_range, payload.max_cloud_cover
                 ),
-                timeout=30.0,
+                timeout=90.0,
             )
             return [TimeSeriesPoint.model_validate(row) for row in rows]
         except Exception:
@@ -198,17 +199,7 @@ async def resolve_time_series(
         except Exception:
             observations = []
 
-    pre_anchor = {"ndvi": 0.72, "ndwi": 0.16, "ndmi": 0.34}
-    post_anchor = summary.model_dump()
-    rows = series_from_live(
-        observations,
-        start,
-        end,
-        pre_anchor,
-        post_anchor,
-        granularity=payload.granularity,
-        seed=run_id,
-    )
+    rows = series_from_live(observations, granularity=payload.granularity)
     return [TimeSeriesPoint.model_validate(row) for row in rows]
 
 

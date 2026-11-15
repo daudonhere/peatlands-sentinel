@@ -102,8 +102,10 @@ class TimeSeriesPoint(BaseModel):
     ndvi: float
     ndwi: float
     ndmi: float
+    mndwi: float = 0.0
     nbr: float = 0.0
     bsi: float = 0.0
+    sar: float = 0.0
 
 
 class ClassScatterPoint(BaseModel):

@@ -102,7 +102,6 @@ def calculate_slope_degrees(
 
 def compute_dem_topography_summary(
     bbox: list[float],
-    base_elevation_m: float = 12.0,
     elev_grid: np.ndarray | None = None,
 ) -> dict[str, float]:
     if (
@@ -110,15 +109,8 @@ def compute_dem_topography_summary(
         or elev_grid.size == 0
         or np.all(np.isnan(elev_grid))
         or np.all(elev_grid == 0)
-        or float(np.nanmean(elev_grid)) == 0.0
     ):
-        grid_size = 20
-        y, x = np.mgrid[0:grid_size, 0:grid_size]
-        cy, cx = grid_size / 2.0, grid_size / 2.0
-        dome_factor = np.clip(
-            1.0 - ((x - cx) ** 2 + (y - cy) ** 2) / (cx**2 + cy**2), 0, 1
-        )
-        elev_grid = base_elevation_m + dome_factor * 8.5
+        return {}
 
     finite = np.where(np.isfinite(elev_grid), elev_grid, float(np.nanmean(elev_grid)))
     min_lon, min_lat, max_lon, max_lat = bbox

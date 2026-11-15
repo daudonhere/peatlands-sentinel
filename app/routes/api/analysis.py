@@ -78,7 +78,7 @@ async def execute_analysis_pipeline(
         (spectral_summary, transitions, arrays, source_meta, scatter),
         dem_grid,
     ) = await asyncio.gather(
-        resolve_spectral(bbox, payload, run_id, area_ha),
+        resolve_spectral(bbox, payload, area_ha),
         resolve_dem(bbox),
     )
 
@@ -91,7 +91,7 @@ async def execute_analysis_pipeline(
     metrics_payload = enriched["metrics"]
     accuracy = ModelAccuracy.model_validate(enriched["accuracy"])
     update(65, "Building time series")
-    time_series = await resolve_time_series(bbox, payload, run_id, spectral_summary)
+    time_series = await resolve_time_series(bbox, payload)
 
     update(80, "Running AI analyst")
     ai_report = await generate_analyst_report(

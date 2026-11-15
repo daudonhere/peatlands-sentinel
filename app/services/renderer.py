@@ -49,32 +49,6 @@ def _normalize(arr: np.ndarray, vmin: float, vmax: float) -> np.ndarray:
     return np.clip((arr - vmin) / span, 0.0, 1.0)
 
 
-def _fallback_gradient(height: int, width: int, target: str, period: str) -> np.ndarray:
-    y, x = np.mgrid[0:height, 0:width]
-    cx, cy = width / 2.0, height / 2.0
-    dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2) / np.sqrt(cx**2 + cy**2)
-    tex = np.sin(x * 0.15) * np.cos(y * 0.15) * 0.1
-    val = np.clip(1.0 - dist + tex, 0.0, 1.0).astype(np.float32)
-    if period == "pre":
-        return val * 0.9
-    if target in (
-        "wildfire_dnbr",
-        "forest_to_bare",
-        "forest_to_mining",
-        "deforest_expansion",
-        "peat_drainage_canal",
-        "landslide_susceptibility",
-        "ground_deformation",
-        "carbon_subsidence",
-        "urban_expansion",
-        "biodiversity_habitat",
-    ):
-        return 1.0 - val * 0.7
-    if target in ("peat_moisture", "water_dynamics"):
-        return val
-    return val * 0.6
-
-
 def generate_spectral_overlay_png(
     target: str,
     metrics: dict,

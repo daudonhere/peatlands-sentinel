@@ -91,11 +91,11 @@ def _compliance_band(wtd: float) -> tuple[str, str]:
 
 
 def evaluate_peat_hydrology_profile(metrics: dict) -> dict:
-    ndwi = float(metrics.get("mean_ndwi", 0.15))
-    ndmi = float(metrics.get("mean_ndmi", 0.2))
-    sar = float(metrics.get("mean_sar_cross_ratio", -10.5))
-    slope = float(metrics.get("mean_slope_deg", 0.6))
-    dry_days = int(metrics.get("dry_spell_days", 10))
+    ndwi = float(metrics.get("mean_ndwi", 0.0))
+    ndmi = float(metrics.get("mean_ndmi", 0.0))
+    sar = float(metrics.get("mean_sar_cross_ratio", 0.0))
+    slope = float(metrics.get("mean_slope_deg", 0.0))
+    dry_days = int(metrics.get("dry_spell_days", 0))
 
     wtd = estimate_water_table_depth(ndwi, sar, dry_days, ndmi)
     subsidence = estimate_peat_subsidence_rate(wtd)

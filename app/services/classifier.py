@@ -1,47 +1,44 @@
 from __future__ import annotations
 
-from functools import lru_cache
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 from app.schemas.analysis import LandTransition, SpectralSummary
-from app.services.reference_data import (
-    CLASS_NAMES,
-    FEATURES,
-    TARGET_MODULATORS,
-    TRAINING_X,
-    TRAINING_Y,
-)
+from app.services.reference_data import CLASS_NAMES, FEATURES
 
-_TRAINING_MATRIX = np.array(TRAINING_X, dtype=np.float32)
-_TRAINING_LABELS = np.array(TRAINING_Y, dtype=np.int32)
-
-_WORLD_COVER_FEATURES: list[list[float]] | None = None
-_WORLD_COVER_LABELS: list[int] | None = None
+_TRAINING_FEATURES: list[list[float]] = []
+_TRAINING_LABELS: list[int] = []
 
 
 def set_worldcover_training(features: list[list[float]], labels: list[int]) -> None:
-    global _WORLD_COVER_FEATURES, _WORLD_COVER_LABELS
+    global _TRAINING_FEATURES, _TRAINING_LABELS
     if features and labels and len(features) == len(labels):
-        # Merge with hardcoded training data for diversity
-        from app.services.reference_data import TRAINING_X, TRAINING_Y
-
-        merged_features = list(TRAINING_X) + list(features)
-        merged_labels = list(TRAINING_Y) + list(labels)
-        _WORLD_COVER_FEATURES = merged_features
-        _WORLD_COVER_LABELS = merged_labels
+        _TRAINING_FEATURES = list(features)
+        _TRAINING_LABELS = list(labels)
+    else:
+        _TRAINING_FEATURES = []
+        _TRAINING_LABELS = []
 
 
 def get_training_data() -> tuple[np.ndarray, np.ndarray]:
-    if _WORLD_COVER_FEATURES and _WORLD_COVER_LABELS:
-        return (
-            np.array(_WORLD_COVER_FEATURES, dtype=np.float32),
-            np.array(_WORLD_COVER_LABELS, dtype=np.int32),
+    if not _TRAINING_FEATURES or not _TRAINING_LABELS:
+        return np.empty((0, len(FEATURES)), dtype=np.float32), np.empty(
+            0, dtype=np.int32
         )
-    return _TRAINING_MATRIX.copy(), _TRAINING_LABELS.copy()
+    return (
+        np.array(_TRAINING_FEATURES, dtype=np.float32),
+        np.array(_TRAINING_LABELS, dtype=np.int32),
+    )
 
 
-def get_trained_classifier() -> RandomForestClassifier:
+def training_dataset() -> tuple[np.ndarray, np.ndarray]:
+    return get_training_data()
+
+
+def get_trained_classifier() -> RandomForestClassifier | None:
+    features, labels = get_training_data()
+    if features.size == 0 or len(np.unique(labels)) < 2:
+        return None
     rf = RandomForestClassifier(
         n_estimators=200,
         max_depth=8,
@@ -49,17 +46,8 @@ def get_trained_classifier() -> RandomForestClassifier:
         random_state=42,
         n_jobs=-1,
     )
-    features, labels = get_training_data()
     rf.fit(features, labels)
     return rf
-
-
-def training_dataset() -> tuple[np.ndarray, np.ndarray]:
-    return get_training_data()
-
-
-def feature_names() -> list[str]:
-    return list(FEATURES)
 
 
 def _as_grid(values: np.ndarray, reference: np.ndarray) -> np.ndarray:
@@ -73,28 +61,22 @@ def _build_pixel_features(
     ndwi: np.ndarray,
     nbr: np.ndarray,
     bsi: np.ndarray,
-    sar_cross_ratio: np.ndarray,
 ) -> np.ndarray:
     size = ndvi.size
-    sar_flat = (
-        sar_cross_ratio.ravel()
-        if sar_cross_ratio.shape == ndvi.shape
-        else np.full(size, float(sar_cross_ratio.flat[0]))
-    )
-    sar_vv = sar_flat - 6.5
     ndwi_flat = (
         ndwi.ravel() if not np.all(np.isnan(ndwi)) else np.zeros(size, dtype=np.float32)
     )
-    return np.column_stack(
-        [ndvi.ravel(), ndwi_flat, nbr.ravel(), bsi.ravel(), sar_vv, sar_flat]
-    ).astype(np.float32)
+    return np.column_stack([ndvi.ravel(), ndwi_flat, nbr.ravel(), bsi.ravel()]).astype(
+        np.float32
+    )
 
 
 def classify_raster_pixels(features_matrix: np.ndarray) -> np.ndarray:
     valid = ~np.isnan(features_matrix).any(axis=1)
     result = np.full(len(features_matrix), -1, dtype=np.int32)
-    if valid.any():
-        result[valid] = get_trained_classifier().predict(features_matrix[valid])
+    model = get_trained_classifier()
+    if model is not None and valid.any():
+        result[valid] = model.predict(features_matrix[valid])
     return result
 
 
@@ -108,7 +90,6 @@ def classify_arrays(arrays: dict) -> np.ndarray:
         _as_grid(arrays.get("ndwi", filler), ndvi),
         _as_grid(arrays.get("nbr", filler), ndvi),
         _as_grid(arrays.get("bsi", filler), ndvi),
-        _as_grid(arrays.get("cross_ratio", filler), ndvi),
     )
     return classify_raster_pixels(features)
 
@@ -175,79 +156,3 @@ def classify_live_arrays(
         classify_arrays(post_live.get("_arrays", {})),
         area_ha,
     )
-
-
-def target_profile(target: str) -> dict:
-    return TARGET_MODULATORS.get(target, TARGET_MODULATORS["peat_moisture"])
-
-
-def _profile_features(target: str) -> np.ndarray:
-    spec = target_profile(target)
-    return np.array(
-        [
-            spec["ndvi"],
-            spec["ndwi"],
-            spec["nbr"],
-            spec["bsi"],
-            spec["sar"] - 6.5,
-            spec["sar"],
-        ],
-        dtype=np.float32,
-    )
-
-
-def simulate_features(
-    target: str, run_id: str, rows: int = 256
-) -> tuple[np.ndarray, np.ndarray]:
-    rng = np.random.default_rng(abs(hash(run_id)) % (2**32))
-    noise = rng.normal(0, 0.04, (rows, 6)).astype(np.float32)
-    base_pre = np.array([0.78, 0.14, 0.65, -0.28, -11.8, -18.1], dtype=np.float32)
-    base_post = _profile_features(target)
-    pre = np.column_stack(
-        [np.clip(base_pre + noise, -1.0, 1.0)[:, :4], base_pre[4:] + noise[:, 4:]]
-    ).astype(np.float32)
-    post = np.column_stack(
-        [np.clip(base_post + noise, -1.0, 1.0)[:, :4], base_post[4:] + noise[:, 4:]]
-    ).astype(np.float32)
-    return pre, post
-
-
-def simulate_aoi_transitions(
-    target: str, run_id: str, area_ha: float
-) -> tuple[SpectralSummary, list[LandTransition]]:
-    spec = target_profile(target)
-    summary = SpectralSummary(
-        mean_ndvi=spec["ndvi"],
-        mean_ndwi=spec["ndwi"],
-        mean_ndmi=spec.get("ndmi", 0.0),
-        mean_nbr=spec["nbr"],
-        mean_bsi=spec["bsi"],
-        max_dnbr=spec["dnbr"],
-        mean_sar_cross_ratio=spec["sar"],
-    )
-    pre, post = simulate_features(target, run_id)
-    transitions = compute_land_transition_matrix(
-        classify_raster_pixels(pre), classify_raster_pixels(post), area_ha
-    )
-    return summary, transitions
-
-
-def simulate_arrays(target: str, run_id: str) -> dict:
-    spec = target_profile(target)
-    rng = np.random.default_rng(abs(hash(run_id + target)) % (2**32))
-    grid = 128
-
-    def field(center: float, spread: float) -> np.ndarray:
-        base = np.full((grid, grid), center, dtype=np.float32)
-        return np.clip(base + rng.normal(0, spread, (grid, grid)), -1.0, 1.0).astype(
-            np.float32
-        )
-
-    return {
-        "ndvi": field(spec["ndvi"], 0.06),
-        "ndwi": field(spec["ndwi"], 0.05),
-        "ndmi": field(spec.get("ndmi", 0.1), 0.06),
-        "nbr": field(spec["nbr"], 0.05),
-        "bsi": field(spec["bsi"], 0.05),
-        "cross_ratio": field(spec["sar"], 0.9),
-    }

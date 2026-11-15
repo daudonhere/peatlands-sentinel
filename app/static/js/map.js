@@ -304,16 +304,22 @@
       valBlock.textContent = metrics.block_priority || "-";
     }
     if (valElev) {
-      const elev = metrics.mean_elevation_m || 0;
-      valElev.textContent = `${Math.round(elev)} m`;
+      valElev.textContent =
+        metrics.mean_elevation_m === undefined
+          ? "n/a"
+          : `${Math.round(metrics.mean_elevation_m)} m`;
     }
     if (valRelief) {
-      const relief = metrics.elevation_relief_m || 0;
-      valRelief.textContent = `${Math.round(relief)} m`;
+      valRelief.textContent =
+        metrics.elevation_relief_m === undefined
+          ? "n/a"
+          : `${Math.round(metrics.elevation_relief_m)} m`;
     }
     if (valSlope) {
-      const slope = metrics.max_slope_deg || 0;
-      valSlope.textContent = `${Number(slope).toFixed(1)}°`;
+      valSlope.textContent =
+        metrics.max_slope_deg === undefined
+          ? "n/a"
+          : `${Number(metrics.max_slope_deg).toFixed(1)}°`;
     }
     if (valLandslide) {
       valLandslide.textContent = Number(

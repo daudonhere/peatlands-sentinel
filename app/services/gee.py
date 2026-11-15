@@ -106,6 +106,34 @@ def _worldcover_image() -> Any:
     )
 
 
+def gee_dem_grid(bbox: list[float], size: int = 64) -> np.ndarray | None:
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    bounds = geom.bounds().getInfo()["coordinates"][0]
+    lons = [c[0] for c in bounds]
+    lats = [c[1] for c in bounds]
+    width_m = (max(lons) - min(lons)) * 111320.0
+    height_m = (max(lats) - min(lats)) * 111320.0
+    scale = max(width_m, height_m) / float(size)
+    image = ee.Image(get_settings().gee_dem_collection).select("DEM")
+    samples = image.reproject(crs="EPSG:4326", scale=scale).sampleRectangle(
+        region=geom, defaultValue=-9999
+    )
+    data = samples.get("DEM").getInfo()
+    if not data:
+        return None
+    arr = np.array(data, dtype=np.float32)
+    if arr.ndim != 2 or arr.size == 0:
+        return None
+    arr = np.where(arr <= -9998, np.nan, arr).astype(np.float32)
+    finite = arr[np.isfinite(arr)]
+    if finite.size == 0:
+        return None
+    rows = np.round(np.linspace(0, arr.shape[0] - 1, size)).astype(int)
+    cols = np.round(np.linspace(0, arr.shape[1] - 1, size)).astype(int)
+    return arr[rows][:, cols]
+
+
 async def gee_live_ndvi(
     bbox: list[float],
     date_range: str,
@@ -128,22 +156,16 @@ async def gee_live_ndvi(
 
     img = coll.first().clip(geom)
     ndvi = img.normalizedDifference(["B8", "B4"]).rename("ndvi")
-    reduced = (
-        ndvi.reduceRegion(
-            reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
-        )
-        .getInfo()
-    )
+    reduced = ndvi.reduceRegion(
+        reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+    ).getInfo()
     mean_ndvi = round(float(reduced.get("ndvi", 0.0) or 0.0), 4)
 
     # Valid pixel ratio
     valid_mask = ndvi.mask()
-    valid_reduced = (
-        valid_mask.reduceRegion(
-            reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
-        )
-        .getInfo()
-    )
+    valid_reduced = valid_mask.reduceRegion(
+        reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+    ).getInfo()
     valid_ratio = round(float(valid_reduced.get("ndvi", 0.85) or 0.85), 3)
 
     return {
@@ -197,6 +219,7 @@ async def gee_monthly_time_series(
             ndvi = img.normalizedDifference(["B8", "B4"])
             ndwi = img.normalizedDifference(["B3", "B8"])
             ndmi = img.normalizedDifference(["B8", "B11"])
+            mndwi = img.normalizedDifference(["B3", "B11"])
             nbr = img.normalizedDifference(["B8", "B12"])
             bsi = img.expression(
                 "((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2))",
@@ -214,6 +237,7 @@ async def gee_monthly_time_series(
                         ndvi.rename("ndvi"),
                         ndwi.rename("ndwi"),
                         ndmi.rename("ndmi"),
+                        mndwi.rename("mndwi"),
                         nbr.rename("nbr"),
                         bsi.rename("bsi"),
                     ]
@@ -224,14 +248,39 @@ async def gee_monthly_time_series(
                 .getInfo()
             )
 
+            sar_value = 0.0
+            s1 = (
+                _s1_collection()
+                .filterBounds(geom)
+                .filterDate(period_start.isoformat(), period_end.isoformat())
+                .filter(ee.Filter.eq("instrumentMode", "IW"))
+            )
+            if int(s1.size().getInfo() or 0) > 0:
+                s1_median = s1.median()
+                ratio = s1_median.select("VH").subtract(s1_median.select("VV"))
+                sar_stats = (
+                    ratio.rename("sar")
+                    .reduceRegion(
+                        reducer=ee.Reducer.mean(),
+                        geometry=geom,
+                        scale=100,
+                        maxPixels=1e9,
+                    )
+                    .getInfo()
+                    or {}
+                )
+                sar_value = round(float(sar_stats.get("sar") or 0.0), 2)
+
             results.append(
                 {
                     "period": f"{period_start.year}-{period_start.month:02d}",
                     "ndvi": round(float(reduced.get("ndvi", 0.0) or 0.0), 4),
                     "ndwi": round(float(reduced.get("ndwi", 0.0) or 0.0), 4),
                     "ndmi": round(float(reduced.get("ndmi", 0.0) or 0.0), 4),
+                    "mndwi": round(float(reduced.get("mndwi", 0.0) or 0.0), 4),
                     "nbr": round(float(reduced.get("nbr", 0.0) or 0.0), 4),
                     "bsi": round(float(reduced.get("bsi", 0.0) or 0.0), 4),
+                    "sar": sar_value,
                 }
             )
         except Exception:

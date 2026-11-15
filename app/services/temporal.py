@@ -1,7 +1,5 @@
-from datetime import date, timedelta
+from datetime import date
 import numpy as np
-
-_GRANULARITY_DAYS = {"weekly": 7, "monthly": 30, "yearly": 365}
 
 
 def parse_iso_interval(date_range: str) -> tuple[date, date]:
@@ -18,40 +16,6 @@ def period_key(day: date, granularity: str) -> str:
     if granularity == "yearly":
         return f"{day.year}"
     return f"{day.year}-{day.month:02d}"
-
-
-def period_start(day: date, granularity: str) -> date:
-    if granularity == "weekly":
-        return day - timedelta(days=day.weekday())
-    if granularity == "yearly":
-        return date(day.year, 1, 1)
-    return date(day.year, day.month, 1)
-
-
-def period_sequence(start: date, end: date, granularity: str) -> list[date]:
-    cursor = period_start(start, granularity)
-    keys: list[date] = []
-    seen: set[str] = set()
-    step = 7 if granularity == "weekly" else 1
-    while cursor <= end:
-        key = period_key(cursor, granularity)
-        if key not in seen:
-            seen.add(key)
-            keys.append(cursor)
-        if granularity == "monthly":
-            cursor = (
-                date(cursor.year + 1, 1, 1)
-                if cursor.month == 12
-                else date(cursor.year, cursor.month + 1, 1)
-            )
-        else:
-            cursor = cursor + timedelta(days=step)
-    return keys
-
-
-def seasonal_factor(day: date) -> float:
-    doy = day.timetuple().tm_yday
-    return float(np.sin(2 * np.pi * (doy - 105) / 365.0))
 
 
 def seasonal_window(year: int, composite_season: str) -> tuple[str, str]:
@@ -78,8 +42,10 @@ def aggregate_observations(
                 "ndvi": [],
                 "ndwi": [],
                 "ndmi": [],
+                "mndwi": [],
                 "nbr": [],
                 "bsi": [],
+                "sar": [],
                 "last_datetime": "",
             }
             order.append(key)
@@ -87,8 +53,10 @@ def aggregate_observations(
             ("ndvi", "mean_ndvi"),
             ("ndwi", "mean_ndwi"),
             ("ndmi", "mean_ndmi"),
+            ("mndwi", "mean_mndwi"),
             ("nbr", "mean_nbr"),
             ("bsi", "mean_bsi"),
+            ("sar", "mean_sar_cross_ratio"),
         ):
             value = obs.get(column)
             if value is not None:
@@ -110,80 +78,24 @@ def aggregate_observations(
                 "ndmi": round(float(np.mean(bucket["ndmi"])), 4)
                 if bucket["ndmi"]
                 else 0.0,
+                "mndwi": round(float(np.mean(bucket["mndwi"])), 4)
+                if bucket["mndwi"]
+                else 0.0,
                 "nbr": round(float(np.mean(bucket["nbr"])), 4)
                 if bucket["nbr"]
                 else 0.0,
                 "bsi": round(float(np.mean(bucket["bsi"])), 4)
                 if bucket["bsi"]
                 else 0.0,
-            }
-        )
-    return series
-
-
-def _anchor_value(anchor: dict, field: str, fallback: float) -> float:
-    value = anchor.get(field, anchor.get(f"mean_{field}"))
-    return float(value) if value is not None else fallback
-
-
-def modelled_series(
-    start: date,
-    end: date,
-    pre_anchor: dict,
-    post_anchor: dict,
-    granularity: str = "monthly",
-    seed: str = "peatlands",
-) -> list[dict]:
-    if end < start:
-        return []
-    stamps = period_sequence(start, end, granularity)
-    if not stamps:
-        return []
-
-    rng = np.random.default_rng(abs(hash(seed)) % (2**32))
-    span_days = max(1, (end - start).days)
-    pre_center = _anchor_value(pre_anchor, "ndvi", 0.7)
-    post_center = _anchor_value(post_anchor, "ndvi", 0.35)
-    pre_ndmi = _anchor_value(pre_anchor, "ndmi", 0.35)
-    post_ndmi = _anchor_value(post_anchor, "ndmi", 0.05)
-    pre_ndwi = _anchor_value(pre_anchor, "ndwi", 0.2)
-    post_ndwi = _anchor_value(post_anchor, "ndwi", -0.05)
-    pre_nbr = _anchor_value(pre_anchor, "nbr", 0.6)
-    post_nbr = _anchor_value(post_anchor, "nbr", 0.3)
-    pre_bsi = _anchor_value(pre_anchor, "bsi", -0.2)
-    post_bsi = _anchor_value(post_anchor, "bsi", 0.1)
-
-    series: list[dict] = []
-    for stamp in stamps:
-        progress = min(1.0, max(0.0, (stamp - start).days / span_days))
-        weight = progress**1.2
-        wave = seasonal_factor(stamp)
-        ndvi = (pre_center + (post_center - pre_center) * weight) + wave * 0.05
-        ndmi = (pre_ndmi + (post_ndmi - pre_ndmi) * weight) + wave * 0.06
-        ndwi = (pre_ndwi + (post_ndwi - pre_ndwi) * weight) + wave * 0.04
-        nbr = (pre_nbr + (post_nbr - pre_nbr) * weight) + wave * 0.03
-        bsi = (pre_bsi + (post_bsi - pre_bsi) * weight) + wave * 0.02
-        series.append(
-            {
-                "period": period_key(stamp, granularity),
-                "ndvi": round(float(np.clip(ndvi + rng.normal(0, 0.012), -1, 1)), 4),
-                "ndwi": round(float(np.clip(ndwi + rng.normal(0, 0.012), -1, 1)), 4),
-                "ndmi": round(float(np.clip(ndmi + rng.normal(0, 0.015), -1, 1)), 4),
-                "nbr": round(float(np.clip(nbr + rng.normal(0, 0.012), -1, 1)), 4),
-                "bsi": round(float(np.clip(bsi + rng.normal(0, 0.01), -1, 1)), 4),
+                "sar": round(float(np.mean(bucket["sar"])), 4)
+                if bucket["sar"]
+                else 0.0,
             }
         )
     return series
 
 
 def series_from_live(
-    observations: list[dict],
-    start: date,
-    end: date,
-    pre_anchor: dict,
-    post_anchor: dict,
-    granularity: str = "monthly",
-    seed: str = "peatlands",
+    observations: list[dict], granularity: str = "monthly"
 ) -> list[dict]:
-    observed = aggregate_observations(observations, granularity)
-    return observed
+    return aggregate_observations(observations, granularity)

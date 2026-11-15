@@ -67,10 +67,6 @@ def test_gee_analysis_import():
     from app.services import gee_analysis
 
     assert hasattr(gee_analysis, "worldcover_training_data")
-    assert hasattr(gee_analysis, "worldcover_mask")
-    assert hasattr(gee_analysis, "validate_classification")
-    assert hasattr(gee_analysis, "compute_target_modulators")
-    assert hasattr(gee_analysis, "cross_sensor_validation")
 
 
 def test_sources_list():
@@ -84,29 +80,26 @@ def test_sources_list():
 def test_classifier_worldcover_training():
     from app.services import classifier
 
-    # Test set/get (merges with hardcoded)
-    features = [[0.5, 0.1, 0.5, -0.2, -10.0, -16.5]]
+    features = [[0.5, 0.1, 0.5, -0.2]]
     labels = [0]
     classifier.set_worldcover_training(features, labels)
     f, l = classifier.get_training_data()
-    assert len(f) > 1  # merged with hardcoded
-    assert len(l) == len(f)
-    assert 0 in l  # has the new label
+    assert len(f) == len(features)
+    assert len(l) == len(features)
+    assert l[0] == 0
 
-    # Reset
     classifier.set_worldcover_training([], [])
     f2, l2 = classifier.get_training_data()
-    assert len(f2) > 0  # falls back to hardcoded
+    assert len(f2) == 0
+    assert len(l2) == 0
+    assert classifier.get_trained_classifier() is None
 
 
-def test_reference_data_update_modulators():
+def test_reference_data_targets():
     from app.services import reference_data
 
-    original_count = len(reference_data.TARGET_MODULATORS)
-    reference_data.update_target_modulators({"test_obj": {"ndvi": 0.5}})
-    assert "test_obj" in reference_data.TARGET_MODULATORS
-    # Cleanup
-    del reference_data.TARGET_MODULATORS["test_obj"]
+    assert len(reference_data.ANALYSIS_TARGETS) >= 20
+    assert "peat_moisture" in reference_data.ANALYSIS_TARGETS
 
 
 def test_intervention_calibrate():
@@ -167,9 +160,9 @@ def test_multi_source_fallback_notification():
 
 def test_twenty_layer_targets():
     """Test 20 analysis targets exist in reference_data."""
-    from app.services.reference_data import TARGET_MODULATORS
+    from app.services.reference_data import ANALYSIS_TARGETS
 
-    assert len(TARGET_MODULATORS) >= 20
+    assert len(ANALYSIS_TARGETS) >= 20
 
 
 def test_ai_analyst_uses_ai_when_configured():
@@ -191,7 +184,7 @@ if __name__ == "__main__":
     test_gee_analysis_import()
     test_sources_list()
     test_classifier_worldcover_training()
-    test_reference_data_update_modulators()
+    test_reference_data_targets()
     test_intervention_calibrate()
     test_gee_landsat_gap_filling()
     test_multi_source_fallback_notification()

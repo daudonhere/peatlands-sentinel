@@ -1,4 +1,3 @@
-from functools import lru_cache
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
@@ -7,26 +6,21 @@ from app.schemas.analysis import ClassScatterPoint, ModelAccuracy
 from app.services.classifier import (
     classify_arrays,
     get_trained_classifier,
-    simulate_arrays,
     training_dataset,
 )
 from app.services.reference_data import CLASS_NAMES, CLASS_COLORS
 from app.services.validation import accuracy_report, per_class_user_accuracy
 
-_BASELINE_FEATURES = {
-    "ndvi": 0.78,
-    "ndwi": 0.14,
-    "ndmi": 0.38,
-    "nbr": 0.66,
-    "bsi": -0.28,
-    "cross_ratio": -18.1,
-}
-
 
 def _cross_validated_predictions() -> tuple[np.ndarray, np.ndarray]:
     features, labels = training_dataset()
+    if features.size == 0 or len(np.unique(labels)) < 2:
+        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
     counts = np.bincount(labels, minlength=len(CLASS_NAMES))
-    folds = int(max(2, min(5, counts[counts > 0].min())))
+    min_count = int(counts[counts > 0].min())
+    if min_count < 2:
+        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
+    folds = int(min(5, min_count))
     model = RandomForestClassifier(
         n_estimators=300,
         max_depth=8,
@@ -43,7 +37,6 @@ def _cross_validated_predictions() -> tuple[np.ndarray, np.ndarray]:
     return labels, predictions
 
 
-@lru_cache(maxsize=1)
 def evaluate_local_model() -> ModelAccuracy:
     labels, predictions = _cross_validated_predictions()
     return accuracy_report(
@@ -58,13 +51,6 @@ def model_breakdown() -> list[dict]:
     for row in rows:
         row["color"] = colors.get(row["class"], "#7a7a7a")
     return rows
-
-
-def _grid_from_baseline() -> dict:
-    return {
-        key: np.full((128, 128), value, dtype=np.float32)
-        for key, value in _BASELINE_FEATURES.items()
-    }
 
 
 def class_scatter_from_arrays(
@@ -140,12 +126,6 @@ def class_scatter_from_arrays(
     return points
 
 
-def simulate_class_scatter(target: str, run_id: str) -> list[ClassScatterPoint]:
-    return class_scatter_from_arrays(
-        _grid_from_baseline(), simulate_arrays(target, run_id)
-    )
-
-
 def landcover_grid(arrays: dict) -> np.ndarray:
     labels = classify_arrays(arrays)
     side = int(round(np.sqrt(labels.size)))
@@ -163,6 +143,13 @@ def change_grid(pre_arrays: dict, post_arrays: dict) -> np.ndarray:
 
 def trained_model_info() -> dict:
     model = get_trained_classifier()
+    if model is None:
+        return {
+            "algorithm": "RandomForest",
+            "n_estimators": 0,
+            "max_depth": 0,
+            "classes": [CLASS_NAMES[i] for i in sorted(CLASS_NAMES)],
+        }
     return {
         "algorithm": "RandomForest",
         "n_estimators": int(model.n_estimators),

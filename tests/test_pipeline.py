@@ -25,6 +25,15 @@ _MOCK_PRE_ARRAYS = {
     "cross_ratio": np.full((128, 128), -7.2, dtype=np.float32),
 }
 
+_TRAINING_FEATURES = [
+    [0.78, 0.15, 0.65, -0.28],
+    [0.80, 0.14, 0.68, -0.32],
+    [0.42, 0.05, 0.55, 0.12],
+    [0.40, 0.04, 0.52, 0.14],
+]
+
+_TRAINING_LABELS = [0, 0, 7, 7]
+
 _MOCK_LIVE = {
     "source": "live_cog",
     "pre_scene_id": "S2A_PRE_MOCK",
@@ -86,6 +95,10 @@ async def test_end_to_end_pipeline():
             patch(
                 "app.services.cog.fetch_live_dem",
                 new=AsyncMock(return_value=mock_dem),
+            ),
+            patch(
+                "app.services.gee_analysis.worldcover_training_data",
+                return_value=(_TRAINING_FEATURES, _TRAINING_LABELS),
             ),
         ):
             res = await client.post("/api/analysis/run", json=payload)
@@ -211,6 +224,10 @@ async def test_fallback_to_simulation():
             patch(
                 "app.services.cog.fetch_live_dem",
                 new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "app.services.gee_analysis.worldcover_training_data",
+                return_value=(_TRAINING_FEATURES, _TRAINING_LABELS),
             ),
         ):
             res = await client.post("/api/analysis/run", json=payload)

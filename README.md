@@ -33,7 +33,7 @@ Multi-temporal peatland monitoring and land cover change detection system using 
 FastAPI Backend (app/)
   ├── services/cog.py              # Concurrent WarpedVRT reader (S2, S1-RTC, DEM, Landsat)
   ├── services/gee.py              # GEE auth, collections, pipeline_metrics, landsat, monthly TS, live NDVI
-  ├── services/gee_analysis.py     # WorldCover training, fractions, mask, validation, target modulators
+  ├── services/gee_analysis.py     # WorldCover training labels sampled from GEE
   ├── services/raster.py           # Canonical spectral indices (NDVI, NDWI, NDMI, dNBR, BSI, SAR)
   ├── services/geospatial.py       # Cloud masking, bounding box, DEM slope and topography
   ├── services/classifier.py       # RF land classification and transition matrix (8 classes, WorldCover)
@@ -52,7 +52,7 @@ FastAPI Backend (app/)
   ├── services/gpkg.py             # OGC GeoPackage generator (pure SQLite/WKB)
   ├── services/renderer.py         # PNG colorizer for spectral indices
   ├── services/observations.py     # STAC scene observations for time series
-  └── services/reference_data.py   # Target modulators, class names, colors
+  └── services/reference_data.py   # Analysis targets, class names, colors
 
 Frontend (static/ and templates/)
   ├── MapLibre GL JS + custom point-based draw (AOI and Boundaries)
@@ -184,7 +184,7 @@ peatlands-sentinel/
 - **AI Analyst**: Requires AI_API_KEY + OpenAI-compatible provider. Deterministic heuristic fallback active when offline.
 - **GEE**: Optional. Requires Google Cloud project + Earth Engine API enabled.
 - **FIRMS**: Requires FIRMS_MAP_KEY from https://firms.modaps.eosdis.nasa.gov/api/.
-- **DEM**: Planetary Computer COG reads may be unreliable; fallback dome model used.
+- **DEM**: Uses Planetary Computer COG first, then Copernicus DEM via GEE. Elevation is reported as n/a when both are unavailable.
 - **Live NDVI (COG)**: Uses GEE fallback when Planetary Computer COG unavailable.
 
 ## License

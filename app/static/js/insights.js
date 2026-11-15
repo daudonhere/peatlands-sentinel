@@ -4,14 +4,14 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
   };
 
   const CLASS_COLORS_MAP = {
-    1: "#1e7e34",
-    2: "#17a2b8",
-    3: "#d39e00",
-    4: "#28a745",
-    5: "#6c757d",
-    6: "#007bff",
-    7: "#dc3545",
-    8: "#8fd19e",
+    0: "#1a5f2a",
+    1: "#3f7f5f",
+    2: "#b08968",
+    3: "#7fb069",
+    4: "#6b6b6b",
+    5: "#1f5f8b",
+    6: "#d62728",
+    7: "#e0c341",
   };
 
   function withBusy(btn, label, task) {
@@ -71,29 +71,82 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
       return;
     }
     const w = 340;
-    const h = 120;
+    const h = 132;
     const padL = 26;
     const padR = 10;
-    const padT = 12;
+    const padT = 28;
     const padB = 22;
     const pw = w - padL - padR;
     const ph = h - padT - padB;
 
-    let vmin = -0.2;
-    let vmax = 1.0;
+    const KEYS = [
+      { key: "ndvi", color: "#7fb069", label: "NDVI", dash: "" },
+      { key: "ndwi", color: "#4aa3df", label: "NDWI", dash: "" },
+      { key: "ndmi", color: "#e0c341", label: "NDMI", dash: "3,2" },
+      { key: "mndwi", color: "#17a2b8", label: "MNDWI", dash: "2,2" },
+      { key: "nbr", color: "#dc3545", label: "NBR", dash: "" },
+      { key: "bsi", color: "#8fd19e", label: "BSI", dash: "4,2" },
+    ];
+
+    const allValues = [];
+    series.forEach(function (s) {
+      KEYS.forEach(function (k) {
+        const v = Number(s[k.key]);
+        if (Number.isFinite(v)) allValues.push(v);
+      });
+    });
+    let vmin = Math.min(-0.2, ...allValues);
+    let vmax = Math.max(0.2, ...allValues);
+    if (vmax - vmin < 0.2) {
+      vmin -= 0.1;
+      vmax += 0.1;
+    }
+    const padSpan = (vmax - vmin) * 0.08;
+    vmin -= padSpan;
+    vmax += padSpan;
     const xStep = series.length > 1 ? pw / (series.length - 1) : pw;
 
+    function toX(idx) {
+      return padL + idx * xStep;
+    }
+    function toY(val) {
+      return padT + (1 - (val - vmin) / (vmax - vmin)) * ph;
+    }
     function toCoord(val, idx) {
-      const x = padL + idx * xStep;
-      const y = padT + (1 - (val - vmin) / (vmax - vmin)) * ph;
-      return `${x.toFixed(1)},${Math.max(padT, Math.min(padT + ph, y)).toFixed(1)}`;
+      return `${toX(idx).toFixed(1)},${toY(val).toFixed(1)}`;
     }
 
-    const ndviPts = series.map((s, i) => toCoord(s.ndvi, i)).join(" ");
-    const ndwiPts = series.map((s, i) => toCoord(s.ndwi, i)).join(" ");
-    const ndmiPts = series.map((s, i) => toCoord(s.ndmi, i)).join(" ");
-    const nbrPts = series.map((s, i) => toCoord(s.nbr || 0, i)).join(" ");
-    const bsiPts = series.map((s, i) => toCoord(s.bsi || 0, i)).join(" ");
+    let grid = "";
+    let ticks = "";
+    const tickCount = 4;
+    for (let i = 0; i <= tickCount; i += 1) {
+      const value = vmax - ((vmax - vmin) * i) / tickCount;
+      const y = toY(value);
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" stroke="#222" stroke-width="1" />`;
+      ticks += `<text x="${padL - 3}" y="${(y + 3).toFixed(1)}" fill="#777" font-size="7" text-anchor="end">${value.toFixed(2)}</text>`;
+    }
+
+    let lines = "";
+    let points = "";
+    let legend = "";
+    KEYS.forEach(function (k, ki) {
+      const coords = series.map(function (s, i) {
+        return toCoord(Number(s[k.key] || 0), i);
+      });
+      lines += `<polyline points="${coords.join(" ")}" fill="none" stroke="${k.color}" stroke-width="1.6"${
+        k.dash ? ` stroke-dasharray="${k.dash}"` : ""
+      } />`;
+      series.forEach(function (s, i) {
+        const value = Number(s[k.key] || 0);
+        points += `<circle cx="${toX(i).toFixed(1)}" cy="${toY(value).toFixed(1)}" r="1.8" fill="${k.color}"><title>${k.label} ${s.period}: ${value.toFixed(3)}</title></circle>`;
+      });
+      const col = ki % 3;
+      const row = Math.floor(ki / 3);
+      const lx = padL + col * 58;
+      const ly = 8 + row * 10;
+      legend += `<rect x="${lx}" y="${ly - 4}" width="3" height="3" fill="${k.color}" />`;
+      legend += `<text x="${lx + 6}" y="${ly}" fill="#bbb" font-size="7">${k.label}</text>`;
+    });
 
     const dStart = (series[0].period || "").substring(5);
     const dEnd = (series[series.length - 1].period || "").substring(5);
@@ -101,26 +154,13 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     box.innerHTML = `
       <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
         <rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />
-        <line x1="${padL}" y1="${padT}" x2="${w - padR}" y2="${padT}" stroke="#222" stroke-width="1" />
-        <line x1="${padL}" y1="${padT + ph / 2}" x2="${w - padR}" y2="${padT + ph / 2}" stroke="#222" stroke-width="1" />
-        <line x1="${padL}" y1="${padT + ph}" x2="${w - padR}" y2="${padT + ph}" stroke="#333" stroke-width="1" />
-        <polyline points="${ndviPts}" fill="none" stroke="#7fb069" stroke-width="1.8" />
-        <polyline points="${ndwiPts}" fill="none" stroke="#4aa3df" stroke-width="1.5" />
-        <polyline points="${ndmiPts}" fill="none" stroke="#e0c341" stroke-width="1.5" stroke-dasharray="3,2" />
-        <polyline points="${nbrPts}" fill="none" stroke="#dc3545" stroke-width="1.5" />
-        <polyline points="${bsiPts}" fill="none" stroke="#8fd19e" stroke-width="1.5" stroke-dasharray="4,2" />
+        ${legend}
+        ${grid}
+        ${ticks}
+        ${lines}
+        ${points}
         <text x="${padL}" y="${h - 6}" fill="#777" font-size="9">${dStart}</text>
         <text x="${w - padR}" y="${h - 6}" fill="#777" font-size="9" text-anchor="end">${dEnd}</text>
-        <circle cx="${w - 110}" cy="8" r="3" fill="#7fb069" />
-        <text x="${w - 104}" y="11" fill="#bbb" font-size="8">NDVI</text>
-        <circle cx="${w - 70}" cy="8" r="3" fill="#4aa3df" />
-        <text x="${w - 64}" y="11" fill="#bbb" font-size="8">NDWI</text>
-        <circle cx="${w - 32}" cy="8" r="3" fill="#e0c341" />
-        <text x="${w - 26}" y="11" fill="#bbb" font-size="8">NDMI</text>
-        <circle cx="${w - 110}" cy="18" r="3" fill="#dc3545" />
-        <text x="${w - 104}" y="21" fill="#bbb" font-size="8">NBR</text>
-        <circle cx="${w - 70}" cy="18" r="3" fill="#8fd19e" />
-        <text x="${w - 64}" y="21" fill="#bbb" font-size="8">BSI</text>
       </svg>
     `;
   }
@@ -144,8 +184,7 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     const pad = 18;
     const cw = pw + pad * 2;
     const ch = ph + pad * 2;
-    const cols = 3;
-    const totalW = cw * cols;
+    const totalW = cw * pairs.length;
     const totalH = ch;
 
     function toX(val, min, max) {
@@ -161,7 +200,6 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
       ndmi: [-0.2, 0.6],
       bsi: [-0.6, 0.5],
       nbr: [-0.3, 0.8],
-      sar: [-25, -5],
     };
 
     let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" style="width:100%;height:auto;display:block;">`;
@@ -180,25 +218,25 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
 
       scatter.forEach(function (pt) {
         const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
+        const preXVal = Number(pt["pre_" + pair.xKey] || 0);
+        const preYVal = Number(pt["pre_" + pair.yKey] || 0);
+        const postXVal = Number(pt["post_" + pair.xKey] || 0);
+        const postYVal = Number(pt["post_" + pair.yKey] || 0);
         // Pre point (hollow)
-        const preX = toX(pt["pre_" + pair.xKey] || 0, xRange[0], xRange[1]);
-        const preY = toY(pt["pre_" + pair.yKey] || 0, yRange[0], yRange[1]);
-        svg += `<circle cx="${(ox + preX).toFixed(1)}" cy="${preY.toFixed(1)}" r="3" fill="none" stroke="${clr}" stroke-width="1.5" opacity="0.6" />`;
+        const preX = toX(preXVal, xRange[0], xRange[1]);
+        const preY = toY(preYVal, yRange[0], yRange[1]);
+        svg += `<circle cx="${(ox + preX).toFixed(1)}" cy="${preY.toFixed(1)}" r="3" fill="none" stroke="${clr}" stroke-width="1.5" opacity="0.6"><title>${pt.land_class} pre: ${pair.xLabel} ${preXVal.toFixed(2)}, ${pair.yLabel} ${preYVal.toFixed(2)}</title></circle>`;
         // Post point (filled)
-        const postX = toX(pt["post_" + pair.xKey] || 0, xRange[0], xRange[1]);
-        const postY = toY(pt["post_" + pair.yKey] || 0, yRange[0], yRange[1]);
-        svg += `<circle cx="${(ox + postX).toFixed(1)}" cy="${postY.toFixed(1)}" r="3" fill="${clr}" opacity="0.9" />`;
+        const postX = toX(postXVal, xRange[0], xRange[1]);
+        const postY = toY(postYVal, yRange[0], yRange[1]);
+        svg += `<circle cx="${(ox + postX).toFixed(1)}" cy="${postY.toFixed(1)}" r="3" fill="${clr}" opacity="0.9"><title>${pt.land_class} post: ${pair.xLabel} ${postXVal.toFixed(2)}, ${pair.yLabel} ${postYVal.toFixed(2)}</title></circle>`;
         // Arrow from pre to post
         svg += `<line x1="${(ox + preX).toFixed(1)}" y1="${preY.toFixed(1)}" x2="${(ox + postX).toFixed(1)}" y2="${postY.toFixed(1)}" stroke="${clr}" stroke-width="0.5" opacity="0.4" />`;
+        // Post value label
+        svg += `<text x="${(ox + postX + 4).toFixed(1)}" y="${(postY - 3).toFixed(1)}" fill="${clr}" font-size="5.5">${postYVal.toFixed(2)}</text>`;
       });
     });
 
-    // Legend
-    let ly = totalH - 4;
-    scatter.forEach(function (pt) {
-      const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
-      // handled below
-    });
     // Class legend
     let lx = 4;
     scatter.forEach(function (pt) {

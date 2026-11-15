@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     gee_service_account: str = ""
     gee_private_key_file: Path | None = None
     gee_worldcover_collection: str = "ESA/WorldCover/v200/2021"
+    gee_dem_collection: str = "COPERNICUS/DEM/GLO30_2024_1"
     gee_samples_per_class: int = 150
     gee_rf_trees: int = 200
 
