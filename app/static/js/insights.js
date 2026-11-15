@@ -222,6 +222,10 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         "circle-stroke-width": 1.5,
       },
     });
+    // Move fire layer to top
+    try {
+      map.moveLayer("fires-layer");
+    } catch (e) {}
   }
 
   $("btn-fires").addEventListener("click", function () {

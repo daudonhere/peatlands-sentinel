@@ -640,13 +640,19 @@
           s2.forEach(function (scene) {
             const line = document.createElement("div");
             line.style.fontSize = "0.75rem";
-            line.style.color = "#a0a0a0";
             const dt = scene.datetime ? scene.datetime.substring(0, 10) : "-";
             const cc =
               typeof scene.cloud_cover === "number"
-                ? ` (cloud ${scene.cloud_cover.toFixed(1)}%)`
-                : "";
-            line.textContent = `${scene.id} - ${dt}${cc}`;
+                ? scene.cloud_cover.toFixed(1) + "%"
+                : "-";
+            line.style.color =
+              typeof scene.cloud_cover === "number" && scene.cloud_cover < 20
+                ? "#4caf50"
+                : typeof scene.cloud_cover === "number" &&
+                    scene.cloud_cover < 50
+                  ? "#ff9800"
+                  : "#f44336";
+            line.textContent = `${dt} | ${cc} cloud | ${scene.id}`;
             inspectPanel.appendChild(line);
           });
         }
@@ -661,7 +667,11 @@
             line.style.fontSize = "0.75rem";
             line.style.color = "#a0a0a0";
             const dt = scene.datetime ? scene.datetime.substring(0, 10) : "-";
-            line.textContent = `${scene.id} - ${dt}`;
+            const orbit =
+              scene.orbit_direction ||
+              (scene.properties && scene.properties["sat:orbit_state"]) ||
+              "";
+            line.textContent = `${dt}${orbit ? " | " + orbit : ""} | ${scene.id}`;
             inspectPanel.appendChild(line);
           });
         }
@@ -981,6 +991,10 @@
     checkboxes.forEach(function (cb) {
       cb.checked = true;
     });
+    // Move fire layer to top if exists
+    try {
+      if (map.getLayer("fires-layer")) map.moveLayer("fires-layer");
+    } catch (e) {}
   }
 
   function removeAllObjectiveLayers() {
