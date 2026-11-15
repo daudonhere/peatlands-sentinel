@@ -105,7 +105,13 @@ def compute_dem_topography_summary(
     base_elevation_m: float = 12.0,
     elev_grid: np.ndarray | None = None,
 ) -> dict[str, float]:
-    if elev_grid is None or elev_grid.size == 0 or np.all(np.isnan(elev_grid)):
+    if (
+        elev_grid is None
+        or elev_grid.size == 0
+        or np.all(np.isnan(elev_grid))
+        or np.all(elev_grid == 0)
+        or float(np.nanmean(elev_grid)) == 0.0
+    ):
         grid_size = 20
         y, x = np.mgrid[0:grid_size, 0:grid_size]
         cy, cx = grid_size / 2.0, grid_size / 2.0

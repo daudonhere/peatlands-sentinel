@@ -247,7 +247,8 @@
 
   function displayAnalysisData(runData, bbox) {
     currentRunId = runData.run_id || runData.id;
-    const metrics = runData.spectral_metrics || runData.metrics || {};
+    const metrics =
+      runData.telemetry || runData.metrics || runData.spectral_metrics || {};
     const aiReport = runData.ai_report || {};
 
     valNdvi.textContent = Number(metrics.mean_ndvi || 0).toFixed(2);
@@ -504,7 +505,7 @@
       const dsSelect = document.getElementById("data-source-select");
       const ds = dsSelect ? dsSelect.value : "planetary_computer";
       loadingDesc.textContent =
-        ds === "gee"
+        ds === "gee" || ds === "landsat"
           ? "Querying Google Earth Engine assets and computing spectral signatures..."
           : "Querying STAC assets and computing spectral signatures...";
     }
@@ -787,6 +788,36 @@
     const container = document.getElementById("layer-list");
     if (!container) return;
     container.innerHTML = "";
+
+    // Bulk toggle
+    const bulkRow = document.createElement("div");
+    bulkRow.style.display = "flex";
+    bulkRow.style.alignItems = "center";
+    bulkRow.style.gap = "0.4rem";
+    bulkRow.style.marginBottom = "0.4rem";
+    bulkRow.style.borderBottom = "1px solid #333";
+    bulkRow.style.paddingBottom = "0.4rem";
+    const bulkCb = document.createElement("input");
+    bulkCb.type = "checkbox";
+    bulkCb.id = "bulk-layer-toggle";
+    const bulkLabel = document.createElement("span");
+    bulkLabel.textContent = "Toggle All Layers";
+    bulkLabel.style.fontSize = "0.8rem";
+    bulkLabel.style.fontWeight = "bold";
+    bulkCb.addEventListener("change", function () {
+      const cbs = container.querySelectorAll(
+        "input[type=checkbox]:not(#bulk-layer-toggle)",
+      );
+      cbs.forEach(function (cb) {
+        if (cb.checked !== bulkCb.checked) {
+          cb.checked = bulkCb.checked;
+          cb.dispatchEvent(new Event("change"));
+        }
+      });
+    });
+    bulkRow.append(bulkCb, bulkLabel);
+    container.appendChild(bulkRow);
+
     Object.keys(OBJECTIVE_LABELS).forEach(function (key) {
       const row = document.createElement("div");
       row.style.display = "flex";

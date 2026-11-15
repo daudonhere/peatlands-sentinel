@@ -154,7 +154,12 @@ async def resolve_dem(bbox: list[float]):
     from app.services import cog as _cog_module
 
     try:
-        return await asyncio.wait_for(_cog_module.fetch_live_dem(bbox), timeout=8.0)
+        result = await asyncio.wait_for(_cog_module.fetch_live_dem(bbox), timeout=8.0)
+        if result is None or (
+            hasattr(result, "size") and result.size > 0 and np.all(result == 0)
+        ):
+            return None
+        return result
     except Exception:
         return None
 

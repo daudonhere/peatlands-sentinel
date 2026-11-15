@@ -1,56 +1,44 @@
 # Peatlands Sentinel - TODO
 
-## Sidebar Display (semua metrik telemetry harus ditampilkan)
+## Cosmetic / Display
 
-### Spectral Indices (saat ini hanya 4 dari 7)
+- [ ] Loading text: "landsat" engine shows "Querying STAC assets" instead of "Querying Google Earth Engine assets" (map.js line 504-512)
+- [ ] Sidebar metrics: frontend reads `spectral_metrics` (7 fields) instead of `telemetry` (all fields) → many zeros (map.js line 250)
+- [ ] Spectral Feature Clusters chart: only shows NDVI vs BSI, should include all metrics (NDVI, NDWI, NDMI, MNDWI, NBR, dNBR, BSI, SAR, WTD, etc.)
+- [ ] Multi-Temporal Index Trend chart (line): only shows NDVI/NDWI/NDMI, should include all metrics
+- [ ] Duplicate Export button: two `btn-export-zip` buttons in index.html (lines 333 & 347)
+- [ ] Inspect Available Passes display: improve UI to be more informative (show scene details, cloud cover, dates clearly)
+- [ ] Map layer ordering: boundaries → AOI → 20 analysis layers → fire (on top, not overlapping) (z-index/layer order)
 
-- [x] Tampilkan NDMI (Normalized Difference Moisture Index)
-- [x] Tampilkan NBR (Normalized Burn Ratio)
-- [x] Tampilkan BSI (Bare Soil Index)
-- [x] Tampilkan MNDWI (Modified NDWI)
+## Classifier Issues
 
-### Topography (belum ditampilkan)
+- [ ] Land Conversion panel empty: classifier predicts only class 6 (Built-up Area) for all pixels, no class transitions detected
+- [ ] Spectral Feature Clusters: verify scatter renders correctly with real GEE data
 
-- [x] Tampilkan Elevasi (mean/max/min/relief)
-- [x] Tampilkan Slope/Kelerengan (mean/max)
+## Time Series
 
-### Hydrology (saat ini hanya 3 dari 10+)
+- [ ] Multi-Temporal Index Trend empty for GEE source: no observations fetched, series_from_live returns empty
+- [ ] Consider adding GEE-based time series (monthly composite NDVI/NDWI/NDMI)
 
-- [x] Tampilkan Water Retention Capacity
-- [x] Tampilkan Drainage Intensity
-- [x] Tampilkan Canal Density
-- [x] Tampilkan Drainage Pressure Index
-- [x] Tampilkan Hydrology Compliance (PP 71/2014)
-- [x] Tampilkan Hydrology Risk Level
-- [x] Tampilkan Block Priority
+## DEM / Topography
 
-### Multi-Hazard (belum ditampilkan)
+- [ ] DEM COG read returns zeros (Planetary Computer COG access unreliable) → mean_elevation_m = 0
+- [ ] Fallback dome model not triggered because elev_grid is zeros (not None/NaN)
 
-- [x] Tampilkan Landslide Susceptibility
-- [x] Tampilkan Ground Deformation Index
-- [x] Tampilkan Seismic Sensitivity
+## Field Validation
 
-### AI Analyst
+- [ ] Live NDVI (COG): Planetary Computer COG read unreliable → "COG read failed"
+- [ ] Active Fires (FIRMS): verify FIRMS_MAP_KEY configured and working
+- [ ] Fire hotspot markers: appear after drawing AOI, not after analysis (by design, but user expects after analysis) (map.js line 409)
 
-- [x] Moisture Condition & Threat Status perlu data final dari AI (saat ini heuristic)
+## History Management
 
-### Landsat
+- [ ] Bundle all objective layer runs into 1 history entry per "Run Analysis" (currently each layer toggle creates separate run)
 
-- [x] Landsat gap-filling when Sentinel-2 unavailable (cloud cover)
+## UI / UX
 
-### Data Source & Performance
+- [ ] 20 analyze land checkboxes: add bulk checkbox (check all / uncheck all) so user doesn't toggle one by one
 
-- [x] Multi-source fallback with user notification (jangan silent fallback)
+## Next TODO:
 
-### FIRMS
-
-- [x] Confidence filter (n/l/h) di frontend
-- [x] Tampilkan fire hotspot markers di peta (saat ini hanya count di panel)
-- [x] Support arsip FIRMS (bukan hanya NRT)
-
-### Testing
-
-- [x] Unit tests for gee.pipeline_metrics
-- [x] Unit tests for firms multi-sensor
-- [x] Integration test for GEE data source
-- [x] Test for 20-layer auto-run flow
+- (isi di sini)
