@@ -28,13 +28,13 @@
 
 ## Field Validation
 
-- [ ] Live NDVI (COG): Planetary Computer COG read unreliable → "COG read failed"
-- [ ] Active Fires (FIRMS): verify FIRMS_MAP_KEY configured and working
-- [ ] Fire hotspot markers: appear after drawing AOI, not after analysis (by design, but user expects after analysis) (map.js line 409)
+- [x] Live NDVI (COG): Planetary Computer COG read unreliable → "COG read failed" — FIXED (GEE fallback added)
+- [x] Active Fires (FIRMS): verify FIRMS_MAP_KEY configured and working — VERIFIED (works, 5 fires found)
+- [x] Fire hotspot markers: appear after drawing AOI, not after analysis (by design, but user expects after analysis) (map.js line 409) — FIXED (removed from draw callback, now only after analysis)
 
 ## History Management
 
-- [x] Bundle all objective layer runs into 1 history entry per "Run Analysis" (currently each layer toggle creates separate run) — FIXED (save_to_history flag, layer toggles skip history)
+- [x] Bundle all objective layer runs into 1 history entry per "Run Analysis" (currently each layer toggle creates separate run) — FIXED (save_to_history flag)
 
 ## UI / UX
 

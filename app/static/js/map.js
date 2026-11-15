@@ -407,7 +407,7 @@
         aoiStatusText.textContent = "AOI: Viewport";
       }
     }
-    if (geom) loadFirmsForAoi();
+    // Fire hotspots loaded after analysis, not on draw
   });
 
   function getActiveGeometry() {

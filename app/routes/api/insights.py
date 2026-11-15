@@ -33,6 +33,20 @@ async def active_fires(payload: BBoxRequest):
 
 @router.post("/live-ndvi")
 async def live_ndvi(payload: BBoxRequest):
+    # Try GEE first (more reliable in this environment)
+    try:
+        from app.services import gee as _gee
+
+        if _gee.is_available():
+            return await asyncio.wait_for(
+                _gee.gee_live_ndvi(
+                    payload.bbox, payload.datetime_range, payload.max_cloud_cover
+                ),
+                timeout=12.0,
+            )
+    except Exception:
+        pass
+    # Fallback to Planetary Computer COG
     try:
         return await asyncio.wait_for(
             live_ndvi_for_aoi(payload.bbox, payload.datetime_range), timeout=12.0

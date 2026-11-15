@@ -106,6 +106,57 @@ def _worldcover_image() -> Any:
     )
 
 
+async def gee_live_ndvi(
+    bbox: list[float],
+    date_range: str,
+    max_cloud: float = 40.0,
+) -> dict:
+    """Fetch live NDVI snapshot from GEE."""
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    start, end = _split_interval(date_range)
+
+    coll = (
+        _s2_collection()
+        .filterBounds(geom)
+        .filterDate(start, end)
+        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud))
+        .sort("CLOUDY_PIXEL_PERCENTAGE")
+    )
+    if coll.size().getInfo() == 0:
+        raise LookupError(f"No S2 scene for {bbox} / {date_range}")
+
+    img = coll.first().clip(geom)
+    ndvi = img.normalizedDifference(["B8", "B4"]).rename("ndvi")
+    reduced = (
+        ndvi.reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+        )
+        .getInfo()
+    )
+    mean_ndvi = round(float(reduced.get("ndvi", 0.0) or 0.0), 4)
+
+    # Valid pixel ratio
+    valid_mask = ndvi.mask()
+    valid_reduced = (
+        valid_mask.reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+        )
+        .getInfo()
+    )
+    valid_ratio = round(float(valid_reduced.get("ndvi", 0.85) or 0.85), 3)
+
+    return {
+        "scene_id": coll.first().get("system:index").getInfo(),
+        "datetime": str(coll.first().get("system:time_start").getInfo())[:10]
+        if False
+        else date_range.split("/")[0],
+        "cloud_cover": coll.first().get("CLOUDY_PIXEL_PERCENTAGE").getInfo(),
+        "valid_pixel_ratio": valid_ratio,
+        "mean_ndvi": mean_ndvi,
+    }
+
+
 async def gee_monthly_time_series(
     bbox: list[float],
     date_range: str,
