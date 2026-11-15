@@ -144,6 +144,8 @@
   const resultsCard = document.getElementById("results-card");
   const historyPanel = document.getElementById("history-panel");
   const inspectPanel = document.getElementById("inspect-panel");
+  const btnBackHistory = document.getElementById("btn-back-history");
+  const btnBackInspect = document.getElementById("btn-back-inspect");
   const resultsCloseBtn = document.getElementById("results-close-btn");
   const resultsEmpty = document.getElementById("results-empty");
   const resultsLoading = document.getElementById("results-loading");
@@ -396,6 +398,17 @@
     insightsCtrl.renderModelAccuracy(runData.accuracy);
     insightsCtrl.refreshIntervention();
     resultsContent.classList.remove("hidden");
+  }
+
+  if (btnBackHistory) {
+    btnBackHistory.addEventListener("click", function () {
+      showPanel("results-content");
+    });
+  }
+  if (btnBackInspect) {
+    btnBackInspect.addEventListener("click", function () {
+      showPanel("results-content");
+    });
   }
 
   const drawCtrl = createDrawController(map, function (geom) {
