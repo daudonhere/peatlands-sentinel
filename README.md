@@ -17,7 +17,7 @@ Multi-temporal peatland monitoring and land cover change detection system using 
 - **AI Analyst**: Multi-provider (OpenAI-compatible, Ollama Cloud, OpenRouter) via HTTPX + Pydantic, deterministic heuristic fallback (multi-metric scoring).
 - **Interactive Map Without Build Tools**: Standalone frontend (zero node_modules) using MapLibre GL JS, custom point-based AOI drawing, Turf.js via CDN.
 - **Point-Based AOI Drawing**: Click vertices, live line preview, double-click/click near first point to close polygon. Draw/Clear toggle.
-- **13 Free Basemaps**: ESRI (10 variants), OpenStreetMap, OpenTopoMap, CyclOSM — no API key required.
+- **13 Free Basemaps**: ESRI (10 variants), OpenStreetMap, OpenTopoMap, CyclOSM - no API key required.
 - **Dual Raster Overlay & Blend Slider**: Pre vs post spectral composite visualization with opacity control, per-index overlay.
 - **Inline Charts**: Time series line chart (NDVI/NDWI/NDMI/NBR/BSI), spectral feature clusters (all metrics per class), model accuracy badge.
 - **Complete GIS Export Bundle (ZIP)**: GeoTIFF, GeoPackage, QGIS .qgs, GeoJSON, XLSX, SVG, CSV, MD, PNG.
@@ -178,8 +178,8 @@ peatlands-sentinel/
 
 - **Python ≥ 3.11** (typing features).
 - **GDAL/PROJ** via `rasterio` wheels.
-- **Frontend**: MapLibre GL JS 4.x, MapboxDraw 1.4, Turf.js 6.x via CDN — no npm/build required.
-- **Database**: SQLite (`data/peatlands.db`) — single file, portable.
+- **Frontend**: MapLibre GL JS 4.x, MapboxDraw 1.4, Turf.js 6.x via CDN - no npm/build required.
+- **Database**: SQLite (`data/peatlands.db`) - single file, portable.
 - **Export GPKG**: Pure Python `sqlite3` (WKB geometry), OGC GeoPackage 1.3 compliant.
 - **AI Analyst**: Requires `AI_API_KEY` + OpenAI-compatible provider. Deterministic heuristic fallback active when offline.
 - **GEE**: Optional. Requires Google Cloud project + Earth Engine API enabled.
@@ -189,4 +189,4 @@ peatlands-sentinel/
 
 ## License
 
-MIT License — free to use, modify, distribute.
+MIT License - free to use, modify, distribute.
