@@ -92,6 +92,8 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     const ndviPts = series.map((s, i) => toCoord(s.ndvi, i)).join(" ");
     const ndwiPts = series.map((s, i) => toCoord(s.ndwi, i)).join(" ");
     const ndmiPts = series.map((s, i) => toCoord(s.ndmi, i)).join(" ");
+    const nbrPts = series.map((s, i) => toCoord(s.nbr || 0, i)).join(" ");
+    const bsiPts = series.map((s, i) => toCoord(s.bsi || 0, i)).join(" ");
 
     const dStart = (series[0].period || "").substring(5);
     const dEnd = (series[series.length - 1].period || "").substring(5);
@@ -105,6 +107,8 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         <polyline points="${ndviPts}" fill="none" stroke="#7fb069" stroke-width="1.8" />
         <polyline points="${ndwiPts}" fill="none" stroke="#4aa3df" stroke-width="1.5" />
         <polyline points="${ndmiPts}" fill="none" stroke="#e0c341" stroke-width="1.5" stroke-dasharray="3,2" />
+        <polyline points="${nbrPts}" fill="none" stroke="#dc3545" stroke-width="1.5" />
+        <polyline points="${bsiPts}" fill="none" stroke="#8fd19e" stroke-width="1.5" stroke-dasharray="4,2" />
         <text x="${padL}" y="${h - 6}" fill="#777" font-size="9">${dStart}</text>
         <text x="${w - padR}" y="${h - 6}" fill="#777" font-size="9" text-anchor="end">${dEnd}</text>
         <circle cx="${w - 110}" cy="8" r="3" fill="#7fb069" />
@@ -113,6 +117,10 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         <text x="${w - 64}" y="11" fill="#bbb" font-size="8">NDWI</text>
         <circle cx="${w - 32}" cy="8" r="3" fill="#e0c341" />
         <text x="${w - 26}" y="11" fill="#bbb" font-size="8">NDMI</text>
+        <circle cx="${w - 110}" cy="18" r="3" fill="#dc3545" />
+        <text x="${w - 104}" y="21" fill="#bbb" font-size="8">NBR</text>
+        <circle cx="${w - 70}" cy="18" r="3" fill="#8fd19e" />
+        <text x="${w - 64}" y="21" fill="#bbb" font-size="8">BSI</text>
       </svg>
     `;
   }

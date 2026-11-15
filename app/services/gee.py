@@ -99,9 +99,9 @@ def _worldcover_image() -> Any:
     import ee
 
     return (
-        ee.ImageCollection(get_settings().gee_worldcover_collection)
-        .first()
-        .select("landcover", ["class"])
+        ee.Image(get_settings().gee_worldcover_collection)
+        .select("Map")
+        .rename("class")
         .int16()
     )
 
@@ -146,9 +146,27 @@ async def gee_monthly_time_series(
             ndvi = img.normalizedDifference(["B8", "B4"])
             ndwi = img.normalizedDifference(["B3", "B8"])
             ndmi = img.normalizedDifference(["B8", "B11"])
+            nbr = img.normalizedDifference(["B8", "B12"])
+            bsi = img.expression(
+                "((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2))",
+                {
+                    "B11": img.select("B11"),
+                    "B4": img.select("B4"),
+                    "B8": img.select("B8"),
+                    "B2": img.select("B2"),
+                },
+            )
 
             reduced = (
-                ee.Image.cat([ndvi.rename("ndvi"), ndwi.rename("ndwi"), ndmi.rename("ndmi")])
+                ee.Image.cat(
+                    [
+                        ndvi.rename("ndvi"),
+                        ndwi.rename("ndwi"),
+                        ndmi.rename("ndmi"),
+                        nbr.rename("nbr"),
+                        bsi.rename("bsi"),
+                    ]
+                )
                 .reduceRegion(
                     reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
                 )
@@ -161,6 +179,8 @@ async def gee_monthly_time_series(
                     "ndvi": round(float(reduced.get("ndvi", 0.0) or 0.0), 4),
                     "ndwi": round(float(reduced.get("ndwi", 0.0) or 0.0), 4),
                     "ndmi": round(float(reduced.get("ndmi", 0.0) or 0.0), 4),
+                    "nbr": round(float(reduced.get("nbr", 0.0) or 0.0), 4),
+                    "bsi": round(float(reduced.get("bsi", 0.0) or 0.0), 4),
                 }
             )
         except Exception:

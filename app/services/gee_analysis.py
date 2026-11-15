@@ -15,9 +15,9 @@ from app.services.gee import (
 def _with_indices(image: Any) -> Any:
     import ee
 
-    nir = image.select("B08").rename("nir")
-    red = image.select("B04").rename("red")
-    green = image.select("B03").rename("green")
+    nir = image.select("B8").rename("nir")
+    red = image.select("B4").rename("red")
+    green = image.select("B3").rename("green")
     swir1 = image.select("B11").rename("swir1")
     swir2 = image.select("B12").rename("swir2")
     return image.addBands(
@@ -113,7 +113,7 @@ def worldcover_training_data(
     if int(collection.size().getInfo() or 0) == 0:
         return [], []
     composite = _with_indices(collection.median())
-    band_names = ["B02", "B03", "B04", "B08", "B11", "B12"]
+    band_names = ["B2", "B3", "B4", "B8", "B11", "B12"]
     # Map WorldCover classes to our 8 classes
     wc_to_our = {
         10: 0,  # Tree cover -> Natural Forest
@@ -131,15 +131,16 @@ def worldcover_training_data(
     cover = _worldcover_image()
     for wc_class, our_class in wc_to_our.items():
         try:
+            mask = cover.eq(wc_class)
             sample = (
                 composite.select(band_names)
                 .addBands(cover.select(["class"]))
+                .updateMask(mask)
                 .sample(
-                    region=cover.eq(wc_class),
+                    region=geom,
                     scale=10,
                     numPixels=points_per_class,
                     seed=wc_class,
-                    tieBreaker=4,
                 )
                 .limit(points_per_class)
             )
@@ -287,7 +288,7 @@ def smile_random_forest_classify(
 ) -> dict:
     ee = _require_available()
     geom = _bbox_geom(bbox)
-    band_names = ["B02", "B03", "B04", "B08", "B11", "B12"]
+    band_names = ["B2", "B3", "B4", "B8", "B11", "B12"]
     cover = _worldcover_image()
 
     def train_and_fraction(date_range: str) -> dict:
@@ -391,7 +392,7 @@ def compute_target_modulators(
         "seasonal_flooding": [80, 90],
         "biodiversity_habitat": [10, 20],
     }
-    band_names = ["B02", "B03", "B04", "B08", "B11", "B12"]
+    band_names = ["B2", "B3", "B4", "B8", "B11", "B12"]
     result = {}
     for obj, wc_classes in obj_to_wc.items():
         ndvis, ndwis, nbrs, bsis, sars = [], [], [], [], []
@@ -480,7 +481,10 @@ def cross_sensor_validation(
     s2_ndwi = 0.0
     if s2_coll.size().getInfo() > 0:
         s2_img = _with_indices(s2_coll.median())
-        s2_stats = s2_img.reduceRegion(ee.Reducer.mean(), geom, 100, maxPixels=1e9).getInfo() or {}
+        s2_stats = (
+            s2_img.reduceRegion(ee.Reducer.mean(), geom, 100, maxPixels=1e9).getInfo()
+            or {}
+        )
         s2_ndvi = round(float(s2_stats.get("NDVI", 0.0) or 0.0), 4)
         s2_ndwi = round(float(s2_stats.get("NDWI", 0.0) or 0.0), 4)
 
@@ -496,15 +500,26 @@ def cross_sensor_validation(
         l8_img = l8_coll.median()
         l8_ndvi_img = l8_img.normalizedDifference(["SR_B5", "SR_B4"]).rename("ndvi")
         l8_ndwi_img = l8_img.normalizedDifference(["SR_B3", "SR_B5"]).rename("ndwi")
-        l8_stats = l8_ndvi_img.addBands(l8_ndwi_img).reduceRegion(
-            ee.Reducer.mean(), geom, 100, maxPixels=1e9
-        ).getInfo() or {}
+        l8_stats = (
+            l8_ndvi_img.addBands(l8_ndwi_img)
+            .reduceRegion(ee.Reducer.mean(), geom, 100, maxPixels=1e9)
+            .getInfo()
+            or {}
+        )
         l8_ndvi = round(float(l8_stats.get("ndvi", 0.0) or 0.0), 4)
         l8_ndwi = round(float(l8_stats.get("ndwi", 0.0) or 0.0), 4)
 
     return {
-        "sentinel2": {"ndvi": s2_ndvi, "ndwi": s2_ndwi, "scenes": int(s2_coll.size().getInfo())},
-        "landsat": {"ndvi": l8_ndvi, "ndwi": l8_ndwi, "scenes": int(l8_coll.size().getInfo())},
+        "sentinel2": {
+            "ndvi": s2_ndvi,
+            "ndwi": s2_ndwi,
+            "scenes": int(s2_coll.size().getInfo()),
+        },
+        "landsat": {
+            "ndvi": l8_ndvi,
+            "ndwi": l8_ndwi,
+            "scenes": int(l8_coll.size().getInfo()),
+        },
         "ndvi_diff": round(s2_ndvi - l8_ndvi, 4),
         "ndwi_diff": round(s2_ndwi - l8_ndwi, 4),
     }
