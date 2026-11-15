@@ -4,15 +4,15 @@
 
 - [x] Loading text: "landsat" engine shows "Querying STAC assets" instead of "Querying Google Earth Engine assets" (map.js line 504-512)
 - [x] Sidebar metrics: frontend reads `spectral_metrics` (7 fields) instead of `telemetry` (all fields) → many zeros (map.js line 250)
+- [ ] Spectral Feature Clusters chart: only shows NDVI vs BSI, should include all metrics (NDVI, NDWI, NDMI, MNDWI, NBR, dNBR, BSI, SAR, WTD, etc.)
 - [x] Multi-Temporal Index Trend chart (line): now shows NDVI, NDWI, NDMI, NBR, BSI (5 metrics)
 - [x] Inspect Available Passes display: improve UI to be more informative (show scene details, cloud cover, dates clearly)
 - [x] Map layer ordering: boundaries → AOI → 20 analysis layers → fire (on top, not overlapping) (z-index/layer order)
 - [x] Duplicate Export button: two `btn-export-zip` buttons in index.html (lines 333 & 347)
-- [ ] Spectral Feature Clusters chart: only shows NDVI vs BSI, should include all metrics (NDVI, NDWI, NDMI, MNDWI, NBR, dNBR, BSI, SAR, WTD, etc.)
 
 ## Classifier Issues
 
-- [ ] Land Conversion panel empty: classifier predicts only class 6 (Built-up Area) for all pixels, no class transitions detected
+- [x] Land Conversion panel empty: classifier predicts only class 6 (Built-up Area) for all pixels, no class transitions detected — FIXED (WorldCover + merged training data, now predicts 4 classes)
 - [ ] Spectral Feature Clusters: verify scatter renders correctly with real GEE data
 
 ## Time Series
@@ -46,6 +46,7 @@
 - [x] _with_indices uses B08/B04 instead of B8/B4 → fixed
 - [x] worldcover_training_data uses cover.eq() as region (invalid) → fixed to use geom with updateMask
 - [x] worldcover_training_data uses B02/B03 (wrong band names) → fixed to B2/B3
+- [x] Merge WorldCover training data with hardcoded for class diversity
 
 ## Next TODO:
 
