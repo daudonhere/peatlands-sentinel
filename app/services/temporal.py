@@ -78,6 +78,8 @@ def aggregate_observations(
                 "ndvi": [],
                 "ndwi": [],
                 "ndmi": [],
+                "nbr": [],
+                "bsi": [],
                 "last_datetime": "",
             }
             order.append(key)
@@ -85,6 +87,8 @@ def aggregate_observations(
             ("ndvi", "mean_ndvi"),
             ("ndwi", "mean_ndwi"),
             ("ndmi", "mean_ndmi"),
+            ("nbr", "mean_nbr"),
+            ("bsi", "mean_bsi"),
         ):
             value = obs.get(column)
             if value is not None:
@@ -105,6 +109,12 @@ def aggregate_observations(
                 else 0.0,
                 "ndmi": round(float(np.mean(bucket["ndmi"])), 4)
                 if bucket["ndmi"]
+                else 0.0,
+                "nbr": round(float(np.mean(bucket["nbr"])), 4)
+                if bucket["nbr"]
+                else 0.0,
+                "bsi": round(float(np.mean(bucket["bsi"])), 4)
+                if bucket["bsi"]
                 else 0.0,
             }
         )
@@ -138,6 +148,10 @@ def modelled_series(
     post_ndmi = _anchor_value(post_anchor, "ndmi", 0.05)
     pre_ndwi = _anchor_value(pre_anchor, "ndwi", 0.2)
     post_ndwi = _anchor_value(post_anchor, "ndwi", -0.05)
+    pre_nbr = _anchor_value(pre_anchor, "nbr", 0.6)
+    post_nbr = _anchor_value(post_anchor, "nbr", 0.3)
+    pre_bsi = _anchor_value(pre_anchor, "bsi", -0.2)
+    post_bsi = _anchor_value(post_anchor, "bsi", 0.1)
 
     series: list[dict] = []
     for stamp in stamps:
@@ -147,12 +161,16 @@ def modelled_series(
         ndvi = (pre_center + (post_center - pre_center) * weight) + wave * 0.05
         ndmi = (pre_ndmi + (post_ndmi - pre_ndmi) * weight) + wave * 0.06
         ndwi = (pre_ndwi + (post_ndwi - pre_ndwi) * weight) + wave * 0.04
+        nbr = (pre_nbr + (post_nbr - pre_nbr) * weight) + wave * 0.03
+        bsi = (pre_bsi + (post_bsi - pre_bsi) * weight) + wave * 0.02
         series.append(
             {
                 "period": period_key(stamp, granularity),
                 "ndvi": round(float(np.clip(ndvi + rng.normal(0, 0.012), -1, 1)), 4),
                 "ndwi": round(float(np.clip(ndwi + rng.normal(0, 0.012), -1, 1)), 4),
                 "ndmi": round(float(np.clip(ndmi + rng.normal(0, 0.015), -1, 1)), 4),
+                "nbr": round(float(np.clip(nbr + rng.normal(0, 0.012), -1, 1)), 4),
+                "bsi": round(float(np.clip(bsi + rng.normal(0, 0.01), -1, 1)), 4),
             }
         )
     return series
