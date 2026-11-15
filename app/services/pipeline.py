@@ -172,7 +172,20 @@ async def resolve_time_series(
 ) -> list[TimeSeriesPoint]:
     start, end = parse_iso_interval(payload.post_date_range)
     observations: list[dict[str, Any]] = []
-    if payload.data_source != "gee":
+    if payload.data_source == "gee":
+        try:
+            from app.services import gee as _gee
+
+            rows = await asyncio.wait_for(
+                _gee.gee_monthly_time_series(
+                    bbox, payload.post_date_range, payload.max_cloud_cover
+                ),
+                timeout=30.0,
+            )
+            return [TimeSeriesPoint.model_validate(row) for row in rows]
+        except Exception:
+            observations = []
+    else:
         try:
             from app.services.observations import fetch_scene_observations
 

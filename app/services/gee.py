@@ -106,6 +106,69 @@ def _worldcover_image() -> Any:
     )
 
 
+async def gee_monthly_time_series(
+    bbox: list[float],
+    date_range: str,
+    max_cloud: float = 40.0,
+) -> list[dict]:
+    """Fetch monthly composite NDVI/NDWI/NDMI from GEE."""
+    ee = _require_available()
+    geom = _bbox_geom(bbox)
+    start, end = _split_interval(date_range)
+    from datetime import date, timedelta
+
+    start_d = date.fromisoformat(start)
+    end_d = date.fromisoformat(end)
+
+    # Generate monthly periods
+    periods = []
+    cursor = date(start_d.year, start_d.month, 1)
+    while cursor <= end_d:
+        if cursor.month == 12:
+            next_month = date(cursor.year + 1, 1, 1)
+        else:
+            next_month = date(cursor.year, cursor.month + 1, 1)
+        periods.append((cursor, min(next_month - timedelta(days=1), end_d)))
+        cursor = next_month
+
+    results = []
+    for period_start, period_end in periods:
+        try:
+            coll = (
+                _s2_collection()
+                .filterBounds(geom)
+                .filterDate(period_start.isoformat(), period_end.isoformat())
+                .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud))
+            )
+            if coll.size().getInfo() == 0:
+                continue
+            img = coll.median().clip(geom)
+            ndvi = img.normalizedDifference(["B8", "B4"])
+            ndwi = img.normalizedDifference(["B3", "B8"])
+            ndmi = img.normalizedDifference(["B8", "B11"])
+
+            reduced = (
+                ee.Image.cat([ndvi.rename("ndvi"), ndwi.rename("ndwi"), ndmi.rename("ndmi")])
+                .reduceRegion(
+                    reducer=ee.Reducer.mean(), geometry=geom, scale=100, maxPixels=1e9
+                )
+                .getInfo()
+            )
+
+            results.append(
+                {
+                    "period": f"{period_start.year}-{period_start.month:02d}",
+                    "ndvi": round(float(reduced.get("ndvi", 0.0) or 0.0), 4),
+                    "ndwi": round(float(reduced.get("ndwi", 0.0) or 0.0), 4),
+                    "ndmi": round(float(reduced.get("ndmi", 0.0) or 0.0), 4),
+                }
+            )
+        except Exception:
+            continue
+
+    return results
+
+
 async def landsat_pipeline_metrics(
     bbox: list[float],
     pre_date_range: str,

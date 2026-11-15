@@ -3,12 +3,12 @@
 ## Cosmetic / Display
 
 - [ ] Loading text: "landsat" engine shows "Querying STAC assets" instead of "Querying Google Earth Engine assets" (map.js line 504-512)
-- [ ] Sidebar metrics: frontend reads `spectral_metrics` (7 fields) instead of `telemetry` (all fields) → many zeros (map.js line 250)
+- [x] Sidebar metrics: frontend reads `spectral_metrics` (7 fields) instead of `telemetry` (all fields) → many zeros (map.js line 250)
 - [ ] Spectral Feature Clusters chart: only shows NDVI vs BSI, should include all metrics (NDVI, NDWI, NDMI, MNDWI, NBR, dNBR, BSI, SAR, WTD, etc.)
 - [ ] Multi-Temporal Index Trend chart (line): only shows NDVI/NDWI/NDMI, should include all metrics
-- [ ] Duplicate Export button: two `btn-export-zip` buttons in index.html (lines 333 & 347)
 - [ ] Inspect Available Passes display: improve UI to be more informative (show scene details, cloud cover, dates clearly)
 - [ ] Map layer ordering: boundaries → AOI → 20 analysis layers → fire (on top, not overlapping) (z-index/layer order)
+- [x] Duplicate Export button: two `btn-export-zip` buttons in index.html (lines 333 & 347)
 
 ## Classifier Issues
 
@@ -17,13 +17,13 @@
 
 ## Time Series
 
-- [ ] Multi-Temporal Index Trend empty for GEE source: no observations fetched, series_from_live returns empty
-- [ ] Consider adding GEE-based time series (monthly composite NDVI/NDWI/NDMI)
+- [x] Multi-Temporal Index Trend empty for GEE source: no observations fetched, series_from_live returns empty
+- [ ] Consider adding GEE-based time series (monthly composite NDVI/NDWI/NDMI) — DONE (gee_monthly_time_series)
 
 ## DEM / Topography
 
-- [ ] DEM COG read returns zeros (Planetary Computer COG access unreliable) → mean_elevation_m = 0
-- [ ] Fallback dome model not triggered because elev_grid is zeros (not None/NaN)
+- [x] DEM COG read returns zeros (Planetary Computer COG access unreliable) → mean_elevation_m = 0
+- [x] Fallback dome model not triggered because elev_grid is zeros (not None/NaN)
 
 ## Field Validation
 
@@ -37,7 +37,7 @@
 
 ## UI / UX
 
-- [ ] 20 analyze land checkboxes: add bulk checkbox (check all / uncheck all) so user doesn't toggle one by one
+- [x] 20 analyze land checkboxes: add bulk checkbox (check all / uncheck all) so user doesn't toggle one by one
 
 ## Next TODO:
 
