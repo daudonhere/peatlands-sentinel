@@ -43,6 +43,12 @@ def calculate_bsi(
     return np.clip(bsi, -1.0, 1.0)
 
 
+def linear_to_db(values: np.ndarray) -> np.ndarray:
+    with np.errstate(divide="ignore", invalid="ignore"):
+        db = 10.0 * np.log10(np.maximum(values.astype(np.float32), 1e-6))
+    return np.where(np.isfinite(db), db, np.nan)
+
+
 def calculate_sar_cross_ratio(vh_db: np.ndarray, vv_db: np.ndarray) -> np.ndarray:
     return vh_db - vv_db
 

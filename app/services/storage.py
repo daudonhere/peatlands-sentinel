@@ -125,6 +125,8 @@ def get_analysis_run(run_id: str) -> dict[str, Any] | None:
             "time_series": extra.get("time_series", []),
             "class_scatter": extra.get("class_scatter", []),
             "data_source": extra.get("data_source"),
+            "granularity": extra.get("granularity", "monthly"),
+            "training_error": extra.get("training_error"),
         }
 
 

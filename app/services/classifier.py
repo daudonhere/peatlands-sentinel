@@ -3,21 +3,45 @@ from __future__ import annotations
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
+from app.config import get_settings
 from app.schemas.analysis import LandTransition, SpectralSummary
 from app.services.reference_data import CLASS_NAMES, FEATURES
 
 _TRAINING_FEATURES: list[list[float]] = []
 _TRAINING_LABELS: list[int] = []
+_TRAINING_COORDS: list[list[float]] = []
 
 
-def set_worldcover_training(features: list[list[float]], labels: list[int]) -> None:
-    global _TRAINING_FEATURES, _TRAINING_LABELS
+def new_classifier(n_estimators: int | None = None) -> RandomForestClassifier:
+    return RandomForestClassifier(
+        n_estimators=int(n_estimators or get_settings().gee_rf_trees),
+        max_depth=16,
+        min_samples_leaf=1,
+        random_state=42,
+        n_jobs=-1,
+    )
+
+
+def set_worldcover_training(
+    features: list[list[float]],
+    labels: list[int],
+    coords: list[list[float]] | None = None,
+) -> None:
+    global _TRAINING_FEATURES, _TRAINING_LABELS, _TRAINING_COORDS
     if features and labels and len(features) == len(labels):
         _TRAINING_FEATURES = list(features)
         _TRAINING_LABELS = list(labels)
+        _TRAINING_COORDS = list(coords) if coords and len(coords) == len(labels) else []
     else:
         _TRAINING_FEATURES = []
         _TRAINING_LABELS = []
+        _TRAINING_COORDS = []
+
+
+def get_training_coords() -> np.ndarray:
+    if not _TRAINING_COORDS:
+        return np.empty((0, 2), dtype=np.float64)
+    return np.array(_TRAINING_COORDS, dtype=np.float64)
 
 
 def get_training_data() -> tuple[np.ndarray, np.ndarray]:
@@ -39,13 +63,7 @@ def get_trained_classifier() -> RandomForestClassifier | None:
     features, labels = get_training_data()
     if features.size == 0 or len(np.unique(labels)) < 2:
         return None
-    rf = RandomForestClassifier(
-        n_estimators=200,
-        max_depth=8,
-        min_samples_leaf=2,
-        random_state=42,
-        n_jobs=-1,
-    )
+    rf = new_classifier()
     rf.fit(features, labels)
     return rf
 

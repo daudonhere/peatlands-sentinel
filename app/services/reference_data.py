@@ -23,6 +23,22 @@ CLASS_COLORS = {
 
 FEATURES = ["ndvi", "ndwi", "nbr", "bsi"]
 
+INDEX_SERIES = [
+    {"key": "ndvi", "label": "NDVI", "color": "#34d399", "unit": ""},
+    {"key": "ndwi", "label": "NDWI", "color": "#38bdf8", "unit": ""},
+    {"key": "mndwi", "label": "MNDWI", "color": "#2dd4bf", "unit": ""},
+    {"key": "ndmi", "label": "NDMI", "color": "#facc15", "unit": ""},
+    {"key": "nbr", "label": "NBR", "color": "#f87171", "unit": ""},
+    {"key": "bsi", "label": "BSI", "color": "#cbd5e1", "unit": ""},
+    {"key": "dnbr", "label": "dNBR", "color": "#fb923c", "unit": ""},
+    {"key": "sar", "label": "SAR VH-VV", "color": "#a78bfa", "unit": "dB"},
+    {"key": "lst", "label": "LST", "color": "#f472b6", "unit": "\u00b0C"},
+]
+
+INDEX_COLORS = {row["key"]: row["color"] for row in INDEX_SERIES}
+
+UNITLESS_KEYS = [row["key"] for row in INDEX_SERIES if not row["unit"]]
+
 ANALYSIS_TARGETS = [
     "peat_moisture",
     "topography_slope",

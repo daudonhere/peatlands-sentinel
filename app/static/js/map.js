@@ -399,9 +399,10 @@
     insightsCtrl.renderTransitions(
       runData.land_transitions || runData.transitions,
     );
-    insightsCtrl.renderTimeSeries(runData.time_series);
-    insightsCtrl.renderClassScatter(runData.class_scatter);
-    insightsCtrl.renderModelAccuracy(runData.accuracy);
+    insightsCtrl.renderTimeSeries(runData.time_series, runData.granularity);
+    insightsCtrl.renderIndexScatter(runData.time_series, runData.granularity);
+    insightsCtrl.renderModelAccuracy(runData.accuracy, runData.training_error);
+    insightsCtrl.loadFires("all", false);
     insightsCtrl.refreshIntervention();
     resultsContent.classList.remove("hidden");
   }
@@ -443,6 +444,17 @@
     },
     function () {
       return `${parseDdMmYy(document.getElementById("date-start").value) || "2024-01-01"}/${parseDdMmYy(document.getElementById("date-end").value) || "2024-12-31"}`;
+    },
+    function () {
+      const out = [];
+      const aoi = getActiveGeometry();
+      if (aoi) out.push(aoi);
+      const boundary =
+        typeof drawCtrl.getBoundaryGeometry === "function"
+          ? drawCtrl.getBoundaryGeometry()
+          : null;
+      if (boundary) out.push(boundary);
+      return out;
     },
   );
 

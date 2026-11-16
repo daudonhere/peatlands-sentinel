@@ -126,6 +126,8 @@ async def execute_analysis_pipeline(
                 "data_source": source_meta.get(
                     "source", payload.data_source or "planetary_computer"
                 ),
+                "granularity": payload.granularity,
+                "training_error": source_meta.get("training_error"),
             },
         )
 
@@ -142,9 +144,11 @@ async def execute_analysis_pipeline(
         accuracy=accuracy,
         time_series=time_series,
         class_scatter=scatter,
+        granularity=payload.granularity,
         data_source=source_meta.get(
             "source", payload.data_source or "planetary_computer"
         ),
+        training_error=source_meta.get("training_error"),
         export_available=True,
         geojson=geojson_envelope,
     )

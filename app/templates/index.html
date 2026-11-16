@@ -13,28 +13,6 @@
     </div>
 
     <div class="sidebar-body">
-      <div class="card">
-        <div class="card-section">
-          <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
-          <select id="basemap-select" class="form-select">
-            <option value="esri">ESRI World Imagery (Satellite)</option>
-            <option value="esri_topo">ESRI World Topo Map</option>
-            <option value="esri_terrain">ESRI World Terrain Base</option>
-            <option value="esri_street">ESRI World Street Map</option>
-            <option value="esri_shaded_relief">ESRI Shaded Relief</option>
-            <option value="esri_physical">ESRI Physical Map</option>
-            <option value="esri_natgeo">ESRI National Geographic</option>
-            <option value="esri_ocean">ESRI Ocean Base</option>
-            <option value="esri_light_gray">ESRI Light Gray Canvas</option>
-            <option value="esri_dark_gray">ESRI Dark Gray Canvas</option>
-            <option value="osm">OpenStreetMap Standard</option>
-            <option value="opentopomap">OpenTopoMap</option>
-            <option value="cyclosm">CyclOSM (Cycling)</option>
-          </select>
-        </div>
-
-
-      </div>
 
       <div class="card">
         <div class="card-section">
@@ -101,8 +79,6 @@
 
     <div class="sidebar-footer">
       <button id="btn-run-analysis" type="button" class="btn btn-primary">Run Satellite Analysis</button>
-      <button id="btn-inspect-scenes" type="button" class="btn btn-outline">Inspect Available Passes</button>
-      <button id="btn-open-history" type="button" class="btn btn-outline">History</button>
       <p id="aoi-status-text" class="results-state-desc" style="margin-top:0.4rem;"></p>
     </div>
   </aside>
@@ -138,6 +114,12 @@
         </div>
 
         <div class="bounds-line">Bounds: <span id="coords-text">[102.000, 0.200, 103.000, 0.800]</span></div>
+
+        <div class="card">
+          <h3 class="analyst-title">FIRMS Fire Hotspots</h3>
+          <div id="firms-panel" style="font-size:0.85rem;"></div>
+          <p id="insight-status" class="analyst-text" style="margin-top: 0.4rem;"></p>
+        </div>
 
         <div class="stats-grid">
           <div class="stat-cell">
@@ -236,7 +218,7 @@
             <div class="stat-label">Seismic Sens.</div>
             <div class="stat-value" id="val-seismic">-</div>
           </div>
-          <div class="stat-cell">
+          <div class="stat-cell" style="grid-column: 1 / -1;">
             <div class="stat-label">Telemetry Source</div>
             <div class="stat-value" id="val-source" style="font-size: 0.8rem;">-</div>
           </div>
@@ -266,7 +248,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 class="analyst-title" style="margin: 0;">Multi-Temporal Index Trend</h3>
-            <span id="ts-granularity-badge" style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">NDVI / NDWI / NDMI</span>
+            <span id="ts-granularity-badge" style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Monthly cadence</span>
           </div>
           <div id="timeseries-chart" style="margin-top: 0.5rem; width: 100%; min-height: 120px;"></div>
         </div>
@@ -274,7 +256,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 class="analyst-title" style="margin: 0;">Spectral Feature Clusters</h3>
-            <span style="font-size: 0.65rem; color: var(--text-secondary);">All Metrics (Pre=light, Post=dark)</span>
+            <span style="font-size: 0.65rem; color: var(--text-secondary);">Color per index (faint older, solid newer)</span>
           </div>
           <div id="scatter-chart" style="margin-top: 0.5rem; width: 100%; min-height: 120px;"></div>
         </div>
@@ -289,6 +271,8 @@
             <div><span style="color: var(--text-secondary);">Kappa:</span> <strong id="val-kappa">-</strong></div>
             <div><span style="color: var(--text-secondary);">Samples:</span> <strong id="val-samples">-</strong></div>
           </div>
+          <div id="val-class-support" style="margin-top: 0.4rem; font-size: 0.7rem; color: var(--text-secondary);"></div>
+          <p id="model-accuracy-note" class="results-state-desc" style="margin-top: 0.4rem; font-size: 0.7rem;"></p>
         </div>
 
         <div class="card">
@@ -296,26 +280,6 @@
           <input type="range" id="dams-slider" min="0" max="20" value="2" style="width: 100%; accent-color: #ffffff;">
           <div id="dams-label" class="history-date" style="margin-top: 0.4rem;">2 dams / 100 Ha</div>
           <p id="intervention-result" class="analyst-text" style="margin-top: 0.4rem;">Run analysis, then adjust slider.</p>
-        </div>
-
-        <div class="card">
-          <h3 class="analyst-title">Field Validation</h3>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; align-items: center;">
-            <select id="firms-confidence" class="form-select" style="flex: 1;">
-              <option value="all">All Confidence</option>
-              <option value="h">High only</option>
-              <option value="n">Nominal+</option>
-              <option value="l">Low+</option>
-            </select>
-            <label style="font-size: 0.7rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.25rem;">
-              <input type="checkbox" id="firms-archive"> Archive
-            </label>
-            <button id="btn-fires" type="button" class="btn btn-outline btn-sm">Active Fires</button>
-          </div>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
-            <button id="btn-live-ndvi" type="button" class="btn btn-outline btn-sm">Live NDVI (COG)</button>
-          </div>
-          <p id="insight-status" class="analyst-text" style="margin-top: 0.4rem;"></p>
         </div>
 
         <div class="card">
@@ -330,21 +294,40 @@
 
         <div class="pass-status">Found 4 Sentinel-2 and 4 Sentinel-1 passes</div>
 
-        <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem;">
-          Export GIS Bundle (ZIP, XLSX, QGIS)
-        </button>
+        <div class="card-section" style="margin-top: 0.5rem;">
+          <label for="basemap-select" class="form-label">Satellite Imagery Basemap</label>
+          <select id="basemap-select" class="form-select">
+            <option value="esri">ESRI World Imagery (Satellite)</option>
+            <option value="esri_topo">ESRI World Topo Map</option>
+            <option value="esri_terrain">ESRI World Terrain Base</option>
+            <option value="esri_street">ESRI World Street Map</option>
+            <option value="esri_shaded_relief">ESRI Shaded Relief</option>
+            <option value="esri_physical">ESRI Physical Map</option>
+            <option value="esri_natgeo">ESRI National Geographic</option>
+            <option value="esri_ocean">ESRI Ocean Base</option>
+            <option value="esri_light_gray">ESRI Light Gray Canvas</option>
+            <option value="esri_dark_gray">ESRI Dark Gray Canvas</option>
+            <option value="osm">OpenStreetMap Standard</option>
+            <option value="opentopomap">OpenTopoMap</option>
+            <option value="cyclosm">CyclOSM (Cycling)</option>
+          </select>
+        </div>
 
         <div class="card">
           <h3 class="analyst-title">Layers (Analysis Objectives)</h3>
           <div id="layer-list" style="display:flex;flex-direction:column;gap:0.35rem;"></div>
         </div>
 
-        <div class="card">
-          <h3 class="analyst-title">FIRMS Fire Hotspots</h3>
-          <div id="firms-panel" style="font-size:0.85rem;"></div>
-        </div>
-
       </div>
+
+      <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+        <button id="btn-inspect-scenes" type="button" class="btn btn-outline" style="flex: 1;">Inspect Available Passes</button>
+        <button id="btn-open-history" type="button" class="btn btn-outline" style="flex: 1;">History</button>
+      </div>
+
+      <button id="btn-export-zip" type="button" class="btn btn-outline" style="width: 100%; margin-top: 0.4rem;">
+        Export GIS Bundle (ZIP, XLSX, QGIS)
+      </button>
 
       <div id="history-panel" class="results-state hidden">
         <button id="btn-back-history" type="button" class="btn btn-outline btn-sm" style="margin-bottom:0.5rem;">&#8592; Back</button>

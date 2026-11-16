@@ -19,6 +19,7 @@ from app.services.raster import (
     calculate_ndvi,
     calculate_ndwi,
     calculate_sar_cross_ratio,
+    linear_to_db,
 )
 
 _S2_BANDS = ["B02", "B03", "B04", "B08", "B11", "B12", "SCL"]
@@ -147,7 +148,9 @@ def _s2_to_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 def _s1_to_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     vv = bands.get("vv", np.full((1, 1), np.nan, dtype=np.float32))
     vh = bands.get("vh", np.full((1, 1), np.nan, dtype=np.float32))
-    return {"cross_ratio": calculate_sar_cross_ratio(vh, vv)}
+    return {
+        "cross_ratio": calculate_sar_cross_ratio(linear_to_db(vh), linear_to_db(vv))
+    }
 
 
 async def fetch_spectral_snapshot(

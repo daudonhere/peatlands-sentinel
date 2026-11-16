@@ -1,8 +1,13 @@
 import numpy as np
 
-from app.services.reference_data import CLASS_COLORS, CLASS_NAMES
+from app.services.reference_data import (
+    CLASS_COLORS,
+    CLASS_NAMES,
+    INDEX_COLORS,
+    UNITLESS_KEYS,
+)
 
-_SERIES_COLORS = {"ndvi": "#7fb069", "ndwi": "#4aa3df", "ndmi": "#e0c341"}
+_SERIES_COLORS = {key: INDEX_COLORS[key] for key in UNITLESS_KEYS}
 
 
 def _escape(text: str) -> str:
@@ -19,7 +24,12 @@ def render_line_chart_svg(
     left, right, top, bottom = 48, 16, 24, 36
     plot_w = width - left - right
     plot_h = height - top - bottom
-    values = [float(p[key]) for p in series for key in _SERIES_COLORS if key in p]
+    values = [
+        float(p[key])
+        for p in series
+        for key in _SERIES_COLORS
+        if p.get(key) is not None
+    ]
     vmin = min(values) if values else -1.0
     vmax = max(values) if values else 1.0
     if vmax == vmin:
@@ -44,7 +54,7 @@ def render_line_chart_svg(
         coords = [
             (x_at(i), y_at(float(point[key])))
             for i, point in enumerate(series)
-            if key in point
+            if point.get(key) is not None
         ]
         if len(coords) < 2:
             continue

@@ -138,6 +138,65 @@ def test_firms_archive_param():
     assert sig.parameters["archive"].default is False
 
 
+def test_worldcover_epoch_and_features():
+    from app.services.gee_analysis import (
+        WC_TO_CLASS,
+        _pixel_features,
+        label_epoch_range,
+        label_epoch_year,
+    )
+
+    assert 2015 <= label_epoch_year() <= 2100
+    assert (
+        label_epoch_range() == f"{label_epoch_year()}-01-01/{label_epoch_year()}-12-31"
+    )
+    assert set(WC_TO_CLASS.values()) <= set(range(8))
+    props = {
+        "B2": 400.0,
+        "B3": 500.0,
+        "B4": 300.0,
+        "B8": 2800.0,
+        "B11": 1300.0,
+        "B12": 500.0,
+    }
+    row = _pixel_features(props)
+    assert row is not None and len(row) == 4
+    assert all(-1.0 <= value <= 1.0 for value in row)
+    assert _pixel_features({"B2": 1.0}) is None
+
+
+def test_period_buckets_cadence():
+    from datetime import date
+
+    from app.services.temporal import period_buckets
+
+    weekly = period_buckets(date(2024, 1, 1), date(2024, 1, 31), "weekly")
+    assert len(weekly) == 5
+    assert weekly[0][2] == "2024-W01"
+    assert weekly[-1][2] == "2024-W05"
+
+    monthly = period_buckets(date(2024, 1, 1), date(2024, 12, 31), "monthly")
+    assert [key for _, _, key in monthly] == [f"2024-{m:02d}" for m in range(1, 13)]
+
+    yearly = period_buckets(date(2022, 6, 1), date(2024, 3, 1), "yearly")
+    assert [key for _, _, key in yearly] == ["2022", "2023", "2024"]
+
+
+def test_dnbr_baseline():
+    from app.services.temporal import apply_dnbr_baseline
+
+    series = [
+        {"period": "2024-03", "nbr": 0.40},
+        {"period": "2024-01", "nbr": 0.70},
+        {"period": "2024-02", "nbr": None},
+    ]
+    result = apply_dnbr_baseline(series)
+    assert [row["period"] for row in result] == ["2024-01", "2024-02", "2024-03"]
+    assert result[0]["dnbr"] == 0.0
+    assert result[1]["dnbr"] is None
+    assert result[2]["dnbr"] == 0.3
+
+
 def test_gee_landsat_gap_filling():
     """Test resolve_pipeline_metrics has gap-filling logic."""
     import inspect
@@ -190,4 +249,7 @@ if __name__ == "__main__":
     test_multi_source_fallback_notification()
     test_twenty_layer_targets()
     test_ai_analyst_uses_ai_when_configured()
+    test_period_buckets_cadence()
+    test_dnbr_baseline()
+    test_worldcover_epoch_and_features()
     print("All unit tests passed!")

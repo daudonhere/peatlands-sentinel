@@ -1,18 +1,38 @@
-function createInsightsController(map, getBbox, getRunId, getDateRange) {
+function createInsightsController(
+  map,
+  getBbox,
+  getRunId,
+  getDateRange,
+  getGeometries,
+) {
   const $ = function (id) {
     return document.getElementById(id);
   };
 
-  const CLASS_COLORS_MAP = {
-    0: "#1a5f2a",
-    1: "#3f7f5f",
-    2: "#b08968",
-    3: "#7fb069",
-    4: "#6b6b6b",
-    5: "#1f5f8b",
-    6: "#d62728",
-    7: "#e0c341",
-  };
+  const INDEX_SERIES = [
+    { key: "ndvi", label: "NDVI", color: "#34d399", unit: "", lane: 0 },
+    { key: "ndwi", label: "NDWI", color: "#38bdf8", unit: "", lane: 0 },
+    { key: "mndwi", label: "MNDWI", color: "#2dd4bf", unit: "", lane: 0 },
+    { key: "ndmi", label: "NDMI", color: "#facc15", unit: "", lane: 0 },
+    { key: "nbr", label: "NBR", color: "#f87171", unit: "", lane: 0 },
+    { key: "bsi", label: "BSI", color: "#cbd5e1", unit: "", lane: 0 },
+    { key: "dnbr", label: "dNBR", color: "#fb923c", unit: "", lane: 0 },
+    { key: "sar", label: "SAR VH-VV", color: "#a78bfa", unit: "dB", lane: 1 },
+    { key: "lst", label: "LST", color: "#f472b6", unit: "\u00b0C", lane: 2 },
+  ];
+
+  const LANES = [0, 1, 2];
+
+  function seriesValue(row, key) {
+    const raw = row[key];
+    if (raw === null || raw === undefined || raw === "") return null;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function unitSuffix(unit) {
+    return unit ? ` ${unit}` : "";
+  }
 
   function withBusy(btn, label, task) {
     const original = btn.textContent;
@@ -28,7 +48,7 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     const box = $("transition-chart");
     if (!box) return;
     box.innerHTML = "";
-    const top = (transitions || [])
+    const changed = (transitions || [])
       .filter(function (t) {
         return t.from_class !== t.to_class;
       })
@@ -36,13 +56,54 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
         return b.area_hectares - a.area_hectares;
       })
       .slice(0, 6);
-    if (!top.length) {
+    const stable = (transitions || []).filter(function (t) {
+      return t.from_class === t.to_class;
+    });
+    const stableHa = stable.reduce(function (s, t) {
+      return s + (t.area_hectares || 0);
+    }, 0);
+    if (!changed.length && !stable.length) {
       box.innerHTML =
-        '<p class="results-state-desc" style="font-size:0.75rem;">No land class conversion detected.</p>';
+        '<p class="results-state-desc" style="font-size:0.75rem;">No land class conversion detected (classification requires GEE training data).</p>';
       return;
     }
-    const max = top[0].area_hectares || 1;
-    top.forEach(function (t) {
+    if (stableHa > 0) {
+      const line = document.createElement("p");
+      line.className = "results-state-desc";
+      line.style.fontSize = "0.75rem";
+      line.style.marginBottom = "0.35rem";
+      line.textContent =
+        "Unchanged area: " +
+        stableHa.toFixed(1) +
+        " ha across " +
+        stable.length +
+        " class(es).";
+      box.appendChild(line);
+    }
+    if (!changed.length) {
+      return;
+    }
+    // Per-class area summary (pre -> post) derived from transition matrix.
+    const preAreas = {};
+    const postAreas = {};
+    (transitions || []).forEach(function (t) {
+      preAreas[t.from_class] = (preAreas[t.from_class] || 0) + (t.area_hectares || 0);
+      postAreas[t.to_class] = (postAreas[t.to_class] || 0) + (t.area_hectares || 0);
+    });
+    const classNames = Object.keys(preAreas).concat(Object.keys(postAreas)).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    if (classNames.length) {
+      const summary = classNames.map(function (c) {
+        return c + ": " + (preAreas[c] || 0).toFixed(0) + " -> " + (postAreas[c] || 0).toFixed(0);
+      }).join(" | ");
+      const line = document.createElement("p");
+      line.className = "results-state-desc";
+      line.style.fontSize = "0.7rem";
+      line.style.marginTop = "0.35rem";
+      line.textContent = "Class areas (ha) pre->post: " + summary;
+      box.appendChild(line);
+    }
+    const max = changed[0].area_hectares || 1;
+    changed.forEach(function (t) {
       const row = document.createElement("div");
       row.className = "bar-row";
       const label = document.createElement("span");
@@ -62,214 +123,292 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     });
   }
 
-  function renderTimeSeries(series) {
+  function renderTimeSeries(series, granularity) {
     const box = $("timeseries-chart");
+    const badge = $("ts-granularity-badge");
     if (!box) return;
+    if (badge) {
+      badge.textContent = `${(granularity || "monthly").toUpperCase()} CADENCE`;
+    }
     if (!series || !series.length) {
       box.innerHTML =
         '<p class="results-state-desc" style="font-size:0.75rem;">No temporal series data available.</p>';
       return;
     }
-    const w = 340;
-    const h = 132;
-    const padL = 26;
-    const padR = 10;
-    const padT = 28;
-    const padB = 22;
-    const pw = w - padL - padR;
-    const ph = h - padT - padB;
 
-    const KEYS = [
-      { key: "ndvi", color: "#7fb069", label: "NDVI", dash: "" },
-      { key: "ndwi", color: "#4aa3df", label: "NDWI", dash: "" },
-      { key: "ndmi", color: "#e0c341", label: "NDMI", dash: "3,2" },
-      { key: "mndwi", color: "#17a2b8", label: "MNDWI", dash: "2,2" },
-      { key: "nbr", color: "#dc3545", label: "NBR", dash: "" },
-      { key: "bsi", color: "#8fd19e", label: "BSI", dash: "4,2" },
-    ];
-
-    const allValues = [];
-    series.forEach(function (s) {
-      KEYS.forEach(function (k) {
-        const v = Number(s[k.key]);
-        if (Number.isFinite(v)) allValues.push(v);
+    const present = function (k) {
+      return series.some(function (row) {
+        return seriesValue(row, k.key) !== null;
       });
+    };
+    const activeLanes = LANES.filter(function (lane) {
+      return INDEX_SERIES.filter(function (k) {
+        return k.lane === lane;
+      }).some(present);
     });
-    let vmin = Math.min(-0.2, ...allValues);
-    let vmax = Math.max(0.2, ...allValues);
-    if (vmax - vmin < 0.2) {
-      vmin -= 0.1;
-      vmax += 0.1;
+    if (!activeLanes.length) {
+      box.innerHTML =
+        '<p class="results-state-desc" style="font-size:0.75rem;">No index values returned for this window.</p>';
+      return;
     }
-    const padSpan = (vmax - vmin) * 0.08;
-    vmin -= padSpan;
-    vmax += padSpan;
-    const xStep = series.length > 1 ? pw / (series.length - 1) : pw;
 
-    function toX(idx) {
-      return padL + idx * xStep;
-    }
-    function toY(val) {
-      return padT + (1 - (val - vmin) / (vmax - vmin)) * ph;
-    }
-    function toCoord(val, idx) {
-      return `${toX(idx).toFixed(1)},${toY(val).toFixed(1)}`;
-    }
+    const w = 340;
+    const padL = 30;
+    const padR = 8;
+    const padB = 14;
+    const legendRows = Math.ceil(INDEX_SERIES.length / 3);
+    const padT = 8 + legendRows * 10 + 4;
+    const laneH = 34;
+    const gap = 6;
+    const plotW = w - padL - padR;
+    const plotH =
+      activeLanes.length * laneH + Math.max(0, activeLanes.length - 1) * gap;
+    const h = padT + plotH + padB;
+
+    const xStep = series.length > 1 ? plotW / (series.length - 1) : 0;
+    const toX = function (index) {
+      if (series.length === 1) return padL + plotW / 2;
+      return padL + index * xStep;
+    };
 
     let grid = "";
-    let ticks = "";
-    const tickCount = 4;
-    for (let i = 0; i <= tickCount; i += 1) {
-      const value = vmax - ((vmax - vmin) * i) / tickCount;
-      const y = toY(value);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" stroke="#222" stroke-width="1" />`;
-      ticks += `<text x="${padL - 3}" y="${(y + 3).toFixed(1)}" fill="#777" font-size="7" text-anchor="end">${value.toFixed(2)}</text>`;
-    }
-
     let lines = "";
     let points = "";
-    let legend = "";
-    KEYS.forEach(function (k, ki) {
-      const coords = series.map(function (s, i) {
-        return toCoord(Number(s[k.key] || 0), i);
+    let laneText = "";
+
+    activeLanes.forEach(function (lane, li) {
+      const keys = INDEX_SERIES.filter(function (k) {
+        return k.lane === lane;
       });
-      lines += `<polyline points="${coords.join(" ")}" fill="none" stroke="${k.color}" stroke-width="1.6"${
-        k.dash ? ` stroke-dasharray="${k.dash}"` : ""
-      } />`;
-      series.forEach(function (s, i) {
-        const value = Number(s[k.key] || 0);
-        points += `<circle cx="${toX(i).toFixed(1)}" cy="${toY(value).toFixed(1)}" r="1.8" fill="${k.color}"><title>${k.label} ${s.period}: ${value.toFixed(3)}</title></circle>`;
+      let min = Infinity;
+      let max = -Infinity;
+      series.forEach(function (row) {
+        keys.forEach(function (k) {
+          const v = seriesValue(row, k.key);
+          if (v !== null) {
+            min = Math.min(min, v);
+            max = Math.max(max, v);
+          }
+        });
       });
-      const col = ki % 3;
-      const row = Math.floor(ki / 3);
-      const lx = padL + col * 58;
-      const ly = 8 + row * 10;
-      legend += `<rect x="${lx}" y="${ly - 4}" width="3" height="3" fill="${k.color}" />`;
-      legend += `<text x="${lx + 6}" y="${ly}" fill="#bbb" font-size="7">${k.label}</text>`;
+      if (!Number.isFinite(min)) return;
+      if (max - min < 0.02) {
+        const bump = Math.max(0.1, Math.abs(max) * 0.05);
+        min -= bump;
+        max += bump;
+      }
+      const lanePad = (max - min) * 0.1;
+      min -= lanePad;
+      max += lanePad;
+
+      const top = padT + li * (laneH + gap);
+      const bottom = top + laneH;
+      const toY = function (value) {
+        return bottom - ((value - min) / (max - min)) * laneH;
+      };
+
+      for (let t = 0; t <= 2; t += 1) {
+        const value = max - ((max - min) * t) / 2;
+        const y = toY(value);
+        grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" stroke="#222" stroke-width="1" />`;
+        laneText += `<text x="${padL - 3}" y="${(y + 2.5).toFixed(1)}" fill="#777" font-size="6.5" text-anchor="end">${value.toFixed(value >= 100 || value <= -100 ? 0 : 1)}</text>`;
+      }
+
+      keys.forEach(function (k) {
+        let segment = [];
+        series.forEach(function (row, index) {
+          const value = seriesValue(row, k.key);
+          if (value === null) {
+            if (segment.length > 1) {
+              lines += `<polyline points="${segment.join(" ")}" fill="none" stroke="${k.color}" stroke-width="1.5" />`;
+            }
+            segment = [];
+            return;
+          }
+          const cx = toX(index).toFixed(1);
+          const cy = toY(value).toFixed(1);
+          segment.push(`${cx},${cy}`);
+          points += `<circle cx="${cx}" cy="${cy}" r="1.8" fill="${k.color}"><title>${k.label} ${row.period}: ${value.toFixed(2)}${unitSuffix(k.unit)}</title></circle>`;
+        });
+        if (segment.length > 1) {
+          lines += `<polyline points="${segment.join(" ")}" fill="none" stroke="${k.color}" stroke-width="1.5" />`;
+        }
+      });
     });
 
-    const dStart = (series[0].period || "").substring(5);
-    const dEnd = (series[series.length - 1].period || "").substring(5);
+    let legend = "";
+    const colW = plotW / 3;
+    INDEX_SERIES.forEach(function (k, ki) {
+      const lx = padL + (ki % 3) * colW;
+      const ly = 9 + Math.floor(ki / 3) * 10;
+      const opacity = present(k) ? 1 : 0.28;
+      legend += `<g opacity="${opacity}"><rect x="${lx}" y="${ly - 4}" width="4" height="4" fill="${k.color}" />`;
+      legend += `<text x="${lx + 7}" y="${ly}" fill="#bbb" font-size="6.5">${k.label}${k.unit ? ` (${k.unit})` : ""}</text></g>`;
+    });
+
+    const tickIdx = Array.from(
+      new Set([0, Math.round((series.length - 1) / 2), series.length - 1]),
+    );
+    let axis = "";
+    tickIdx.forEach(function (index, pos) {
+      const anchor =
+        tickIdx.length === 1
+          ? "middle"
+          : pos === 0
+            ? "start"
+            : pos === tickIdx.length - 1
+              ? "end"
+              : "middle";
+      axis += `<text x="${toX(index).toFixed(1)}" y="${h - 4}" fill="#777" font-size="7" text-anchor="${anchor}">${series[index].period}</text>`;
+    });
 
     box.innerHTML = `
-      <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
-        <rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />
-        ${legend}
-        ${grid}
-        ${ticks}
-        ${lines}
-        ${points}
-        <text x="${padL}" y="${h - 6}" fill="#777" font-size="9">${dStart}</text>
-        <text x="${w - padR}" y="${h - 6}" fill="#777" font-size="9" text-anchor="end">${dEnd}</text>
-      </svg>
-    `;
+        <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
+          <rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />
+          ${legend}
+          ${grid}
+          ${laneText}
+          ${lines}
+          ${points}
+          ${axis}
+        </svg>
+      `;
   }
 
-  function renderClassScatter(scatter) {
+  function renderIndexScatter(series, granularity) {
     const box = $("scatter-chart");
     if (!box) return;
-    if (!scatter || !scatter.length) {
+    if (!series || !series.length) {
       box.innerHTML =
         '<p class="results-state-desc" style="font-size:0.75rem;">No feature cluster samples available.</p>';
       return;
     }
-    // Multi-scatter: NDVI vs BSI, NDWI vs NBR, NDMI vs SAR (pre + post per class)
-    const pairs = [
-      { xKey: "bsi", yKey: "ndvi", xLabel: "BSI", yLabel: "NDVI" },
-      { xKey: "nbr", yKey: "ndwi", xLabel: "NBR", yLabel: "NDWI" },
-      { xKey: "bsi", yKey: "ndmi", xLabel: "BSI", yLabel: "NDMI" },
-    ];
-    const pw = 100;
-    const ph = 90;
-    const pad = 18;
-    const cw = pw + pad * 2;
-    const ch = ph + pad * 2;
-    const totalW = cw * pairs.length;
-    const totalH = ch;
 
-    function toX(val, min, max) {
-      return pad + ((val - min) / (max - min)) * pw;
-    }
-    function toY(val, min, max) {
-      return pad + (1 - (val - min) / (max - min)) * ph;
+    const rows = INDEX_SERIES.filter(function (k) {
+      return series.some(function (row) {
+        return seriesValue(row, k.key) !== null;
+      });
+    });
+    if (!rows.length) {
+      box.innerHTML =
+        '<p class="results-state-desc" style="font-size:0.75rem;">No index values returned for this window.</p>';
+      return;
     }
 
-    const ranges = {
-      ndvi: [-0.3, 1.0],
-      ndwi: [-0.8, 0.5],
-      ndmi: [-0.2, 0.6],
-      bsi: [-0.6, 0.5],
-      nbr: [-0.3, 0.8],
-    };
+    const w = 340;
+    const labelW = 52;
+    const padR = 8;
+    const padT = 4;
+    const rowH = 15;
+    const plotW = w - labelW - padR;
+    const h = padT + rows.length * rowH + 13;
 
-    let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" style="width:100%;height:auto;display:block;">`;
-    svg += `<rect width="${totalW}" height="${totalH}" fill="#0d0d0d" rx="2" />`;
+    let svg = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">`;
+    svg += `<rect width="${w}" height="${h}" fill="#0d0d0d" rx="2" />`;
 
-    pairs.forEach(function (pair, pi) {
-      const ox = pi * cw;
-      const xRange = ranges[pair.xKey];
-      const yRange = ranges[pair.yKey];
+    rows.forEach(function (k, ri) {
+      const values = series
+        .map(function (row) {
+          return seriesValue(row, k.key);
+        })
+        .filter(function (v) {
+          return v !== null;
+        });
+      let min = Math.min(...values);
+      let max = Math.max(...values);
+      if (max - min < 1e-6) {
+        min -= 0.5;
+        max += 0.5;
+      }
+      const y = padT + ri * rowH + rowH / 2;
+      svg += `<line x1="${labelW}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#232323" stroke-width="0.8" />`;
+      svg += `<text x="2" y="${(y + 2.4).toFixed(1)}" fill="${k.color}" font-size="6.5">${k.label}${k.unit ? ` ${k.unit}` : ""}</text>`;
 
-      // Axes
-      svg += `<line x1="${ox + pad}" y1="${pad + ph}" x2="${ox + pad + pw}" y2="${pad + ph}" stroke="#333" stroke-width="1" />`;
-      svg += `<line x1="${ox + pad}" y1="${pad}" x2="${ox + pad}" y2="${pad + ph}" stroke="#333" stroke-width="1" />`;
-      svg += `<text x="${ox + pad + pw / 2}" y="${pad + ph + 12}" fill="#777" font-size="7" text-anchor="middle">${pair.xLabel}</text>`;
-      svg += `<text x="${ox + 4}" y="${pad + ph / 2}" fill="#777" font-size="7" text-anchor="middle" transform="rotate(-90, ${ox + 4}, ${pad + ph / 2})">${pair.yLabel}</text>`;
-
-      scatter.forEach(function (pt) {
-        const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
-        const preXVal = Number(pt["pre_" + pair.xKey] || 0);
-        const preYVal = Number(pt["pre_" + pair.yKey] || 0);
-        const postXVal = Number(pt["post_" + pair.xKey] || 0);
-        const postYVal = Number(pt["post_" + pair.yKey] || 0);
-        // Pre point (hollow)
-        const preX = toX(preXVal, xRange[0], xRange[1]);
-        const preY = toY(preYVal, yRange[0], yRange[1]);
-        svg += `<circle cx="${(ox + preX).toFixed(1)}" cy="${preY.toFixed(1)}" r="3" fill="none" stroke="${clr}" stroke-width="1.5" opacity="0.6"><title>${pt.land_class} pre: ${pair.xLabel} ${preXVal.toFixed(2)}, ${pair.yLabel} ${preYVal.toFixed(2)}</title></circle>`;
-        // Post point (filled)
-        const postX = toX(postXVal, xRange[0], xRange[1]);
-        const postY = toY(postYVal, yRange[0], yRange[1]);
-        svg += `<circle cx="${(ox + postX).toFixed(1)}" cy="${postY.toFixed(1)}" r="3" fill="${clr}" opacity="0.9"><title>${pt.land_class} post: ${pair.xLabel} ${postXVal.toFixed(2)}, ${pair.yLabel} ${postYVal.toFixed(2)}</title></circle>`;
-        // Arrow from pre to post
-        svg += `<line x1="${(ox + preX).toFixed(1)}" y1="${preY.toFixed(1)}" x2="${(ox + postX).toFixed(1)}" y2="${postY.toFixed(1)}" stroke="${clr}" stroke-width="0.5" opacity="0.4" />`;
-        // Post value label
-        svg += `<text x="${(ox + postX + 4).toFixed(1)}" y="${(postY - 3).toFixed(1)}" fill="${clr}" font-size="5.5">${postYVal.toFixed(2)}</text>`;
+      series.forEach(function (row, si) {
+        const value = seriesValue(row, k.key);
+        if (value === null) return;
+        const cx = labelW + ((value - min) / (max - min)) * plotW;
+        const age = series.length > 1 ? si / (series.length - 1) : 1;
+        const opacity = (0.3 + 0.7 * age).toFixed(2);
+        svg += `<circle cx="${cx.toFixed(1)}" cy="${y}" r="2.4" fill="${k.color}" opacity="${opacity}"><title>${k.label} ${row.period}: ${value.toFixed(2)}${unitSuffix(k.unit)}</title></circle>`;
       });
     });
 
-    // Class legend
-    let lx = 4;
-    scatter.forEach(function (pt) {
-      const clr = CLASS_COLORS_MAP[pt.class_code] || "#999999";
-      svg += `<circle cx="${lx + 3}" cy="${totalH - 6}" r="3" fill="${clr}" />`;
-      svg += `<text x="${lx + 8}" y="${totalH - 3}" fill="#999" font-size="6">${pt.land_class.substring(0, 6)}</text>`;
-      lx += 55;
-    });
-
+    const cadence = (granularity || "monthly").toUpperCase();
+    const countLabel = `${series.length} POINT${series.length === 1 ? "" : "S"}`;
+    svg += `<text x="${labelW}" y="${h - 3}" fill="#777" font-size="6.5">${cadence} ${countLabel}</text>`;
+    svg += `<text x="${w - padR}" y="${h - 3}" fill="#777" font-size="6.5" text-anchor="end">FAINT OLDER / SOLID NEWER</text>`;
     svg += `</svg>`;
     box.innerHTML = svg;
   }
 
-  function renderModelAccuracy(accuracy) {
+  function renderModelAccuracy(accuracy, trainingError) {
     const elBadge = $("val-accuracy-badge");
     const elOverall = $("val-overall-acc");
     const elKappa = $("val-kappa");
     const elSamples = $("val-samples");
-    if (!accuracy) {
-      if (elBadge) elBadge.textContent = "OA: -";
-      if (elOverall) elOverall.textContent = "-";
-      if (elKappa) elKappa.textContent = "-";
-      if (elSamples) elSamples.textContent = "-";
+    const supportBox = $("val-class-support");
+    const noteBox = $("model-accuracy-note");
+    if (!accuracy || (accuracy.samples || 0) === 0) {
+      if (elBadge) elBadge.textContent = "OA: - | \u03ba -";
+      if (elOverall) elOverall.textContent = "0.0";
+      if (elKappa) elKappa.textContent = "0.0";
+      if (elSamples) elSamples.textContent = "0";
+      if (supportBox) supportBox.textContent = "";
+      if (noteBox)
+        noteBox.textContent = trainingError
+          ? `Training failed: ${trainingError}`
+          : "No training data (GEE unavailable or no scenes). Re-run with GEE engine.";
+      return;
+    }
+    const rows = (accuracy.confusion_matrix || [])
+      .map(function (row, i) {
+        const n = (row || []).reduce(function (s, v) {
+          return s + v;
+        }, 0);
+        return { name: (accuracy.class_names || [])[i], n: n };
+      })
+      .filter(function (r) {
+        return r.n > 0;
+      });
+    const distinct = rows.length;
+    if (distinct < 3) {
+      if (elBadge) elBadge.textContent = "OA: - | \u03ba -";
+      if (elOverall) elOverall.textContent = "0.0";
+      if (elKappa) elKappa.textContent = "0.0";
+      if (elSamples) elSamples.textContent = String(accuracy.samples || 0);
+      if (supportBox)
+        supportBox.textContent =
+          "Class support: " +
+          rows
+            .map(function (r) {
+              return r.name + ": " + r.n;
+            })
+            .join(" | ");
+      if (noteBox)
+        noteBox.textContent =
+          "Insufficient class diversity (" +
+          distinct +
+          "/8 classes). Accuracy not representative; use a more heterogeneous AOI.";
       return;
     }
     const oaPct = (accuracy.overall_accuracy * 100).toFixed(1) + "%";
-    const kappa = Number(accuracy.kappa || 0).toFixed(3);
+    const kappaPct = (Number(accuracy.kappa || 0) * 100).toFixed(1) + "%";
     const samples = accuracy.samples || 0;
     if (elBadge)
-      elBadge.textContent = `OA ${(accuracy.overall_accuracy * 100).toFixed(0)}% | \u03ba ${Number(accuracy.kappa || 0).toFixed(2)}`;
+      elBadge.textContent = `OA ${(accuracy.overall_accuracy * 100).toFixed(0)}% | \u03ba ${kappaPct}`;
     if (elOverall) elOverall.textContent = oaPct;
-    if (elKappa) elKappa.textContent = kappa;
+    if (elKappa) elKappa.textContent = kappaPct;
     if (elSamples) elSamples.textContent = String(samples);
+    if (supportBox)
+      supportBox.textContent =
+        "Class support: " +
+        rows
+          .map(function (r) {
+            return r.name + ": " + r.n;
+          })
+          .join(" | ");
+    if (noteBox) noteBox.textContent = "";
   }
 
   function showFires(fires) {
@@ -305,42 +444,68 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
     } catch (e) {}
   }
 
-  $("btn-fires").addEventListener("click", function () {
-    const status = $("insight-status");
-    const confFilter = $("firms-confidence");
-    const conf = confFilter ? confFilter.value : "all";
-    const archiveEl = $("firms-archive");
-    const archive = archiveEl ? archiveEl.checked : false;
-    withBusy($("btn-fires"), "Querying FIRMS...", async function () {
-      try {
-        const data = await fetchActiveFires(getBbox(), 5, archive);
-        let fires = data.fires || [];
-        if (conf !== "all") {
-          fires = fires.filter(function (f) {
-            return f.confidence === conf || f.confidence === "h";
-          });
+  const btnFires = $("btn-fires");
+  if (btnFires)
+    btnFires.addEventListener("click", function () {
+      const status = $("insight-status");
+      const confFilter = $("firms-confidence");
+      const conf = confFilter ? confFilter.value : "all";
+      const archiveEl = $("firms-archive");
+      const archive = archiveEl ? archiveEl.checked : false;
+      withBusy(btnFires, "Querying FIRMS...", async function () {
+        try {
+          const data = await fetchActiveFires(getBbox(), 5, archive);
+          let fires = data.fires || [];
+          if (conf !== "all") {
+            fires = fires.filter(function (f) {
+              return f.confidence === conf || f.confidence === "h";
+            });
+          }
+          const geoms =
+            typeof getGeometries === "function" ? getGeometries() : [];
+          const polygons = (geoms || []).filter(Boolean);
+          if (polygons.length) {
+            fires = fires.filter(function (f) {
+              const pt = turf.point([f.longitude, f.latitude]);
+              return polygons.some(function (g) {
+                try {
+                  const geom = g && g.type === "Feature" ? g.geometry : g;
+                  if (
+                    !geom ||
+                    (geom.type !== "Polygon" && geom.type !== "MultiPolygon")
+                  ) {
+                    return true;
+                  }
+                  return turf.booleanPointInPolygon(pt, geom);
+                } catch (e) {
+                  return true;
+                }
+              });
+            });
+          }
+          showFires(fires);
+          status.textContent = `${fires.length} hotspots (conf: ${conf}, ${archive ? "archive" : "NRT"})`;
+        } catch (err) {
+          status.textContent = err.message;
         }
-        showFires(fires);
-        status.textContent = `${fires.length} hotspots (conf: ${conf}, ${archive ? "archive" : "NRT"})`;
-      } catch (err) {
-        status.textContent = err.message;
-      }
+      });
     });
-  });
 
-  $("btn-live-ndvi").addEventListener("click", function () {
-    const status = $("insight-status");
-    withBusy($("btn-live-ndvi"), "Reading COG...", async function () {
-      try {
-        const d = await fetchLiveNdvi(getBbox(), getDateRange());
-        const dt = d.datetime ? d.datetime.substring(0, 10) : "-";
-        const clear = Math.round((d.valid_pixel_ratio || 0) * 100);
-        status.textContent = `Live NDVI ${d.mean_ndvi} (${dt}, ${clear}% clear)`;
-      } catch (err) {
-        status.textContent = err.message;
-      }
+  const btnLiveNdvi = $("btn-live-ndvi");
+  if (btnLiveNdvi)
+    btnLiveNdvi.addEventListener("click", function () {
+      const status = $("insight-status");
+      withBusy(btnLiveNdvi, "Reading COG...", async function () {
+        try {
+          const d = await fetchLiveNdvi(getBbox(), getDateRange());
+          const dt = d.datetime ? d.datetime.substring(0, 10) : "-";
+          const clear = Math.round((d.valid_pixel_ratio || 0) * 100);
+          status.textContent = `Live NDVI ${d.mean_ndvi} (${dt}, ${clear}% clear)`;
+        } catch (err) {
+          status.textContent = err.message;
+        }
+      });
     });
-  });
 
   const slider = $("dams-slider");
   async function updateIntervention() {
@@ -364,11 +529,45 @@ function createInsightsController(map, getBbox, getRunId, getDateRange) {
   slider.addEventListener("input", updateIntervention);
   slider.addEventListener("change", updateIntervention);
 
+  async function loadFires(conf, archive) {
+    const status = $("insight-status");
+    try {
+      const data = await fetchActiveFires(getBbox(), 5, !!archive);
+      let fires = data.fires || [];
+      if (conf && conf !== "all") {
+        fires = fires.filter(function (f) {
+          return f.confidence === conf || f.confidence === "h";
+        });
+      }
+      const geoms = typeof getGeometries === "function" ? getGeometries() : [];
+      const polygons = (geoms || []).filter(Boolean);
+      if (polygons.length) {
+        fires = fires.filter(function (f) {
+          const pt = turf.point([f.longitude, f.latitude]);
+          return polygons.some(function (g) {
+            try {
+              const geom = g && g.type === "Feature" ? g.geometry : g;
+              if (!geom || (geom.type !== "Polygon" && geom.type !== "MultiPolygon")) return true;
+              return turf.booleanPointInPolygon(pt, geom);
+            } catch (e) {
+              return true;
+            }
+          });
+        });
+      }
+      showFires(fires);
+      if (status) status.textContent = `${fires.length} hotspots (conf: ${conf || "all"}, ${archive ? "archive" : "NRT"})`;
+    } catch (err) {
+      if (status) status.textContent = err.message;
+    }
+  }
+
   return {
     renderTransitions: renderTransitions,
     renderTimeSeries: renderTimeSeries,
-    renderClassScatter: renderClassScatter,
+    renderIndexScatter: renderIndexScatter,
     renderModelAccuracy: renderModelAccuracy,
+    loadFires: loadFires,
     refreshIntervention: updateIntervention,
     showFires: showFires,
   };

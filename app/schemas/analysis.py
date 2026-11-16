@@ -99,13 +99,15 @@ class ModelAccuracy(BaseModel):
 
 class TimeSeriesPoint(BaseModel):
     period: str
-    ndvi: float
-    ndwi: float
-    ndmi: float
-    mndwi: float = 0.0
-    nbr: float = 0.0
-    bsi: float = 0.0
-    sar: float = 0.0
+    ndvi: float | None = None
+    ndwi: float | None = None
+    mndwi: float | None = None
+    ndmi: float | None = None
+    nbr: float | None = None
+    bsi: float | None = None
+    dnbr: float | None = None
+    sar: float | None = None
+    lst: float | None = None
 
 
 class ClassScatterPoint(BaseModel):
@@ -145,6 +147,8 @@ class AnalysisPipelineResponse(BaseModel):
     accuracy: ModelAccuracy | None = None
     time_series: list[TimeSeriesPoint] = Field(default_factory=list)
     class_scatter: list[ClassScatterPoint] = Field(default_factory=list)
+    granularity: str = "monthly"
     data_source: str = "planetary_computer"
+    training_error: str | None = None
     export_available: bool = True
     geojson: dict[str, Any] | None = None

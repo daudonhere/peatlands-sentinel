@@ -11,6 +11,7 @@ from app.schemas.analysis import (
     SpectralSummary,
     TimeSeriesPoint,
 )
+from app.config import get_settings
 from app.services.geospatial import polygon_mask
 
 from app.services.classifier import (
@@ -24,7 +25,11 @@ from app.services.model_metrics import (
     evaluate_local_model,
 )
 from app.services.sources import resolve_pipeline_metrics
-from app.services.temporal import parse_iso_interval, series_from_live
+from app.services.temporal import (
+    apply_dnbr_baseline,
+    parse_iso_interval,
+    series_from_live,
+)
 
 
 def _merge_arrays(pre: dict | None, post: dict | None) -> dict[str, np.ndarray]:
@@ -87,6 +92,16 @@ def _recompute_metrics(
         finite = arr[np.isfinite(arr)]
         if finite.size:
             metrics["mean_sar_cross_ratio"] = round(float(np.nanmean(finite)), 4)
+    ndvi_arr = post_arrays.get("ndvi")
+    if isinstance(ndvi_arr, np.ndarray):
+        finite = ndvi_arr[np.isfinite(ndvi_arr)]
+        if finite.size:
+            metrics["vegetation_fraction"] = round(float(np.mean(finite > 0.3)), 4)
+    mndwi_arr = post_arrays.get("mndwi")
+    if isinstance(mndwi_arr, np.ndarray):
+        finite = mndwi_arr[np.isfinite(mndwi_arr)]
+        if finite.size:
+            metrics["water_fraction"] = round(float(np.mean(finite > 0.0)), 4)
     pre_nbr = (pre_arrays or {}).get("nbr") if isinstance(pre_arrays, dict) else None
     post_nbr = post_arrays.get("nbr")
     if isinstance(pre_nbr, np.ndarray) and isinstance(post_nbr, np.ndarray):
@@ -103,24 +118,34 @@ async def resolve_spectral(
 ) -> tuple[SpectralSummary, list, dict, dict, list[ClassScatterPoint]]:
     geometry = _extract_geometry(payload)
     # Fetch real ESA WorldCover training labels when GEE is available
+    training_error = None
     try:
         from app.services import gee_analysis as _gee_analysis
 
-        features, labels = await asyncio.wait_for(
+        settings = get_settings()
+        features, labels, coords = await asyncio.wait_for(
             asyncio.to_thread(
                 _gee_analysis.worldcover_training_data,
                 bbox,
-                payload.post_date_range,
-                30,
+                settings.gee_samples_per_class,
             ),
-            timeout=60.0,
+            timeout=420.0,
         )
         if features and labels:
             from app.services import classifier as _clf
 
-            _clf.set_worldcover_training(features, labels)
-    except Exception:
-        pass
+            _clf.set_worldcover_training(features, labels, coords)
+        else:
+            training_error = "No WorldCover training samples returned for this AOI."
+    except Exception as exc:
+        import sys
+
+        print(
+            f"[resolve_spectral] WorldCover training failed: {exc!r}",
+            file=sys.stderr,
+            flush=True,
+        )
+        training_error = str(exc)
     result = await asyncio.wait_for(
         resolve_pipeline_metrics(
             payload.data_source,
@@ -144,6 +169,8 @@ async def resolve_spectral(
     arrays = _merge_arrays(pre_arrays, post_arrays)
     scatter = class_scatter_from_arrays(pre_arrays or {}, post_arrays or {})
     extra = {"source": result.source, **result.scene_meta}
+    if training_error:
+        extra["training_error"] = training_error
     return summary, transitions, arrays, extra, scatter
 
 
@@ -175,13 +202,16 @@ async def resolve_time_series(
     observations: list[dict[str, Any]] = []
     if payload.data_source == "gee":
         try:
-            from app.services import gee as _gee
+            from app.services import gee_series
 
             rows = await asyncio.wait_for(
-                _gee.gee_monthly_time_series(
-                    bbox, payload.post_date_range, payload.max_cloud_cover
+                gee_series.gee_time_series(
+                    bbox,
+                    payload.post_date_range,
+                    payload.max_cloud_cover,
+                    payload.granularity,
                 ),
-                timeout=90.0,
+                timeout=150.0,
             )
             return [TimeSeriesPoint.model_validate(row) for row in rows]
         except Exception:
@@ -199,7 +229,9 @@ async def resolve_time_series(
         except Exception:
             observations = []
 
-    rows = series_from_live(observations, granularity=payload.granularity)
+    rows = apply_dnbr_baseline(
+        series_from_live(observations, granularity=payload.granularity)
+    )
     return [TimeSeriesPoint.model_validate(row) for row in rows]
 
 

@@ -5,26 +5,26 @@ Multi-temporal peatland monitoring and land cover change detection system using 
 ## Key Features
 
 - **Multimodal Satellite Ingestion**: Planetary Computer STAC (Sentinel-2 L2A, Sentinel-1 RTC, Copernicus DEM GLO-30, Landsat 8/9, ESA WorldCover v200) + Google Earth Engine (optional).
-- **Google Earth Engine Support**: Alternative data source via GEE (S2_SR_HARMONIZED, S1_GRD, LC08/LC09, WorldCover) with native RF classifier. GEE monthly time series, live NDVI snapshot.
+- **Google Earth Engine Support**: Alternative data source via GEE (S2_SR_HARMONIZED, S1_GRD, LC08/LC09, WorldCover) with native RF classifier. Cadence-based time series (weekly/monthly/yearly), live NDVI snapshot.
 - **Complete Spectral Indices**: NDVI, NDWI/MNDWI, NBR and dNBR, BSI, SAR cross-ratio VH/VV, NDMI (Normalized Difference Moisture Index).
-- **Time Series and Seasonal Composite**: GEE monthly composites (NDVI/NDWI/NDMI/NBR/BSI), weekly/monthly/yearly aggregation, seasonal window.
+- **Time Series and Seasonal Composite**: index time series (NDVI, NDWI, MNDWI, NDMI, NBR, BSI, dNBR, SAR VH-VV dB, LST) bucketed by the weekly/monthly/yearly cadence selected in the control dock, plus seasonal window aggregation.
 - **Peat Hydrology and Carbon Emissions Model**: WTD based on PP 71/2014 and PP 57/2016 (safe threshold -40 cm), subsidence rate, carbon emissions (0.91 tCO2e/ha/yr per cm drainage), drainage intensity, canal density, water retention capacity.
 - **Multi-Hazard Assessment**: Landslide (slope + SAR anomaly + NDVI drop), ground deformation (InSAR proxy via S1 coherence), coastal inundation (MNDWI + DEM < 2m).
 - **Canal Blocking Intervention Simulation**: Water table rise, hydrological recovery area, potential carbon emission reduction (tCO2e/yr). Calibratable with field data.
 - **Active Fire Hotspot Detection**: NASA FIRMS multi-sensor (VIIRS SNPP / NOAA-20 + MODIS) real-time integration with deduplication, confidence filter, map markers, archive support.
-- **8-Class Land Cover Classification**: Natural Forest, Wet Peatland, Bare Land, Oil Palm Plantation, Open Mining, Water Bodies, Built-up Area, Cropland/Agriculture. WorldCover v200 training labels.
-- **Model Validation**: Stratified cross-validation, confusion matrix, overall accuracy, Cohen's kappa, per-class spectral scatter (all metrics).
+- **8-Class Land Cover Classification**: Natural Forest, Wet Peatland, Bare Land, Oil Palm Plantation, Open Mining, Water Bodies, Built-up Area, Cropland/Agriculture. Random Forest trained on ESA WorldCover v200 labels sampled from the WorldCover reference year (2021) via stratifiedSample (6 draws x 300 pixels, 30 m), duplicate-pixel removal, spatial holdout evaluation (500 trees, depth 16).
+- **Model Validation**: Spatial holdout (block-based, no shared locations), confusion matrix, overall accuracy, Cohen's kappa (percentage), per-class support, insufficient-diversity warning.
 - **AI Analyst**: Multi-provider (OpenAI-compatible, Ollama Cloud, OpenRouter) via HTTPX + Pydantic, deterministic heuristic fallback (multi-metric scoring).
 - **Interactive Map Without Build Tools**: Standalone frontend (zero node_modules) using MapLibre GL JS, custom point-based AOI drawing, Turf.js via CDN.
 - **Point-Based AOI Drawing**: Click vertices, live line preview, double-click/click near first point to close polygon. Draw/Clear toggle.
 - **13 Free Basemaps**: ESRI (10 variants), OpenStreetMap, OpenTopoMap, CyclOSM - no API key required.
 - **Dual Raster Overlay and Blend Slider**: Pre vs post spectral composite visualization with opacity control, per-index overlay.
-- **Inline Charts**: Time series line chart (NDVI/NDWI/NDMI/NBR/BSI), spectral feature clusters (all metrics per class), model accuracy badge.
+- **Inline Charts**: Multi-lane index trend (unitless indices, SAR dB, LST C on separate lanes), per-index temporal scatter clusters with one color per index, model accuracy badge.
 - **Complete GIS Export Bundle (ZIP)**: GeoTIFF, GeoPackage, QGIS .qgs, GeoJSON, XLSX, SVG, CSV, MD, PNG.
 - **SQLite History Storage**: Local SQLite database with compressed raster arrays (.npz).
 - **Multi-Source Fallback**: GEE to Landsat to Planetary Computer with user notification.
 - **Bulk Layer Toggle**: Check/uncheck all 20 analysis layers at once.
-- **Fire Hotspot Markers**: Appear after analysis (not on draw).
+- **Fire Hotspot Markers**: Auto-loaded after analysis, filtered to the drawn AOI/boundary.
 - **Back Navigation**: Back button on history and inspect panels.
 
 ## System Architecture
@@ -32,8 +32,9 @@ Multi-temporal peatland monitoring and land cover change detection system using 
 ```text
 FastAPI Backend (app/)
   ├── services/cog.py              # Concurrent WarpedVRT reader (S2, S1-RTC, DEM, Landsat)
-  ├── services/gee.py              # GEE auth, collections, pipeline_metrics, landsat, monthly TS, live NDVI
-  ├── services/gee_analysis.py     # WorldCover training labels sampled from GEE
+  ├── services/gee.py              # GEE auth, collections, pipeline_metrics, landsat, live NDVI
+  ├── services/gee_analysis.py     # WorldCover training labels sampled from GEE (spatial holdout)
+  ├── services/gee_series.py       # Cadence-based time series (S2+S1+Landsat, SAR dB, LST, dNBR)
   ├── services/raster.py           # Canonical spectral indices (NDVI, NDWI, NDMI, dNBR, BSI, SAR)
   ├── services/geospatial.py       # Cloud masking, bounding box, DEM slope and topography
   ├── services/classifier.py       # RF land classification and transition matrix (8 classes, WorldCover)
@@ -185,7 +186,7 @@ peatlands-sentinel/
 - **GEE**: Optional. Requires Google Cloud project + Earth Engine API enabled.
 - **FIRMS**: Requires FIRMS_MAP_KEY from https://firms.modaps.eosdis.nasa.gov/api/.
 - **DEM**: Uses Planetary Computer COG first, then Copernicus DEM via GEE. Elevation is reported as n/a when both are unavailable.
-- **Live NDVI (COG)**: Uses GEE fallback when Planetary Computer COG unavailable.
+- **Live NDVI (COG)**: Button removed; GEE live NDVI still available via API.
 
 ## License
 

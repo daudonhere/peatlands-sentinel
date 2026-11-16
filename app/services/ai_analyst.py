@@ -238,30 +238,128 @@ def heuristic_report(target: str, metrics: dict[str, Any]) -> AIAnalystReport:
         f"{trans_text}" + (f" Dominant hazard: {hazard}." if hazard else "")
     )
 
-    # Actions based on threat and metrics
+    # Actions based on threat and metrics (metric-driven, varied by data)
     actions = []
     if threat == "Critical":
-        actions.append("Dispatch local peatland patrol unit immediately")
-        actions.append("Verify canal block water levels")
         if wtd_cm < -80:
             actions.append(
-                f"Emergency rewetting: WTD at {wtd_cm:.0f} cm exceeds safe threshold"
+                f"Emergency rewetting: water table at {wtd_cm:.0f} cm exceeds safe threshold"
+            )
+        elif wtd_cm < -55:
+            actions.append(
+                f"Raise water table: currently {wtd_cm:.0f} cm, target above -40 cm"
+            )
+        if dnbr > 0.4:
+            actions.append(
+                f"Inspect burn scars (dNBR {dnbr:.2f}) and verify hotspot coordinates"
+            )
+        if bsi > 0.15:
+            actions.append(
+                f"Revegetate bare soil patches (BSI {bsi:.2f}) to reduce ignition risk"
             )
         if co2 > 5.0:
-            actions.append(f"Carbon emission alert: {co2:.1f} tCO2e/ha/yr")
-        actions.append("Report hotspot coordinates to forestry command center")
+            actions.append(
+                f"Carbon emission alert: {co2:.1f} tCO2e/ha/yr, prioritize rewetting"
+            )
+        if drain > 0.5:
+            actions.append("Inspect drainage canals for blockage or illegal clearing")
+        if canal > 0.4:
+            actions.append(f"Block priority canals (density {canal:.2f} km/km2)")
+        if subsidence > 3.0:
+            actions.append(
+                f"Track subsidence: {subsidence:.1f} cm/yr, reinforce canal blocks"
+            )
+        if hazard and hazard.lower() not in ("", "low", "none"):
+            actions.append(f"Respond to dominant hazard: {hazard}")
+        if not actions:
+            actions.append("Dispatch local peatland patrol unit immediately")
+            actions.append("Verify canal block water levels")
     elif threat == "Moderate":
         actions.append("Monitor satellite passes at 5-day intervals")
+        if ndwi < -0.1:
+            actions.append(f"Watch moisture (NDWI {ndwi:.2f}); schedule field check")
         if drain > 0.5:
             actions.append("Inspect drainage canals for blockage or illegal clearing")
         if subsidence > 2.0:
             actions.append(f"Track subsidence: {subsidence:.1f} cm/yr")
-        actions.append("Check for illegal canal clearing activities nearby")
+        if ndmi < 0.1:
+            actions.append(
+                f"Low canopy moisture (NDMI {ndmi:.2f}); irrigate if possible"
+            )
+        if not actions:
+            actions.append("Check for illegal canal clearing activities nearby")
     else:
         actions.append("Maintain baseline environmental surveillance")
+        if ndvi > 0.5:
+            actions.append(f"Vegetation healthy (NDVI {ndvi:.2f}); keep monitoring")
         if area > 1000:
             actions.append(f"Continue monitoring {area:.0f} ha peatland area")
+        if co2 > 1.0:
+            actions.append(f"Track carbon: {co2:.1f} tCO2e/ha/yr")
+        if not actions:
+            actions.append("No immediate action required")
 
+    return AIAnalystReport(
+        threat_level=threat,
+        peat_moisture_status=status,
+        fire_risk_summary=fire_summary,
+        classification_reasoning=reasoning,
+        recommended_actions=actions,
+    )
+
+
+def heuristic_report_alternate(target: str, metrics: dict[str, Any]) -> AIAnalystReport:
+    """Second, varied fallback used when the primary heuristic yields too few actions."""
+    ndvi = float(metrics.get("mean_ndvi", 0.5))
+    ndwi = float(metrics.get("mean_ndwi", 0.1))
+    ndmi = float(metrics.get("mean_ndmi", 0.2))
+    wtd_cm = float(metrics.get("water_table_depth_cm", -35.0))
+    co2 = float(metrics.get("co2_emission_tco2e_ha_year", 0.0))
+    subsidence = float(metrics.get("subsidence_rate_cm_year", 1.5))
+    drain = float(metrics.get("drainage_intensity", 0.3))
+    hazard = str(metrics.get("dominant_hazard", ""))
+    area = float(metrics.get("area_hectares", 0.0))
+
+    threat = (
+        "Critical"
+        if wtd_cm < -55 or co2 > 5.0
+        else "Moderate"
+        if wtd_cm < -30
+        else "Low"
+    )
+    status = (
+        "Critical Dry"
+        if threat == "Critical"
+        else "Draining"
+        if threat == "Moderate"
+        else "Wet"
+    )
+    fire_summary = (
+        f"Alternate assessment: NDVI {ndvi:.2f}, NDWI {ndwi:.2f}, NDMI {ndmi:.2f}; "
+        f"WTD {wtd_cm:.0f} cm; CO2 {co2:.1f} tCO2e/ha/yr."
+    )
+    reasoning = (
+        f"Alternate reasoning for {target}: moisture WTD {wtd_cm:.0f} cm, "
+        f"drainage {drain:.2f}, subsidence {subsidence:.1f} cm/yr"
+        + (f", hazard {hazard}." if hazard else ".")
+    )
+    actions = []
+    if threat == "Critical":
+        actions.append("Coordinate with local fire brigade for rapid response")
+        actions.append("Temporarily close access to driest peat blocks")
+        if wtd_cm < -40:
+            actions.append(f"Install emergency water gates (WTD {wtd_cm:.0f} cm)")
+        if co2 > 2.0:
+            actions.append(f"Quantify carbon loss: {co2:.1f} tCO2e/ha/yr")
+    elif threat == "Moderate":
+        actions.append("Schedule field inspection within 7 days")
+        actions.append("Review canal maintenance logs")
+    else:
+        actions.append("Continue routine monitoring")
+        if area > 500:
+            actions.append(f"Maintain surveillance over {area:.0f} ha")
+    if not actions:
+        actions.append("No immediate action required")
     return AIAnalystReport(
         threat_level=threat,
         peat_moisture_status=status,
@@ -290,7 +388,16 @@ async def generate_analyst_report(
         if report is not None:
             return report
 
-    return heuristic_report(target, metrics)
+    primary = heuristic_report(target, metrics)
+    if len(primary.recommended_actions) < 2:
+        alternate = heuristic_report_alternate(target, metrics)
+        merged = list(primary.recommended_actions)
+        for action in alternate.recommended_actions:
+            if action not in merged:
+                merged.append(action)
+        if merged:
+            primary = primary.model_copy(update={"recommended_actions": merged})
+    return primary
 
 
 def analyst_engine_status() -> dict[str, Any]:

@@ -29,8 +29,9 @@ class Settings(BaseSettings):
     gee_private_key_file: Path | None = None
     gee_worldcover_collection: str = "ESA/WorldCover/v200/2021"
     gee_dem_collection: str = "COPERNICUS/DEM/GLO30_2024_1"
-    gee_samples_per_class: int = 150
-    gee_rf_trees: int = 200
+    gee_samples_per_class: int = 300
+    gee_sample_draws: int = 6
+    gee_rf_trees: int = 500
 
     ai_api_key: str = ""
     ai_base_url: str = "https://api.openai.com/v1"

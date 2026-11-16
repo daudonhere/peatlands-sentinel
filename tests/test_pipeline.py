@@ -33,6 +33,7 @@ _TRAINING_FEATURES = [
 ]
 
 _TRAINING_LABELS = [0, 0, 7, 7]
+_TRAINING_COORDS = [[102.1, 0.45], [102.12, 0.46], [102.14, 0.47], [102.16, 0.48]]
 
 _MOCK_LIVE = {
     "source": "live_cog",
@@ -98,7 +99,7 @@ async def test_end_to_end_pipeline():
             ),
             patch(
                 "app.services.gee_analysis.worldcover_training_data",
-                return_value=(_TRAINING_FEATURES, _TRAINING_LABELS),
+                return_value=(_TRAINING_FEATURES, _TRAINING_LABELS, _TRAINING_COORDS),
             ),
         ):
             res = await client.post("/api/analysis/run", json=payload)
@@ -227,7 +228,7 @@ async def test_fallback_to_simulation():
             ),
             patch(
                 "app.services.gee_analysis.worldcover_training_data",
-                return_value=(_TRAINING_FEATURES, _TRAINING_LABELS),
+                return_value=(_TRAINING_FEATURES, _TRAINING_LABELS, _TRAINING_COORDS),
             ),
         ):
             res = await client.post("/api/analysis/run", json=payload)

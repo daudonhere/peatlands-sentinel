@@ -1,33 +1,79 @@
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
 from app.schemas.analysis import ClassScatterPoint, ModelAccuracy
 from app.services.classifier import (
     classify_arrays,
     get_trained_classifier,
+    get_training_coords,
+    new_classifier,
     training_dataset,
 )
 from app.services.reference_data import CLASS_NAMES, CLASS_COLORS
 from app.services.validation import accuracy_report, per_class_user_accuracy
 
 
-def _cross_validated_predictions() -> tuple[np.ndarray, np.ndarray]:
+def _spatial_holdout_predictions() -> tuple[np.ndarray, np.ndarray] | None:
     features, labels = training_dataset()
-    if features.size == 0 or len(np.unique(labels)) < 2:
-        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
+    coords = get_training_coords()
+    if (
+        features.size == 0
+        or coords.shape[0] != features.shape[0]
+        or coords.shape[0] < 20
+    ):
+        return None
     counts = np.bincount(labels, minlength=len(CLASS_NAMES))
-    min_count = int(counts[counts > 0].min())
-    if min_count < 2:
-        return np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32)
-    folds = int(min(5, min_count))
-    model = RandomForestClassifier(
-        n_estimators=300,
-        max_depth=8,
-        min_samples_leaf=1,
-        random_state=42,
-        n_jobs=-1,
+    if int((counts > 0).sum()) < 2:
+        return None
+    # Build spatial blocks (0.05 deg grid) so train/test never share a location.
+    block_ids = np.array(
+        [f"{int(c[0] * 20)}_{int(c[1] * 20)}" for c in coords], dtype=object
     )
+    unique_blocks = np.unique(block_ids)
+    if unique_blocks.size < 4:
+        return None
+    rng = np.random.default_rng(42)
+    shuffled = rng.permutation(unique_blocks)
+    cut = max(1, int(round(unique_blocks.size * 0.7)))
+    train_blocks = set(shuffled[:cut].tolist())
+    test_blocks = set(shuffled[cut:].tolist())
+    train_mask = np.array([b in train_blocks for b in block_ids])
+    test_mask = ~train_mask
+    if train_mask.sum() < 10 or test_mask.sum() < 10:
+        return None
+    # Keep only classes present in both splits.
+    train_labels = labels[train_mask]
+    test_labels = labels[test_mask]
+    common = np.intersect1d(np.unique(train_labels), np.unique(test_labels))
+    if common.size < 2:
+        return None
+    train_keep = np.isin(labels, common) & train_mask
+    test_keep = np.isin(labels, common) & test_mask
+    if train_keep.sum() < 10 or test_keep.sum() < 10:
+        return None
+    model = new_classifier()
+    model.fit(features[train_keep], labels[train_keep])
+    preds = model.predict(features[test_keep])
+    return labels[test_keep], preds
+
+
+def _cross_validated_predictions() -> tuple[np.ndarray, np.ndarray]:
+    spatial = _spatial_holdout_predictions()
+    if spatial is not None:
+        return spatial
+    features, labels = training_dataset()
+    empty = (np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+    if features.size == 0:
+        return empty
+    counts = np.bincount(labels, minlength=len(CLASS_NAMES))
+    usable = counts >= 2
+    if int(usable.sum()) < 2:
+        return empty
+    keep = usable[labels]
+    features = features[keep]
+    labels = labels[keep]
+    folds = int(min(5, counts[usable].min()))
+    model = new_classifier()
     predictions = cross_val_predict(
         model,
         features,
@@ -35,6 +81,10 @@ def _cross_validated_predictions() -> tuple[np.ndarray, np.ndarray]:
         cv=StratifiedKFold(n_splits=folds, shuffle=True, random_state=42),
     )
     return labels, predictions
+    labels, predictions = _cross_validated_predictions()
+    return accuracy_report(
+        labels, predictions, [CLASS_NAMES[i] for i in sorted(CLASS_NAMES)]
+    )
 
 
 def evaluate_local_model() -> ModelAccuracy:
@@ -42,9 +92,6 @@ def evaluate_local_model() -> ModelAccuracy:
     return accuracy_report(
         labels, predictions, [CLASS_NAMES[i] for i in sorted(CLASS_NAMES)]
     )
-
-
-def model_breakdown() -> list[dict]:
     report = evaluate_local_model()
     rows = per_class_user_accuracy(report)
     colors = {name: CLASS_COLORS[code] for code, name in CLASS_NAMES.items()}

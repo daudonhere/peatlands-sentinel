@@ -5,6 +5,7 @@ from app.services.raster import (
     calculate_nbr,
     calculate_dnbr,
     classify_dnbr_severity,
+    linear_to_db,
 )
 from app.services.hydrology import evaluate_peat_hydrology_profile
 from app.services.intervention import simulate_canal_blocking
@@ -32,6 +33,13 @@ def test_spectral_indices():
     assert classify_dnbr_severity(dnbr) == "Moderate Severity"
 
 
+def test_sar_decibel_conversion():
+    db = linear_to_db(np.array([1.0, 0.1], dtype=np.float32))
+    assert np.isclose(db[0], 0.0)
+    assert np.isclose(db[1], -10.0)
+    assert np.isnan(linear_to_db(np.array([np.nan], dtype=np.float32)))[0]
+
+
 def test_hydrology_and_geotiff():
     hydro = evaluate_peat_hydrology_profile(
         {"mean_ndwi": 0.2, "mean_sar_cross_ratio": -10.0}
@@ -54,6 +62,7 @@ def test_canal_blocking():
 
 if __name__ == "__main__":
     test_spectral_indices()
+    test_sar_decibel_conversion()
     test_canal_blocking()
     test_hydrology_and_geotiff()
     print("All raster self-checks passed.")

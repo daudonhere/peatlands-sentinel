@@ -68,3 +68,7 @@ cache/
 Thumbs.db
 
 .playwright-mcp/
+
+# Local todo files
+todo.md
+TODO.md

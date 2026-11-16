@@ -7,7 +7,14 @@ from app.services.cog import _fetch_s2_bands, _s2_to_indices
 from app.services.ingestion import search_stac_items
 from app.services.temporal import seasonal_window
 
-_OBSERVATION_FIELDS = ("mean_ndvi", "mean_ndwi", "mean_ndmi", "mean_nbr", "mean_bsi")
+_OBSERVATION_FIELDS = (
+    "mean_ndvi",
+    "mean_ndwi",
+    "mean_mndwi",
+    "mean_ndmi",
+    "mean_nbr",
+    "mean_bsi",
+)
 
 
 def _summarize_indices(indices: dict) -> dict:
